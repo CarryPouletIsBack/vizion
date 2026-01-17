@@ -123,8 +123,13 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
 
         <main className="user-account-main">
           <section className="user-account-header">
-            <h1 className="user-account-title">Mon compte</h1>
-            <p className="user-account-subtitle">Gérez vos informations et vos connexions</p>
+            <div>
+              <h1 className="user-account-title">Mon compte</h1>
+              <p className="user-account-subtitle">Gérez vos informations et vos connexions</p>
+            </div>
+            <button type="button" className="btn btn--ghost" onClick={handleLogout}>
+              Se déconnecter
+            </button>
           </section>
 
           <section className="user-account-content">
