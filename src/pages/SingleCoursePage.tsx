@@ -68,9 +68,17 @@ export default function SingleCoursePage({
         name: 'Grand Raid',
       }
 
-  // TODO: Récupérer les segments Strava si on a un route_id
-  // Pour l'instant, on passe undefined
-  const analysis = analyzeCourseReadiness(metrics, courseData, undefined)
+  // Récupérer les segments Strava de la course
+  const stravaSegments = (selectedCourse as { stravaSegments?: Array<{
+    id: number
+    name: string
+    distance: number
+    elevation_gain: number
+    average_grade: number
+    type: 'climb' | 'descent' | 'flat'
+  }> } | undefined)?.stravaSegments
+
+  const analysis = analyzeCourseReadiness(metrics, courseData, stravaSegments)
   return (
     <div className="single-course-page">
       <HeaderTopBar onNavigate={onNavigate} />

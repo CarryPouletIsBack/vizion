@@ -19,6 +19,15 @@ type CourseItem = {
   distanceKm?: number
   elevationGain?: number
   profile?: Array<[number, number]>
+  stravaRouteId?: string
+  stravaSegments?: Array<{
+    id: number
+    name: string
+    distance: number
+    elevation_gain: number
+    average_grade: number
+    type: 'climb' | 'descent' | 'flat'
+  }>
 }
 
 type EventItem = {
@@ -111,6 +120,34 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
             }
           }
 
+          // Parser les segments Strava si présents
+          let stravaSegments: Array<{
+            id: number
+            name: string
+            distance: number
+            elevation_gain: number
+            average_grade: number
+            type: 'climb' | 'descent' | 'flat'
+          }> | undefined = undefined
+          if (course.strava_segments) {
+            if (typeof course.strava_segments === 'string') {
+              try {
+                stravaSegments = JSON.parse(course.strava_segments)
+              } catch {
+                stravaSegments = undefined
+              }
+            } else if (Array.isArray(course.strava_segments)) {
+              stravaSegments = course.strava_segments as Array<{
+                id: number
+                name: string
+                distance: number
+                elevation_gain: number
+                average_grade: number
+                type: 'climb' | 'descent' | 'flat'
+              }>
+            }
+          }
+
           event.courses.push({
             id: course.id,
             name: course.name,
@@ -120,6 +157,8 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
             distanceKm: course.distance_km || undefined,
             elevationGain: course.elevation_gain || undefined,
             profile,
+            stravaRouteId: course.strava_route_id || undefined,
+            stravaSegments,
           })
         }
       })
@@ -209,6 +248,15 @@ function App() {
     distanceKm?: number
     elevationGain?: number
     profile?: Array<[number, number]>
+    stravaRouteId?: string
+    stravaSegments?: Array<{
+      id: number
+      name: string
+      distance: number
+      elevation_gain: number
+      average_grade: number
+      type: 'climb' | 'descent' | 'flat'
+    }>
   }) => {
     let fallbackEventId = selectedEventId ?? events[0]?.id
 
@@ -292,6 +340,8 @@ function App() {
         distance_km: payload.distanceKm || null,
         elevation_gain: elevationGainRounded,
         profile: payload.profile ? JSON.stringify(payload.profile) : null,
+        strava_route_id: payload.stravaRouteId || null,
+        strava_segments: payload.stravaSegments ? JSON.stringify(payload.stravaSegments) : null,
       })
 
       if (error) {
@@ -322,6 +372,8 @@ function App() {
       distance_km: payload.distanceKm || null,
       elevation_gain: elevationGainRounded,
       profile: payload.profile ? JSON.stringify(payload.profile) : null,
+      strava_route_id: payload.stravaRouteId || null,
+      strava_segments: payload.stravaSegments ? JSON.stringify(payload.stravaSegments) : null,
     })
 
     if (error) {

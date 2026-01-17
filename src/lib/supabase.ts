@@ -28,6 +28,15 @@ export type CourseRow = {
   distance_km: number | null
   elevation_gain: number | null
   profile: Array<[number, number]> | null
+  strava_route_id: string | null
+  strava_segments: string | Array<{
+    id: number
+    name: string
+    distance: number
+    elevation_gain: number
+    average_grade: number
+    type: 'climb' | 'descent' | 'flat'
+  }> | null
   created_at: string
   updated_at: string
 }

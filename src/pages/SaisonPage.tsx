@@ -9,6 +9,7 @@ import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 import WorldMapSimple from '../components/WorldMapSimple'
 import { gpxToSvg } from '../lib/gpxToSvg'
+import { extractRouteIdFromUrl } from '../lib/stravaRouteParser'
 
 // Jeux de données temporaires pour la maquette MVP.
 const raceCards = [
@@ -53,6 +54,7 @@ export default function SaisonPage({
   const courseNameRef = useRef<HTMLInputElement | null>(null)
   const courseImageRef = useRef<HTMLInputElement | null>(null)
   const courseGpxRef = useRef<HTMLInputElement | null>(null)
+  const courseStravaRouteRef = useRef<HTMLInputElement | null>(null)
 
   const handleCreateEvent = () => {
     const name = eventNameRef.current?.value?.trim() || 'Sans titre'
@@ -172,12 +174,52 @@ export default function SaisonPage({
     const name = courseNameRef.current?.value?.trim() || 'Sans titre'
     const imageFile = courseImageRef.current?.files?.[0]
     const gpxFile = courseGpxRef.current?.files?.[0]
+    const stravaRouteUrl = courseStravaRouteRef.current?.value?.trim()
     const imageUrl = imageFile ? URL.createObjectURL(imageFile) : undefined
     const gpxName = gpxFile?.name
     let gpxSvg: string | undefined
     let distanceKm: number | undefined
     let elevationGain: number | undefined
     let profile: Array<[number, number]> | undefined
+    let stravaRouteId: string | undefined
+    let stravaSegments: Array<{
+      id: number
+      name: string
+      distance: number
+      elevation_gain: number
+      average_grade: number
+      type: 'climb' | 'descent' | 'flat'
+    }> | undefined
+
+    // Extraire l'ID de route depuis l'URL Strava
+    if (stravaRouteUrl) {
+      stravaRouteId = extractRouteIdFromUrl(stravaRouteUrl) || undefined
+      if (stravaRouteId) {
+        // Récupérer les segments depuis l'API Strava
+        try {
+          // Récupérer le token depuis localStorage
+          const tokenData = localStorage.getItem('vizion:strava_token')
+          if (tokenData) {
+            const token = JSON.parse(tokenData)
+            const response = await fetch(`/api/strava/route-segments?route_id=${stravaRouteId}`, {
+              headers: {
+                Authorization: `Bearer ${token.access_token}`,
+              },
+            })
+
+            if (response.ok) {
+              const data = await response.json()
+              stravaSegments = data.segments || undefined
+              console.log(`Segments récupérés : ${stravaSegments?.length || 0}`)
+            } else {
+              console.warn('Impossible de récupérer les segments Strava:', await response.text())
+            }
+          }
+        } catch (error) {
+          console.error('Erreur lors de la récupération des segments Strava:', error)
+        }
+      }
+    }
 
     setIsCreateModalOpen(false)
     setCreateModalView('select')
@@ -198,10 +240,21 @@ export default function SaisonPage({
       }
     }
 
-      onCreateCourse?.({ name, imageUrl, gpxName, gpxSvg, distanceKm, elevationGain, profile })
+    onCreateCourse?.({
+      name,
+      imageUrl,
+      gpxName,
+      gpxSvg,
+      distanceKm,
+      elevationGain,
+      profile,
+      ...(stravaRouteId && { stravaRouteId }),
+      ...(stravaSegments && stravaSegments.length > 0 && { stravaSegments }),
+    })
     if (courseNameRef.current) courseNameRef.current.value = ''
     if (courseImageRef.current) courseImageRef.current.value = ''
     if (courseGpxRef.current) courseGpxRef.current.value = ''
+    if (courseStravaRouteRef.current) courseStravaRouteRef.current.value = ''
   }
 
   return (
@@ -467,6 +520,21 @@ export default function SaisonPage({
                   placeholder="UTMB"
                   ref={courseNameRef}
                 />
+              </div>
+              <div className="modal-field">
+                <label htmlFor="course-strava-route">
+                  URL Strava Route (optionnel)
+                </label>
+                <input
+                  id="course-strava-route"
+                  className="modal-input"
+                  type="url"
+                  placeholder="https://www.strava.com/routes/3344025913460591936"
+                  ref={courseStravaRouteRef}
+                />
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                  Les segments critiques seront automatiquement analysés
+                </p>
               </div>
               <p className="modal-footnote">
                 En créant une course tu accepte{' '}

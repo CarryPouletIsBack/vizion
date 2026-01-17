@@ -1,4 +1,5 @@
-import type { StravaMetrics, StravaSegment } from '../types/strava'
+import type { StravaMetrics } from '../types/strava'
+import type { StravaSegment } from '../types/strava'
 
 /**
  * Analyse les segments critiques d'une route pour un coureur

@@ -1,5 +1,4 @@
-import type { StravaMetrics } from '../types/strava'
-import type { StravaSegment } from './stravaSegments'
+import type { StravaMetrics, StravaSegment } from '../types/strava'
 
 /**
  * Données d'une course pour l'analyse
