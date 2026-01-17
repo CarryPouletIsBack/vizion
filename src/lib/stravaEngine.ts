@@ -56,6 +56,19 @@ export function computeStravaMetrics(activities: StravaActivity[]): StravaMetric
   const now = new Date()
   const buckets = buildWeekBuckets(now)
 
+  // Compteurs pour les métriques enrichies
+  let totalHeartrate = 0
+  let heartrateCount = 0
+  let totalCadence = 0
+  let cadenceCount = 0
+  let totalSpeed = 0
+  let speedCount = 0
+  let totalElapsedTime = 0
+  let totalMovingTime = 0
+  let totalSufferScore = 0
+  let sufferScoreCount = 0
+  let trailRunCount = 0
+
   activities.forEach((act) => {
     const d = new Date(act.date)
     const bucket = pickBucket(buckets, d)
@@ -65,6 +78,33 @@ export function computeStravaMetrics(activities: StravaActivity[]): StravaMetric
     bucket.count += 1
     if (act.distanceKm > bucket.longRunKm) bucket.longRunKm = act.distanceKm
     if (act.elevationGain > bucket.longRunDPlus) bucket.longRunDPlus = act.elevationGain
+
+    // Collecter les métriques enrichies
+    if (act.averageHeartrate) {
+      totalHeartrate += act.averageHeartrate
+      heartrateCount += 1
+    }
+    if (act.averageCadence) {
+      totalCadence += act.averageCadence
+      cadenceCount += 1
+    }
+    if (act.averageSpeedKmh) {
+      totalSpeed += act.averageSpeedKmh
+      speedCount += 1
+    }
+    if (act.elapsedTimeSec) {
+      totalElapsedTime += act.elapsedTimeSec
+    }
+    if (act.movingTimeSec) {
+      totalMovingTime += act.movingTimeSec
+    }
+    if (act.sufferScore) {
+      totalSufferScore += act.sufferScore
+      sufferScoreCount += 1
+    }
+    if (act.type === 'TrailRun' || act.type === 'Run' && act.elevationGain > act.distanceKm * 50) {
+      trailRunCount += 1
+    }
   })
 
   const last = buckets[buckets.length - 1]
@@ -80,10 +120,30 @@ export function computeStravaMetrics(activities: StravaActivity[]): StravaMetric
   const loadScore = Math.round(last.km * 10 + last.dplus * 0.3)
   const loadDelta = Math.round(variation * 10) / 10
 
+  // Calculer les métriques enrichies
+  const averageHeartrate = heartrateCount > 0 ? Math.round(totalHeartrate / heartrateCount) : undefined
+  const averageCadence = cadenceCount > 0 ? Math.round(totalCadence / cadenceCount) : undefined
+  const averageSpeedKmh = speedCount > 0 ? Math.round((totalSpeed / speedCount) * 10) / 10 : undefined
+  const restRatio = totalElapsedTime > 0 ? Math.round(((totalElapsedTime - totalMovingTime) / totalElapsedTime) * 100) / 100 : undefined
+  const sufferScore = sufferScoreCount > 0 ? Math.round(totalSufferScore / sufferScoreCount) : undefined
+  const trailRunRatio = activities.length > 0 ? Math.round((trailRunCount / activities.length) * 100) / 100 : undefined
+
   const recommendations: string[] = []
   if (longRunDistanceKm < 20) recommendations.push('ajouter 2 sorties > 4h')
   if (dPlusPerWeek < 2800) recommendations.push('augmenter le travail en descente')
   recommendations.push('tester nutrition sur effort long')
+  
+  // Recommandations basées sur les nouvelles métriques
+  if (averageHeartrate && averageHeartrate > 165) {
+    recommendations.push('FC moyenne élevée - vérifier l\'intensité des sorties')
+  }
+  if (restRatio && restRatio > 0.15) {
+    recommendations.push(`Beaucoup de pauses (${Math.round(restRatio * 100)}% du temps) - travailler la continuité`)
+  }
+  if (trailRunRatio && trailRunRatio < 0.3) {
+    recommendations.push('Peu de sorties trail - augmenter le terrain technique')
+  }
+
   const targetDPlusPerWeek = 2800
 
   return {
@@ -97,5 +157,11 @@ export function computeStravaMetrics(activities: StravaActivity[]): StravaMetric
     loadDelta,
     recommendations,
     targetDPlusPerWeek,
+    averageHeartrate,
+    averageCadence,
+    averageSpeedKmh,
+    restRatio,
+    sufferScore,
+    trailRunRatio,
   }
 }

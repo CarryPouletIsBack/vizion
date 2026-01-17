@@ -93,14 +93,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       page += 1
     }
 
-    // Transformer les activités au format attendu
-    const formattedActivities = activities.map((act) => ({
-      id: String(act.id),
-      date: act.start_date,
-      distanceKm: act.distance / 1000, // Convertir mètres en km
-      elevationGain: act.total_elevation_gain || 0,
-      movingTimeSec: act.moving_time || 0,
-    }))
+    // Transformer les activités au format attendu avec données enrichies
+    const formattedActivities = activities.map((act) => {
+      // Calculer la vitesse moyenne (km/h)
+      const movingTimeHours = (act.moving_time || 0) / 3600
+      const distanceKm = (act.distance || 0) / 1000
+      const averageSpeedKmh = movingTimeHours > 0 ? distanceKm / movingTimeHours : 0
+      
+      // Calculer la vitesse max (km/h)
+      const maxSpeedKmh = act.max_speed ? act.max_speed * 3.6 : undefined // m/s -> km/h
+
+      return {
+        id: String(act.id),
+        date: act.start_date,
+        distanceKm,
+        elevationGain: act.total_elevation_gain || 0,
+        movingTimeSec: act.moving_time || 0,
+        elapsedTimeSec: act.elapsed_time || act.moving_time || 0,
+        averageSpeedKmh: averageSpeedKmh > 0 ? Math.round(averageSpeedKmh * 10) / 10 : undefined,
+        maxSpeedKmh: maxSpeedKmh ? Math.round(maxSpeedKmh * 10) / 10 : undefined,
+        averageHeartrate: act.average_heartrate || undefined,
+        maxHeartrate: act.max_heartrate || undefined,
+        averageCadence: act.average_cadence || undefined,
+        calories: act.calories || undefined,
+        sufferScore: act.suffer_score || undefined,
+        achievementCount: act.achievement_count || undefined,
+        prCount: act.pr_count || undefined,
+        kudosCount: act.kudos_count || undefined,
+        type: act.type || act.sport_type || 'Run',
+        name: act.name || undefined,
+      }
+    })
 
     return res.status(200).json({ activities: formattedActivities })
   } catch (error) {
