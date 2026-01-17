@@ -184,9 +184,29 @@
 
 /* Personnaliser le style de la carte Leaflet pour correspondre au design */
 .world-map-leaflet .leaflet-container {
-  background: var(--color-bg-primary, #0b0e11);
+  background: transparent;
+  font-family: 'Space Grotesk', sans-serif;
 }
 
+/* Style pour avoir continents en #E5E7EB et océans transparents */
+/* On inverse les couleurs pour obtenir continents clairs */
 .world-map-leaflet .leaflet-tile-pane {
-  filter: invert(1) hue-rotate(180deg) brightness(0.9);
+  filter: 
+    invert(1) 
+    hue-rotate(180deg) 
+    brightness(0.9) 
+    contrast(1.1)
+    saturate(0);
+}
+
+/* Rendre les océans (zones bleues) transparents en utilisant mix-blend-mode */
+.world-map-leaflet .leaflet-tile-pane img {
+  mix-blend-mode: screen;
+  opacity: 0.95;
+}
+
+/* S'assurer que les tuiles respectent le filtre */
+.world-map-leaflet .leaflet-tile-container img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
