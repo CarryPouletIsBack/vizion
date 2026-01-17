@@ -31,10 +31,14 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
   })
 
   useEffect(() => {
+    let mounted = true
+
     // Charger l'utilisateur Supabase
     const loadUser = async () => {
       try {
         const supabaseUser = await getCurrentUser()
+        if (!mounted) return
+
         if (supabaseUser) {
           // Charger les données Strava si disponibles
           const tokenData = localStorage.getItem('vizion:strava_token')
@@ -70,6 +74,7 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
           onNavigate?.('saison')
         }
       } catch (error) {
+        if (!mounted) return
         console.warn('Impossible de charger l\'utilisateur:', error)
         onNavigate?.('saison')
       }
@@ -78,13 +83,16 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
     loadUser()
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'vizion:strava_token') {
+      if (e.key === 'vizion:strava_token' && mounted) {
         loadUser()
       }
     }
 
     window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
+    return () => {
+      mounted = false
+      window.removeEventListener('storage', handleStorageChange)
+    }
   }, [onNavigate])
 
   const handleStravaConnect = async () => {

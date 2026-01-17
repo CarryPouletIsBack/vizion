@@ -30,10 +30,14 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
   }, [isLoginModalOpen, loginModalMode])
 
   useEffect(() => {
+    let mounted = true
+
     // Charger l'utilisateur Supabase
     const loadSupabaseUser = async () => {
       try {
         const supabaseUser = await getCurrentUser()
+        if (!mounted) return
+
         if (supabaseUser) {
           // Charger les données Strava si disponibles
           const tokenData = localStorage.getItem('vizion:strava_token')
@@ -57,6 +61,7 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
           setUser(null)
         }
       } catch (error) {
+        if (!mounted) return
         console.warn('Impossible de charger l\'utilisateur:', error)
         setUser(null)
       }
@@ -66,6 +71,8 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
 
     // Écouter les changements d'authentification Supabase
     const { data: { subscription } } = onAuthStateChange(async (supabaseUser) => {
+      if (!mounted) return
+
       if (supabaseUser) {
         // Charger les données Strava si disponibles
         const tokenData = localStorage.getItem('vizion:strava_token')
@@ -92,17 +99,21 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
 
     // Écouter les changements dans localStorage pour Strava
     const handleStorageChange = (e: StorageEvent) => {
+      if (!mounted) return
       if (e.key === 'vizion:strava_token' && user) {
         try {
           const tokenData = e.newValue
           if (tokenData) {
             const parsed = JSON.parse(tokenData)
             if (parsed.athlete) {
-              setUser({
-                ...user,
-                firstname: parsed.athlete.firstname || user.firstname,
-                lastname: parsed.athlete.lastname || user.lastname,
-                profile: parsed.athlete.profile || parsed.athlete.profile_medium || parsed.athlete.profile_large || user.profile,
+              setUser((prevUser) => {
+                if (!prevUser) return null
+                return {
+                  ...prevUser,
+                  firstname: parsed.athlete.firstname || prevUser.firstname,
+                  lastname: parsed.athlete.lastname || prevUser.lastname,
+                  profile: parsed.athlete.profile || parsed.athlete.profile_medium || parsed.athlete.profile_large || prevUser.profile,
+                }
               })
             }
           }
@@ -114,10 +125,11 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
 
     window.addEventListener('storage', handleStorageChange)
     return () => {
+      mounted = false
       subscription.unsubscribe()
       window.removeEventListener('storage', handleStorageChange)
     }
-  }, [user])
+  }, []) // Retirer 'user' des dépendances pour éviter les boucles infinies
 
   const handleStravaConnect = async () => {
     try {

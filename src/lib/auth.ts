@@ -46,11 +46,21 @@ export async function signOut() {
  * Obtenir l'utilisateur actuellement connecté
  */
 export async function getCurrentUser() {
-  const { data: { user }, error } = await supabase.auth.getUser()
-  if (error) {
-    throw new Error(error.message)
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser()
+    if (error) {
+      // Ne pas lancer d'erreur si l'utilisateur n'est pas authentifié (c'est normal)
+      if (error.message.includes('JWT') || error.message.includes('token') || error.message.includes('session')) {
+        return null
+      }
+      throw new Error(error.message)
+    }
+    return user
+  } catch (error) {
+    // Gérer les erreurs CORS et autres erreurs réseau silencieusement
+    console.warn('Erreur lors de la récupération de l\'utilisateur:', error)
+    return null
   }
-  return user
 }
 
 /**

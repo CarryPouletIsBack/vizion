@@ -4,8 +4,14 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = 'https://bzltfvqzquqkvfnwcmmr.supabase.co'
 const supabaseAnonKey = 'sb_publishable_uU3vmqDdKuULADE7bGzRow_aEsu4F2N'
 
-// Client Supabase
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Client Supabase avec gestion des erreurs CORS
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false, // Désactiver la détection automatique pour éviter les appels répétés
+  },
+})
 
 // Types pour les tables
 export type EventRow = {
