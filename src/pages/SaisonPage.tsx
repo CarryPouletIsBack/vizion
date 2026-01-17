@@ -171,12 +171,24 @@ export default function SaisonPage({
   }
 
   const handleCreateCourse = async () => {
+    console.log('🚀 Début création course')
     const name = courseNameRef.current?.value?.trim() || 'Sans titre'
+    console.log('📝 Nom:', name)
+    
+    // Vérifier que le nom n'est pas vide ou "Sans titre"
+    if (!name || name.toLowerCase() === 'sans titre') {
+      console.warn('⚠️ Nom invalide, annulation')
+      alert('Veuillez entrer un nom de course valide')
+      return
+    }
+
     const imageFile = courseImageRef.current?.files?.[0]
     const gpxFile = courseGpxRef.current?.files?.[0]
     const stravaRouteUrl = courseStravaRouteRef.current?.value?.trim()
     const imageUrl = imageFile ? URL.createObjectURL(imageFile) : undefined
     const gpxName = gpxFile?.name
+    console.log('📁 Fichiers:', { image: !!imageFile, gpx: !!gpxFile, stravaUrl: !!stravaRouteUrl })
+    
     let gpxSvg: string | undefined
     let distanceKm: number | undefined
     let elevationGain: number | undefined
@@ -191,11 +203,33 @@ export default function SaisonPage({
       type: 'climb' | 'descent' | 'flat'
     }> | undefined
 
-    // Extraire l'ID de route depuis l'URL Strava
+    // Traiter le GPX d'abord
+    if (gpxFile) {
+      try {
+        console.log('📊 Traitement GPX...')
+        const gpxText = await gpxFile.text()
+        const stats = parseGpxStats(gpxText)
+        distanceKm = stats.distanceKm
+        elevationGain = stats.elevationGain
+        profile = stats.profile
+        console.log('📊 Stats GPX:', { distanceKm, elevationGain, profilePoints: profile?.length })
+        
+        // Conversion GPX → SVG côté client (fonctionne en production)
+        const rawSvg = gpxToSvg(gpxText)
+        gpxSvg = sanitizeSvg(rawSvg)
+        console.log('✅ SVG généré:', !!gpxSvg)
+      } catch (error) {
+        console.error('❌ Erreur lors de la conversion GPX → SVG', error)
+      }
+    }
+
+    // Extraire l'ID de route depuis l'URL Strava (optionnel, ne bloque pas la création)
     if (stravaRouteUrl) {
+      console.log('🔗 Récupération segments Strava...')
       stravaRouteId = extractRouteIdFromUrl(stravaRouteUrl) || undefined
       if (stravaRouteId) {
-        // Récupérer les segments depuis l'API Strava
+        console.log('🔗 Route ID extrait:', stravaRouteId)
+        // Récupérer les segments depuis l'API Strava (non bloquant)
         try {
           // Récupérer le token depuis localStorage
           const tokenData = localStorage.getItem('vizion:strava_token')
@@ -210,37 +244,26 @@ export default function SaisonPage({
             if (response.ok) {
               const data = await response.json()
               stravaSegments = data.segments || undefined
-              console.log(`Segments récupérés : ${stravaSegments?.length || 0}`)
+              console.log(`✅ Segments récupérés : ${stravaSegments?.length || 0}`)
             } else {
-              console.warn('Impossible de récupérer les segments Strava:', await response.text())
+              const errorText = await response.text()
+              console.warn('⚠️ Impossible de récupérer les segments Strava:', errorText)
+              // Ne pas bloquer la création si les segments échouent
             }
+          } else {
+            console.warn('⚠️ Pas de token Strava, segments non récupérés')
           }
         } catch (error) {
-          console.error('Erreur lors de la récupération des segments Strava:', error)
+          console.error('❌ Erreur lors de la récupération des segments Strava:', error)
+          // Ne pas bloquer la création si les segments échouent
         }
+      } else {
+        console.warn('⚠️ Impossible d\'extraire l\'ID de route depuis l\'URL')
       }
     }
 
-    setIsCreateModalOpen(false)
-    setCreateModalView('select')
-    onNavigate?.('courses')
-
-    if (gpxFile) {
-      try {
-        const gpxText = await gpxFile.text()
-        const stats = parseGpxStats(gpxText)
-        distanceKm = stats.distanceKm
-        elevationGain = stats.elevationGain
-        profile = stats.profile
-        // Conversion GPX → SVG côté client (fonctionne en production)
-        const rawSvg = gpxToSvg(gpxText)
-        gpxSvg = sanitizeSvg(rawSvg)
-      } catch (error) {
-        console.error('Erreur lors de la conversion GPX → SVG', error)
-      }
-    }
-
-    onCreateCourse?.({
+    // Préparer les données pour la création
+    const courseData = {
       name,
       imageUrl,
       gpxName,
@@ -250,7 +273,32 @@ export default function SaisonPage({
       profile,
       ...(stravaRouteId && { stravaRouteId }),
       ...(stravaSegments && stravaSegments.length > 0 && { stravaSegments }),
+    }
+    
+    console.log('💾 Données course à créer:', {
+      name,
+      hasImage: !!imageUrl,
+      hasGpx: !!gpxSvg,
+      hasStravaRoute: !!stravaRouteId,
+      hasSegments: !!stravaSegments,
     })
+
+    // Fermer la modale et naviguer
+    setIsCreateModalOpen(false)
+    setCreateModalView('select')
+    onNavigate?.('courses')
+
+    // Appeler la fonction de création (asynchrone)
+    try {
+      console.log('📤 Appel onCreateCourse...')
+      await onCreateCourse?.(courseData)
+      console.log('✅ onCreateCourse terminé')
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'appel onCreateCourse:', error)
+      alert('Erreur lors de la création de la course. Vérifiez la console pour plus de détails.')
+    }
+
+    // Réinitialiser les champs
     if (courseNameRef.current) courseNameRef.current.value = ''
     if (courseImageRef.current) courseImageRef.current.value = ''
     if (courseGpxRef.current) courseGpxRef.current.value = ''

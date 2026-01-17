@@ -258,10 +258,20 @@ function App() {
       type: 'climb' | 'descent' | 'flat'
     }>
   }) => {
+    console.log('📥 App.tsx handleCreateCourse appelé avec:', {
+      name: payload.name,
+      hasImage: !!payload.imageUrl,
+      hasGpx: !!payload.gpxSvg,
+      hasStravaRoute: !!payload.stravaRouteId,
+      hasSegments: !!payload.stravaSegments,
+    })
+
     let fallbackEventId = selectedEventId ?? events[0]?.id
+    console.log('🎯 Event ID sélectionné:', fallbackEventId)
 
     // Si aucun event n'existe, créer un event par défaut
     if (!fallbackEventId) {
+      console.log('📝 Création d\'un event par défaut...')
       const { data: newEvent, error: eventError } = await supabase
         .from('events')
         .insert({
@@ -273,12 +283,14 @@ function App() {
         .single()
 
       if (eventError || !newEvent) {
-        console.error('Erreur lors de la création de l\'event par défaut:', eventError)
+        console.error('❌ Erreur lors de la création de l\'event par défaut:', eventError)
+        alert('Erreur lors de la création de l\'événement. Vérifiez la console.')
         return
       }
 
       fallbackEventId = newEvent.id
       setSelectedEventId(fallbackEventId)
+      console.log('✅ Event par défaut créé:', fallbackEventId)
 
       // Recharger les events pour avoir le nouvel event dans la liste
       const loadedEvents = await loadEventsFromSupabase()
@@ -290,13 +302,17 @@ function App() {
 
     const cleanName = payload.name.trim()
     if (!cleanName || cleanName.toLowerCase() === 'sans titre') {
+      console.warn('⚠️ Nom invalide, annulation')
+      alert('Veuillez entrer un nom de course valide')
       return
     }
 
     // Convertir les blob URLs en base64 si nécessaire
     let imageUrl = payload.imageUrl
     if (imageUrl && imageUrl.startsWith('blob:')) {
+      console.log('🖼️ Conversion image blob → base64...')
       imageUrl = await blobUrlToBase64(imageUrl)
+      console.log('✅ Image convertie:', !!imageUrl)
     }
 
     // Le SVG est déjà une string, pas besoin de conversion
@@ -305,7 +321,7 @@ function App() {
     // Vérifier que l'event_id existe dans la base (ne doit pas être un ID par défaut comme 'event-1')
     const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fallbackEventId)
     if (!isValidUuid) {
-      console.error('L\'event_id n\'est pas un UUID valide:', fallbackEventId)
+      console.warn('⚠️ L\'event_id n\'est pas un UUID valide:', fallbackEventId)
       // Si c'est un ID par défaut, créer l'event d'abord
       const { data: newEvent, error: eventError } = await supabase
         .from('events')
@@ -318,12 +334,14 @@ function App() {
         .single()
 
       if (eventError || !newEvent) {
-        console.error('Erreur lors de la création de l\'event par défaut:', eventError)
+        console.error('❌ Erreur lors de la création de l\'event par défaut:', eventError)
+        alert('Erreur lors de la création de l\'événement. Vérifiez la console.')
         return
       }
 
       // Utiliser le nouvel event_id
       const newEventId = newEvent.id
+      console.log('✅ Nouvel event créé:', newEventId)
 
       // Insérer la course avec le nouvel event_id
       // Arrondir elevation_gain à 2 décimales
@@ -331,7 +349,8 @@ function App() {
         ? Number(payload.elevationGain.toFixed(2))
         : null
 
-      const { error } = await supabase.from('courses').insert({
+      console.log('💾 Insertion course dans Supabase...')
+      const { error, data } = await supabase.from('courses').insert({
         event_id: newEventId,
         name: cleanName,
         image_url: imageUrl || null,
@@ -342,13 +361,16 @@ function App() {
         profile: payload.profile ? JSON.stringify(payload.profile) : null,
         strava_route_id: payload.stravaRouteId || null,
         strava_segments: payload.stravaSegments ? JSON.stringify(payload.stravaSegments) : null,
-      })
+      }).select()
 
       if (error) {
-        console.error('Erreur lors de la création de la course:', error)
+        console.error('❌ Erreur lors de la création de la course:', error)
         console.error('Détails:', JSON.stringify(error, null, 2))
+        alert(`Erreur lors de la création de la course: ${error.message}`)
         return
       }
+
+      console.log('✅ Course créée avec succès:', data)
 
       // Recharger les events depuis Supabase
       const loadedEvents = await loadEventsFromSupabase()
@@ -363,7 +385,8 @@ function App() {
       ? Number(payload.elevationGain.toFixed(2))
       : null
 
-    const { error } = await supabase.from('courses').insert({
+    console.log('💾 Insertion course dans Supabase avec event_id:', fallbackEventId)
+    const { error, data } = await supabase.from('courses').insert({
       event_id: fallbackEventId,
       name: cleanName,
       image_url: imageUrl || null,
@@ -374,17 +397,21 @@ function App() {
       profile: payload.profile ? JSON.stringify(payload.profile) : null,
       strava_route_id: payload.stravaRouteId || null,
       strava_segments: payload.stravaSegments ? JSON.stringify(payload.stravaSegments) : null,
-    })
+    }).select()
 
     if (error) {
-      console.error('Erreur lors de la création de la course:', error)
+      console.error('❌ Erreur lors de la création de la course:', error)
       console.error('Détails:', JSON.stringify(error, null, 2))
+      alert(`Erreur lors de la création de la course: ${error.message}`)
       return
     }
+
+    console.log('✅ Course créée avec succès:', data)
 
     // Recharger les events depuis Supabase
     const loadedEvents = await loadEventsFromSupabase()
     setEvents(loadedEvents)
+    console.log('✅ Events rechargés, total:', loadedEvents.length)
   }
 
   const handleSelectEvent = (eventId: string) => {
