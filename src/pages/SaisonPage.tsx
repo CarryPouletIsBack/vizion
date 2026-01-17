@@ -7,6 +7,7 @@ import reunionFlag from '../assets/5375c6ef182ea756eeb23fb723865d5c353eb10b.png'
 import grandRaidLogo from '../assets/da2a1ce5e69564e56a29b5912fd151a8f515e136.png'
 import HeaderTopBar from '../components/HeaderTopBar'
 import WorldMapSimple from '../components/WorldMapSimple'
+import { gpxToSvg } from '../lib/gpxToSvg'
 
 // Jeux de données temporaires pour la maquette MVP.
 const raceCards = [
@@ -188,21 +189,9 @@ export default function SaisonPage({
         distanceKm = stats.distanceKm
         elevationGain = stats.elevationGain
         profile = stats.profile
-        const response = await fetch('/api/gpx-to-svg', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ gpxText, gpxName }),
-        })
-        if (response.ok) {
-          const data = (await response.json()) as { svg?: string; profile?: Array<[number, number]> }
-          gpxSvg = data.svg ? sanitizeSvg(data.svg) : undefined
-          if (data.profile && data.profile.length > 1) {
-            profile = data.profile
-          }
-        } else {
-          const errorText = await response.text()
-          console.error('Conversion GPX échouée', errorText)
-        }
+        // Conversion GPX → SVG côté client (fonctionne en production)
+        const rawSvg = gpxToSvg(gpxText)
+        gpxSvg = sanitizeSvg(rawSvg)
       } catch (error) {
         console.error('Erreur lors de la conversion GPX → SVG', error)
       }
