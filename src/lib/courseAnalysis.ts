@@ -92,6 +92,8 @@ export function analyzeCourseReadiness(
   const issues: string[] = []
   const strengths: string[] = []
   const recommendations: string[] = []
+  // Stocker temporairement les actions critiques basées sur les stats
+  const tempImmediateActions: string[] = []
 
   // === ANALYSE DISTANCE ===
   const distanceRatio = metrics.longRunDistanceKm > 0 ? course.distanceKm / metrics.longRunDistanceKm : Infinity
