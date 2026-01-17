@@ -94,7 +94,7 @@ export default function EventsColumnFilteringChart({
             const value = String((this as unknown as { value?: string }).value ?? '')
             const index = Number(value.split('-').pop() || 0)
             const eventId = pagedEvents[index]?.id ?? ''
-            return `<div class="events-grid__options-wrapper" data-event-id="${eventId}"><button class="events-grid__options" type="button" aria-label="Options" data-event-id="${eventId}">⋯</button></div>`
+            return `<div class="events-grid__options-wrapper" data-eventid="${eventId}"><button class="events-grid__options" type="button" aria-label="Options" data-eventid="${eventId}">⋯</button></div>`
           },
         },
       },
@@ -115,7 +115,7 @@ export default function EventsColumnFilteringChart({
       
       const element = optionsButton || optionsWrapper
       if (element) {
-        const eventId = element.getAttribute('data-event-id')
+        const eventId = element.getAttribute('data-eventid')
         if (eventId) {
           const rect = element.getBoundingClientRect()
           setMenuOpen({ eventId, x: rect.right, y: rect.bottom })
