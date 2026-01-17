@@ -35,7 +35,7 @@ type CoursesPageProps = {
  * Calcule le taux de progression (niveau actuel vs exigences de la course)
  * Retourne un pourcentage entre 0 et 100
  * 
- * Logique révisée : à 6 mois, un entraînement sérieux couvre ~50% des exigences finales
+ * Logique stricte : seuils minimums réalistes pour une course de 175 km / 10150 D+
  */
 function calculateReadinessPercentage(
   metrics: { kmPerWeek: number; dPlusPerWeek: number; longRunDistanceKm: number; longRunDPlus: number; regularity: 'bonne' | 'moyenne' | 'faible' } | null,
@@ -46,35 +46,67 @@ function calculateReadinessPercentage(
     return 0 // Pas de données = 0%
   }
 
-  // Objectif réaliste à 6 mois : 50% des exigences hebdomadaires finales
   const courseWeeklyEquivalent = courseDistanceKm / 6
   const courseWeeklyDPlus = courseElevationGain / 6
-  const targetDistanceWeekly = courseWeeklyEquivalent * 0.5 // Objectif réaliste à 6 mois
-  const targetDPlusWeekly = courseWeeklyDPlus * 0.5 // Objectif réaliste à 6 mois
-
-  // Calculer les ratios de couverture (plafonnés à 100% pour éviter sur-évaluation)
-  const distanceCoverage = Math.min(1, (metrics.kmPerWeek / targetDistanceWeekly) * 0.7)
-  const elevationCoverage = Math.min(1, (metrics.dPlusPerWeek / targetDPlusWeekly) * 0.7)
   
-  // Score de régularité (moins pénalisant)
-  const regularityScore = metrics.regularity === 'bonne' ? 1 : metrics.regularity === 'moyenne' ? 0.8 : 0.6
+  // Seuils minimums stricts
+  const minDistanceWeekly = 40 // km/semaine minimum
+  const idealDistanceWeekly = courseWeeklyEquivalent * 0.7 // Objectif réaliste
+  let distanceCoverage = 0
+  if (metrics.kmPerWeek >= idealDistanceWeekly) {
+    distanceCoverage = 1.0
+  } else if (metrics.kmPerWeek >= minDistanceWeekly) {
+    distanceCoverage = 0.5 + (metrics.kmPerWeek - minDistanceWeekly) / (idealDistanceWeekly - minDistanceWeekly) * 0.5
+  } else {
+    distanceCoverage = Math.max(0, (metrics.kmPerWeek / minDistanceWeekly) * 0.5)
+  }
 
-  // Score de sortie longue (40% de la distance de course = seuil minimal)
-  const longRunThreshold = courseDistanceKm * 0.4
-  const longRunScore = metrics.longRunDistanceKm >= longRunThreshold ? 1 : Math.min(1, metrics.longRunDistanceKm / longRunThreshold)
+  const minDPlusWeekly = 1500 // m/semaine minimum
+  const idealDPlusWeekly = courseWeeklyDPlus * 0.7
+  let elevationCoverage = 0
+  if (metrics.dPlusPerWeek >= idealDPlusWeekly) {
+    elevationCoverage = 1.0
+  } else if (metrics.dPlusPerWeek >= minDPlusWeekly) {
+    elevationCoverage = 0.5 + (metrics.dPlusPerWeek - minDPlusWeekly) / (idealDPlusWeekly - minDPlusWeekly) * 0.5
+  } else {
+    elevationCoverage = Math.max(0, (metrics.dPlusPerWeek / minDPlusWeekly) * 0.5)
+  }
+  
+  // Score de régularité (strict)
+  const regularityScore = metrics.regularity === 'bonne' ? 1.0 : metrics.regularity === 'moyenne' ? 0.5 : 0.2
 
-  // Score de D+ max (60% du D+ de course = objectif réaliste)
-  const dPlusThreshold = courseElevationGain * 0.6
-  const dPlusMaxScore = metrics.longRunDPlus >= dPlusThreshold ? 1 : Math.min(1, metrics.longRunDPlus / dPlusThreshold)
+  // Score de sortie longue
+  const longRunThreshold = Math.max(courseDistanceKm * 0.4, 70)
+  const idealLongRun = courseDistanceKm * 0.6
+  let longRunScore = 0
+  if (metrics.longRunDistanceKm >= idealLongRun) {
+    longRunScore = 1.0
+  } else if (metrics.longRunDistanceKm >= longRunThreshold) {
+    longRunScore = 0.5 + (metrics.longRunDistanceKm - longRunThreshold) / (idealLongRun - longRunThreshold) * 0.5
+  } else {
+    longRunScore = Math.max(0, (metrics.longRunDistanceKm / longRunThreshold) * 0.5)
+  }
 
-  // Calculer le pourcentage global (pondération équilibrée)
-  // Distance: 25%, D+: 25%, Sortie longue: 20%, D+ max: 15%, Régularité: 15%
+  // Score de D+ max
+  const dPlusThreshold = Math.max(courseElevationGain * 0.5, 6000)
+  const idealDPlusMax = courseElevationGain * 0.7
+  let dPlusMaxScore = 0
+  if (metrics.longRunDPlus >= idealDPlusMax) {
+    dPlusMaxScore = 1.0
+  } else if (metrics.longRunDPlus >= dPlusThreshold) {
+    dPlusMaxScore = 0.5 + (metrics.longRunDPlus - dPlusThreshold) / (idealDPlusMax - dPlusThreshold) * 0.5
+  } else {
+    dPlusMaxScore = Math.max(0, (metrics.longRunDPlus / dPlusThreshold) * 0.5)
+  }
+
+  // Calculer le pourcentage global (pondération stricte)
+  // Distance: 30%, D+: 30%, Sortie longue: 25%, D+ max: 10%, Régularité: 5%
   const coverageRatio = Math.round(
-    (distanceCoverage * 0.25 +
-      elevationCoverage * 0.25 +
-      longRunScore * 0.20 +
-      dPlusMaxScore * 0.15 +
-      regularityScore * 0.15) *
+    (distanceCoverage * 0.30 +
+      elevationCoverage * 0.30 +
+      longRunScore * 0.25 +
+      dPlusMaxScore * 0.10 +
+      regularityScore * 0.05) *
       100
   )
 
