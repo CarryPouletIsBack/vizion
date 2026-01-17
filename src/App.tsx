@@ -96,6 +96,20 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
       coursesData.forEach((course: CourseRow) => {
         const event = eventsMap.get(course.event_id)
         if (event) {
+          // Parser le profile si c'est une string JSON, sinon utiliser directement
+          let profile: Array<[number, number]> | undefined = undefined
+          if (course.profile) {
+            if (typeof course.profile === 'string') {
+              try {
+                profile = JSON.parse(course.profile)
+              } catch {
+                profile = undefined
+              }
+            } else if (Array.isArray(course.profile)) {
+              profile = course.profile as Array<[number, number]>
+            }
+          }
+
           event.courses.push({
             id: course.id,
             name: course.name,
@@ -104,7 +118,7 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
             gpxSvg: course.gpx_svg || undefined,
             distanceKm: course.distance_km || undefined,
             elevationGain: course.elevation_gain || undefined,
-            profile: course.profile || undefined,
+            profile,
           })
         }
       })

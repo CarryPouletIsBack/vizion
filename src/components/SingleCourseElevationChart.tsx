@@ -25,7 +25,11 @@ type SingleCourseElevationChartProps = {
 
 export default function SingleCourseElevationChart({ data }: SingleCourseElevationChartProps) {
   const ref = useRef<HTMLDivElement | null>(null)
-  const seriesData = (data && data.length > 1 ? data : sampleData).map(([x, y]) => [x, y])
+  
+  // S'assurer que data est un tableau valide
+  const isValidData = Array.isArray(data) && data.length > 1
+  const seriesData = isValidData ? data.map(([x, y]) => [x, y]) : sampleData.map(([x, y]) => [x, y])
+  
   const minY = Math.min(...seriesData.map((p) => p[1]))
   const maxY = Math.max(...seriesData.map((p) => p[1]))
   const totalDistance = seriesData[seriesData.length - 1][0]

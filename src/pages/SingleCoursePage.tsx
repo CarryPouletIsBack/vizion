@@ -45,7 +45,9 @@ export default function SingleCoursePage({
       : '175 km · 10 150 D+ · Août 2026'
   const courseHeading = `${courseEventName.toUpperCase()} – ${courseTitle}`
   const coursePrep = 'Préparation en cours : M-6'
-  const profileData = (selectedCourse as { profile?: Array<[number, number]> } | undefined)?.profile
+  const rawProfile = (selectedCourse as { profile?: Array<[number, number]> } | undefined)?.profile
+  // S'assurer que profileData est un tableau valide
+  const profileData = Array.isArray(rawProfile) && rawProfile.length > 0 ? rawProfile : undefined
   const gpxSvg = selectedCourse?.gpxSvg
   const maxDistance = profileData?.length ? profileData[profileData.length - 1][0] : undefined
   useGpxHoverMarker('gpx-inline-svg', maxDistance)
