@@ -18,7 +18,7 @@
   align-items: flex-start;
   position: fixed;
   top: calc(18px + var(--topbar-height, 56px));
-  left: 24px;
+  left: 12px;
   width: 200px;
   z-index: 90;
 }
@@ -94,7 +94,7 @@
   width: min(473px, 100%);
   border-radius: 8px;
   border: 1.5px solid var(--color-border-default, #2a3038);
-  background: var(--color-brand-secondary, rgba(76, 141, 255, 0.12));
+  background: var(--color-bg-primary, #0b0e11);
   color: var(--color-text-primary, #e5e7eb);
   cursor: pointer;
 }
@@ -128,7 +128,7 @@
 .modal {
   width: min(537px, calc(100% - 32px));
   border-radius: 28px;
-  background: rgba(76, 141, 255, 0.12);
+  background: var(--color-bg-primary, #0b0e11);
   border: 0.5px solid #ffffff;
   color: var(--color-text-primary, #e5e7eb);
   padding: 24px 16px;
@@ -186,7 +186,7 @@
   padding: 12px 24px;
   border-radius: 8px;
   border: 0.5px solid #464646;
-  background: rgba(95, 179, 106, 0.12);
+  background: var(--color-bg-primary, #0b0e11);
   color: var(--color-text-primary, #e5e7eb);
   text-align: left;
   cursor: pointer;

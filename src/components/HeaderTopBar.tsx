@@ -9,15 +9,6 @@ type HeaderTopBarProps = {
 export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
   return (
     <header className="saison-topbar">
-      <div className="saison-topbar__logo" role="button" tabIndex={0} onClick={() => onNavigate?.('saison')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onNavigate?.('saison') }}>
-        <img src={logoVision} alt="VZION" />
-      </div>
-
-      {/* Header race masqué pour le moment */}
-      <div className="saison-topbar__race" style={{ display: 'none' }}>
-        {/* Contenu masqué */}
-      </div>
-
       <div className="saison-topbar__actions">
         <button className="btn btn--ghost" type="button">
           Se connecter
@@ -25,6 +16,15 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
         <button className="btn btn--primary" type="button">
           Créer un compte
         </button>
+      </div>
+
+      {/* Header race masqué pour le moment */}
+      <div className="saison-topbar__race" style={{ display: 'none' }}>
+        {/* Contenu masqué */}
+      </div>
+
+      <div className="saison-topbar__logo" role="button" tabIndex={0} onClick={() => onNavigate?.('saison')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onNavigate?.('saison') }}>
+        <img src={logoVision} alt="VZION" />
       </div>
     </header>
   )

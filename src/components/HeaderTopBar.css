@@ -4,9 +4,9 @@
   left: 0;
   right: 0;
   z-index: 100;
-  display: grid;
-  grid-template-columns: 1fr minmax(420px, 2fr) 1fr;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
   padding: 8px 14px;
   background: var(--color-bg-primary, #0b0e11);
@@ -88,8 +88,15 @@
 
 .saison-topbar__actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 12px;
+  margin-left: 0;
+}
+
+@media (max-width: 768px) {
+  .saison-topbar__actions {
+    margin-left: 0;
+  }
 }
 
 .btn {

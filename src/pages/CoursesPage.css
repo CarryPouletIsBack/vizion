@@ -14,13 +14,12 @@
 
 .courses-side {
   position: fixed;
-  top: 80px;
-  left: 0;
+  top: calc(var(--topbar-height, 56px) + 16px);
+  left: 12px;
   width: 200px;
-  height: calc(100vh - 80px);
   display: flex;
   align-items: flex-start;
-  z-index: 50;
+  z-index: 90;
 }
 
 .courses-nav {
@@ -59,6 +58,12 @@
   margin-left: 224px;
   flex: 1 0 0;
   padding-top: 14px;
+}
+
+@media (max-width: 768px) {
+  .courses-main {
+    margin-left: 0;
+  }
 }
 
 .courses-header {

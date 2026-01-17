@@ -87,7 +87,7 @@
   width: min(392px, 100%);
   border-radius: 8px;
   border: 1.5px solid var(--color-border-default, #2a3038);
-  background: var(--color-brand-secondary, rgba(76, 141, 255, 0.12));
+  background: var(--color-bg-primary, #0b0e11);
 }
 
 .single-course-card__title {
