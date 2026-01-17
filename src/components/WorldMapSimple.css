@@ -4,6 +4,7 @@
   display: grid;
   place-items: center;
   overflow: visible;
+  position: relative;
 }
 
 .world-map-simple svg {
@@ -44,6 +45,7 @@
   border-radius: 8px;
   background: var(--color-bg-surface, #161b21) !important;
   backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
   border: 0.5px solid rgba(42, 46, 26, 0.2);
   font-size: 11px;
   letter-spacing: 1.43px;
@@ -53,6 +55,16 @@
   opacity: 1 !important;
   z-index: 10;
   position: relative;
+  font-family: inherit;
+  margin: 0;
+  outline: none;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.map-tag--absolute {
+  z-index: 100 !important;
+  pointer-events: auto !important;
 }
 
 .map-tag__flag {
