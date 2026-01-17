@@ -77,9 +77,29 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
     if (window.confirm('Êtes-vous sûr de vouloir déconnecter votre compte Strava ?')) {
       localStorage.removeItem('vizion:strava_token')
       localStorage.removeItem('vizion:strava-metrics')
-      setUser(null)
       setIsStravaConnected(false)
+      // Recharger les données utilisateur sans Strava
+      if (user) {
+        setUser({
+          ...user,
+          firstname: undefined,
+          lastname: undefined,
+          profile: undefined,
+        })
+      }
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      localStorage.removeItem('vizion:strava_token')
+      localStorage.removeItem('vizion:strava-metrics')
+      setUser(null)
       window.location.reload()
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error)
+      alert('Erreur lors de la déconnexion')
     }
   }
 
@@ -122,13 +142,8 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
                       <h3 className="user-account-profile__name">
                         {user.firstname} {user.lastname}
                       </h3>
-                      {user.username && (
-                        <p className="user-account-profile__username">@{user.username}</p>
-                      )}
-                      {(user.city || user.country) && (
-                        <p className="user-account-profile__location">
-                          {[user.city, user.country].filter(Boolean).join(', ')}
-                        </p>
+                      {user.email && (
+                        <p className="user-account-profile__username">{user.email}</p>
                       )}
                     </div>
                   </div>
