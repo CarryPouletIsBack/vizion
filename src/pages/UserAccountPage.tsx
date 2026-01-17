@@ -4,7 +4,6 @@ import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 import { redirectToStravaAuth } from '../lib/stravaAuth'
 import { getCurrentUser, signOut, updateProfile } from '../lib/auth'
-import useStravaMetrics from '../hooks/useStravaMetrics'
 
 type UserAccountPageProps = {
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
@@ -30,12 +29,12 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
     lastname: '',
     birthdate: '',
   })
-  const { metrics, loading: metricsLoading } = useStravaMetrics()
   const [stravaStats, setStravaStats] = useState({
     activityCount: 0,
     totalDistance: 0,
     totalElevationGain: 0,
   })
+  const [statsLoading, setStatsLoading] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -414,19 +413,19 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
                     <div className="user-account-stats__item">
                       <span className="user-account-stats__label">Activités synchronisées</span>
                       <span className="user-account-stats__value">
-                        {metricsLoading ? '...' : stravaStats.activityCount || '-'}
+                        {statsLoading ? '...' : stravaStats.activityCount > 0 ? stravaStats.activityCount : '-'}
                       </span>
                     </div>
                     <div className="user-account-stats__item">
                       <span className="user-account-stats__label">Distance totale</span>
                       <span className="user-account-stats__value">
-                        {metricsLoading ? '...' : stravaStats.totalDistance > 0 ? `${(stravaStats.totalDistance / 1000).toFixed(0)} km` : '-'}
+                        {statsLoading ? '...' : stravaStats.totalDistance > 0 ? `${(stravaStats.totalDistance / 1000).toFixed(0)} km` : '-'}
                       </span>
                     </div>
                     <div className="user-account-stats__item">
                       <span className="user-account-stats__label">Dénivelé total</span>
                       <span className="user-account-stats__value">
-                        {metricsLoading ? '...' : stravaStats.totalElevationGain > 0 ? `${Math.round(stravaStats.totalElevationGain)} m` : '-'}
+                        {statsLoading ? '...' : stravaStats.totalElevationGain > 0 ? `${Math.round(stravaStats.totalElevationGain)} m` : '-'}
                       </span>
                     </div>
                   </div>
