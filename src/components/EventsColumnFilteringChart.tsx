@@ -124,7 +124,7 @@ export default function EventsColumnFilteringChart({
 
     gridRef.current = new DataGrid(containerRef.current, gridOptions as any)
 
-    // Gestionnaire pour les clics sur les boutons d'options
+    // Gestionnaire pour les clics sur les boutons d'options - utiliser une délégation d'événements plus robuste
     const handleOptionsClick = (event: Event) => {
       const mouseEvent = event as MouseEvent
       const target = mouseEvent.target as HTMLElement | null
@@ -145,6 +145,7 @@ export default function EventsColumnFilteringChart({
             const rect = element.getBoundingClientRect()
             // Positionner le menu sous le bouton, centré
             setMenuOpen({ eventId, x: rect.left + rect.width / 2 - 60, y: rect.bottom + 4 })
+            console.log('Menu ouvert pour eventId:', eventId, 'Position:', rect.left + rect.width / 2 - 60, rect.bottom + 4)
           }
         }
         return true
@@ -191,14 +192,26 @@ export default function EventsColumnFilteringChart({
       }
     }
 
+    // Utiliser une délégation d'événements au niveau du document pour capturer tous les clics
+    const documentClickHandler = (event: Event) => {
+      const mouseEvent = event as MouseEvent
+      const target = mouseEvent.target as HTMLElement | null
+      
+      // Vérifier si on clique sur le bouton options
+      if (target?.closest('.events-grid__options') || target?.closest('.events-grid__options-wrapper')) {
+        handleOptionsClick(event)
+      }
+    }
+    
     // Ajouter les gestionnaires avec capture phase - options en premier pour avoir la priorité
-    containerRef.current.addEventListener('click', handleOptionsClick, { capture: true, passive: false })
+    document.addEventListener('click', documentClickHandler, { capture: true, passive: false })
     containerRef.current.addEventListener('click', handleRowClick, { capture: true, passive: false })
     
     // Ajouter aussi un gestionnaire directement sur les boutons après le rendu
     const timeoutId = setTimeout(() => {
       if (containerRef.current) {
         const optionsElements = containerRef.current.querySelectorAll('.events-grid__options, .events-grid__options-wrapper')
+        console.log('Options elements trouvés:', optionsElements.length)
         optionsElements.forEach((element) => {
           const clickHandler = (e: Event) => {
             e.preventDefault()
@@ -214,7 +227,7 @@ export default function EventsColumnFilteringChart({
           }, { capture: true, passive: false })
         })
       }
-    }, 300)
+    }, 500)
     
     // Fermer le menu si on clique ailleurs
     const handleOutsideClick = (event: Event) => {
@@ -228,21 +241,13 @@ export default function EventsColumnFilteringChart({
 
     return () => {
       clearTimeout(timeoutId)
+      document.removeEventListener('click', documentClickHandler, { capture: true } as any)
       const gridInstance = gridRef.current as { destroy?: () => void } | null
       if (gridInstance?.destroy) {
         gridInstance.destroy()
       }
       gridRef.current = null
-      containerRef.current?.removeEventListener('click', handleOptionsClick, { capture: true } as any)
       containerRef.current?.removeEventListener('click', handleRowClick, { capture: true } as any)
-      if (containerRef.current) {
-        const optionsElements = containerRef.current.querySelectorAll('.events-grid__options, .events-grid__options-wrapper')
-        optionsElements.forEach((element) => {
-          // Supprimer tous les listeners
-          const newElement = element.cloneNode(true)
-          element.parentNode?.replaceChild(newElement, element)
-        })
-      }
       document.removeEventListener('click', handleOutsideClick)
       if (containerRef.current) {
         containerRef.current.innerHTML = ''
