@@ -68,7 +68,12 @@ export default function SingleCourseElevationChart({ data, metrics }: SingleCour
       },
       xAxis: {
         title: { text: 'Km', style: { color: '#9ca3af' } },
-        labels: { style: { color: '#9ca3af' } },
+        labels: { 
+          style: { color: '#9ca3af' },
+          formatter: function() {
+            return Math.round(this.value as number).toString()
+          }
+        },
         gridLineWidth: 0,
         lineColor: 'rgba(255,255,255,0.2)',
       },
