@@ -373,3 +373,55 @@
   max-width: 100%;
   height: auto;
 }
+
+/* Mobile : sidebar en bas de l'écran */
+@media (max-width: 768px) {
+  .single-course-side {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 90;
+  }
+
+  .single-course-nav {
+    flex-direction: row;
+    justify-content: space-around;
+    border-radius: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 8px;
+  }
+
+  .single-course-nav__item {
+    text-align: center;
+    font-size: 14px;
+    letter-spacing: 1px;
+    padding: 8px 4px;
+  }
+
+  .single-course-nav__item--active {
+    font-size: 16px;
+  }
+
+  .single-course-main {
+    margin-left: 0;
+    width: 100%;
+    padding-bottom: 80px; /* Espace pour la sidebar en bas */
+  }
+
+  .single-course-page {
+    padding-bottom: 100px; /* Espace supplémentaire pour la sidebar */
+  }
+
+  .single-course-content {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .single-course-course__gpx {
+    width: 100%;
+    max-width: 100%;
+  }
+}

@@ -522,3 +522,45 @@
     align-items: flex-start;
   }
 }
+
+/* Mobile : sidebar en bas de l'écran */
+@media (max-width: 768px) {
+  .saison-side {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 90;
+  }
+
+  .side-nav {
+    flex-direction: row;
+    justify-content: space-around;
+    border-radius: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 8px;
+  }
+
+  .side-nav__item {
+    text-align: center;
+    font-size: 14px;
+    letter-spacing: 1px;
+    padding: 8px 4px;
+  }
+
+  .side-nav__item--active {
+    font-size: 16px;
+  }
+
+  .saison-main {
+    margin-left: 0;
+    width: 100%;
+    padding-bottom: 80px; /* Espace pour la sidebar en bas */
+  }
+
+  .saison-page {
+    padding-bottom: 100px; /* Espace supplémentaire pour la sidebar */
+  }
+}
