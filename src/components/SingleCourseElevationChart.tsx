@@ -74,7 +74,12 @@ export default function SingleCourseElevationChart({ data, metrics }: SingleCour
       },
       yAxis: {
         title: { text: 'D+', style: { color: '#9ca3af' } },
-        labels: { style: { color: '#9ca3af' } },
+        labels: { 
+          style: { color: '#9ca3af' },
+          formatter: function() {
+            return Math.round(this.value as number).toString()
+          }
+        },
         gridLineColor: 'rgba(255,255,255,0.15)',
         tickAmount: 6,
         min: minY - 20,
@@ -86,6 +91,9 @@ export default function SingleCourseElevationChart({ data, metrics }: SingleCour
         style: { color: '#e5e7eb' },
         valueSuffix: ' m',
         headerFormat: '<b>{point.key} km</b><br/>',
+        pointFormatter: function() {
+          return `<span style="color:${this.color}">●</span> ${this.series.name}: <b>${Math.round(this.y as number)} m</b><br/>`
+        },
       },
       plotOptions: {
         series: {
