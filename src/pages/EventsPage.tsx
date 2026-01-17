@@ -17,9 +17,11 @@ type EventsPageProps = {
     courses: Array<{ id: string; name: string }>
   }>
   onEventSelect?: (eventId: string) => void
+  onEventEdit?: (eventId: string) => void
+  onEventDelete?: (eventId: string) => void
 }
 
-export default function EventsPage({ onNavigate, events, onEventSelect }: EventsPageProps) {
+export default function EventsPage({ onNavigate, events, onEventSelect, onEventEdit, onEventDelete }: EventsPageProps) {
   const [countryFilter, setCountryFilter] = useState('Tous')
   const [dateFilter, setDateFilter] = useState('Toutes')
 
@@ -95,6 +97,12 @@ export default function EventsPage({ onNavigate, events, onEventSelect }: Events
               events={filteredEvents}
               onEventSelect={(eventId) => {
                 onEventSelect?.(eventId)
+              }}
+              onEventEdit={(eventId) => {
+                onEventEdit?.(eventId)
+              }}
+              onEventDelete={(eventId) => {
+                onEventDelete?.(eventId)
               }}
             />
           </section>

@@ -125,6 +125,54 @@
   height: 32px;
   color: var(--color-text-primary, #e5e7eb);
   cursor: pointer;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.events-grid__options:hover {
+  color: var(--color-accent, #bfc900);
+  background: rgba(191, 201, 0, 0.1);
+}
+
+.events-grid__menu {
+  background: var(--color-bg-surface, #161b21);
+  backdrop-filter: blur(25px);
+  border: 0.5px solid rgba(42, 46, 26, 0.2);
+  border-radius: 8px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 120px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.events-grid__menu-item {
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary, #e5e7eb);
+  font-size: 14px;
+  letter-spacing: 1.82px;
+  text-align: left;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s, color 0.2s;
+  font-family: inherit;
+}
+
+.events-grid__menu-item:hover {
+  background: rgba(191, 201, 0, 0.1);
+  color: var(--color-accent, #bfc900);
+}
+
+.events-grid__menu-item--danger {
+  color: #ef4444;
+}
+
+.events-grid__menu-item--danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
 }
 
 .events-chart .highcharts-datagrid-col-resize-handle,

@@ -16,15 +16,20 @@ type EventsColumnFilteringChartProps = {
     courses: Array<{ id: string; name: string }>
   }>
   onEventSelect?: (eventId: string) => void
+  onEventEdit?: (eventId: string) => void
+  onEventDelete?: (eventId: string) => void
 }
 
 export default function EventsColumnFilteringChart({
   events,
   onEventSelect,
+  onEventEdit,
+  onEventDelete,
 }: EventsColumnFilteringChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const gridRef = useRef<InstanceType<typeof DataGrid> | null>(null)
   const [pageIndex, setPageIndex] = useState(0)
+  const [menuOpen, setMenuOpen] = useState<{ eventId: string; x: number; y: number } | null>(null)
   const pageSize = 15
   const totalPages = Math.max(1, Math.ceil(events.length / pageSize))
   const pagedEvents = useMemo(() => {
@@ -85,7 +90,10 @@ export default function EventsColumnFilteringChart({
         Options: {
           headerFormat: '',
           cellFormatter: function () {
-            return '<button class="events-grid__options" type="button" aria-label="Options">⋯</button>'
+            const value = String((this as unknown as { value?: string }).value ?? '')
+            const index = Number(value.split('-').pop() || 0)
+            const eventId = pagedEvents[index]?.id ?? ''
+            return `<button class="events-grid__options" type="button" aria-label="Options" data-event-id="${eventId}">⋯</button>`
           },
         },
       },
@@ -95,8 +103,25 @@ export default function EventsColumnFilteringChart({
 
     const handleRowClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null
+      
+      // Si on clique sur le bouton d'options, ouvrir le menu
+      const optionsButton = target?.closest<HTMLElement>('.events-grid__options')
+      if (optionsButton) {
+        event.stopPropagation()
+        const eventId = optionsButton.getAttribute('data-event-id')
+        if (eventId) {
+          const rect = optionsButton.getBoundingClientRect()
+          setMenuOpen({ eventId, x: rect.right, y: rect.bottom })
+        }
+        return
+      }
+
+      // Sinon, gérer le clic sur la ligne
       const rowEl = target?.closest<HTMLElement>('.highcharts-datagrid-row')
       if (!rowEl || !containerRef.current) return
+
+      // Ne pas sélectionner si on clique sur le menu
+      if (target?.closest('.events-grid__menu')) return
 
       const rows = Array.from(containerRef.current.querySelectorAll('.highcharts-datagrid-row'))
       const rowIndex = rows.indexOf(rowEl)
@@ -109,6 +134,15 @@ export default function EventsColumnFilteringChart({
     }
 
     containerRef.current.addEventListener('click', handleRowClick)
+    
+    // Fermer le menu si on clique ailleurs
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null
+      if (!target?.closest('.events-grid__menu') && !target?.closest('.events-grid__options')) {
+        setMenuOpen(null)
+      }
+    }
+    document.addEventListener('click', handleOutsideClick)
 
     return () => {
       const gridInstance = gridRef.current as { destroy?: () => void } | null
@@ -117,6 +151,7 @@ export default function EventsColumnFilteringChart({
       }
       gridRef.current = null
       containerRef.current?.removeEventListener('click', handleRowClick)
+      document.removeEventListener('click', handleOutsideClick)
       if (containerRef.current) {
         containerRef.current.innerHTML = ''
       }
@@ -133,9 +168,47 @@ export default function EventsColumnFilteringChart({
     setPageIndex(0)
   }, [events])
 
+  const handleEdit = (eventId: string) => {
+    setMenuOpen(null)
+    onEventEdit?.(eventId)
+  }
+
+  const handleDelete = (eventId: string) => {
+    setMenuOpen(null)
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) {
+      onEventDelete?.(eventId)
+    }
+  }
+
   return (
     <div className="events-chart">
       <div className="events-chart__container" ref={containerRef} />
+      {menuOpen && (
+        <div
+          className="events-grid__menu"
+          style={{
+            position: 'fixed',
+            left: `${menuOpen.x}px`,
+            top: `${menuOpen.y}px`,
+            zIndex: 1000,
+          }}
+        >
+          <button
+            type="button"
+            className="events-grid__menu-item"
+            onClick={() => handleEdit(menuOpen.eventId)}
+          >
+            Éditer
+          </button>
+          <button
+            type="button"
+            className="events-grid__menu-item events-grid__menu-item--danger"
+            onClick={() => handleDelete(menuOpen.eventId)}
+          >
+            Supprimer
+          </button>
+        </div>
+      )}
       <div className="events-chart__pagination" role="navigation" aria-label="Pagination">
         {Array.from({ length: totalPages }).map((_, index) => (
           <button

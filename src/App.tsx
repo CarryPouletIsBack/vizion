@@ -422,6 +422,27 @@ function App() {
     setView('courses')
   }
 
+  const handleEditEvent = (eventId: string) => {
+    // TODO: Implémenter l'édition d'un événement
+    console.log('Édition de l\'événement:', eventId)
+    alert('Fonctionnalité d\'édition à venir')
+  }
+
+  const handleDeleteEvent = async (eventId: string) => {
+    // Supprimer l'événement et ses courses associées
+    const { error } = await supabase.from('events').delete().eq('id', eventId)
+
+    if (error) {
+      console.error('Erreur lors de la suppression de l\'événement:', error)
+      alert('Erreur lors de la suppression de l\'événement')
+      return
+    }
+
+    // Recharger les events depuis Supabase
+    const loadedEvents = await loadEventsFromSupabase()
+    setEvents(loadedEvents)
+  }
+
   const handleSelectCourse = (courseId: string) => {
     setSelectedCourseId(courseId)
     setView('course')
@@ -496,7 +517,13 @@ function App() {
         />
       )}
       {view === 'events' && (
-        <EventsPage onNavigate={handleNavigate} events={events} onEventSelect={handleSelectEvent} />
+        <EventsPage
+          onNavigate={handleNavigate}
+          events={events}
+          onEventSelect={handleSelectEvent}
+          onEventEdit={handleEditEvent}
+          onEventDelete={handleDeleteEvent}
+        />
       )}
       {view === 'courses' && (
         <CoursesPage
