@@ -4,6 +4,7 @@ import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 import { redirectToStravaAuth } from '../lib/stravaAuth'
 import { getCurrentUser, signOut, updateProfile } from '../lib/auth'
+import useStravaMetrics from '../hooks/useStravaMetrics'
 
 type UserAccountPageProps = {
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
@@ -29,6 +30,7 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
     lastname: '',
     birthdate: '',
   })
+  const { metrics } = useStravaMetrics()
 
   useEffect(() => {
     let mounted = true
@@ -406,15 +408,21 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
                   <div className="user-account-stats">
                     <div className="user-account-stats__item">
                       <span className="user-account-stats__label">Activités synchronisées</span>
-                      <span className="user-account-stats__value">-</span>
+                      <span className="user-account-stats__value">
+                        {metrics ? metrics.activityCount : '-'}
+                      </span>
                     </div>
                     <div className="user-account-stats__item">
                       <span className="user-account-stats__label">Distance totale</span>
-                      <span className="user-account-stats__value">-</span>
+                      <span className="user-account-stats__value">
+                        {metrics ? `${(metrics.totalDistance / 1000).toFixed(0)} km` : '-'}
+                      </span>
                     </div>
                     <div className="user-account-stats__item">
                       <span className="user-account-stats__label">Dénivelé total</span>
-                      <span className="user-account-stats__value">-</span>
+                      <span className="user-account-stats__value">
+                        {metrics ? `${Math.round(metrics.totalElevationGain)} m` : '-'}
+                      </span>
                     </div>
                   </div>
                 </div>

@@ -86,10 +86,13 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
       .order('created_at', { ascending: false })
 
     if (coursesError) {
-      // Ne pas afficher d'erreur si c'est juste une absence de permissions (utilisateur non connecté)
-      if (coursesError.code !== 'PGRST116' && coursesError.code !== '42501' && coursesError.code !== 'PGRST301') {
-        console.error('Erreur lors du chargement des courses:', coursesError)
+      // Gérer silencieusement les erreurs de permission (RLS) pour les utilisateurs non connectés
+      if (coursesError.code === 'PGRST116' || coursesError.code === '42501' || coursesError.code === 'PGRST301') {
+        console.warn('⚠️ Erreur de permission lors du chargement des courses (utilisateur non connecté ou RLS):', coursesError.message)
+        return eventsData.map((event: EventRow) => ({ ...event, courses: [] })) // Retourner les événements sans courses
       }
+      console.error('Erreur lors du chargement des courses:', coursesError)
+      return eventsData.map((event: EventRow) => ({ ...event, courses: [] })) // Retourner les événements sans courses
     }
 
     // Transformer les données Supabase en EventItem[]
