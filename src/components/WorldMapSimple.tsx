@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { memo, useMemo, useState } from 'react'
-import { geoCentroid } from 'd3-geo'
+import { memo, useMemo, useRef, useState } from 'react'
+import { geoCentroid, geoMercator } from 'd3-geo'
 import { Annotation, ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps'
 
 import features from '../data/world-map-features.json'
@@ -26,6 +26,7 @@ type MapTag = {
 const WorldMapSimple = memo(function WorldMapSimple({ onCourseSelect }: WorldMapSimpleProps) {
   const [position, setPosition] = useState({ coordinates: [0, 0] as [number, number], zoom: 1.35 })
   const [activeTagId, setActiveTagId] = useState<string | null>(null)
+  const mapContainerRef = useRef<HTMLDivElement | null>(null)
 
   const mapTags = useMemo<MapTag[]>(
     () => [
@@ -36,28 +37,90 @@ const WorldMapSimple = memo(function WorldMapSimple({ onCourseSelect }: WorldMap
     []
   )
 
-  const handleTagClick = (tag: MapTag) => {
+  const handleTagClick = (tag: MapTag, event?: React.MouseEvent) => {
+    event?.stopPropagation()
+    // Afficher la card ET zoomer
     setActiveTagId(tag.id)
-    // Zoomer sur la zone du tag
     setPosition({
       coordinates: tag.coordinates,
       zoom: Math.min(6, Math.max(2.5, position.zoom + 1.5)),
     })
   }
 
-  const handleGeographyClick = (geo: GeoJSON.Feature) => {
-    // Zoomer sur le pays cliqué
-    const [longitude, latitude] = geoCentroid(geo)
-    setPosition({
-      coordinates: [longitude, latitude],
-      zoom: Math.min(6, Math.max(2.5, position.zoom + 1)),
-    })
+  const handleGeographyClick = (geo: GeoJSON.Feature, event: React.MouseEvent<SVGPathElement>) => {
+    event.stopPropagation()
+    
+    // Calculer les coordonnées du point cliqué
+    const svgElement = event.currentTarget.ownerSVGElement
+    if (!svgElement || !mapContainerRef.current) {
+      // Fallback sur le centroid
+      const [longitude, latitude] = geoCentroid(geo)
+      setPosition({
+        coordinates: [longitude, latitude],
+        zoom: Math.min(6, Math.max(2.5, position.zoom + 1)),
+      })
+      return
+    }
+
+    // Obtenir les dimensions du SVG
+    const svgRect = svgElement.getBoundingClientRect()
+    const containerRect = mapContainerRef.current.getBoundingClientRect()
+    
+    // Coordonnées du clic dans le SVG (relatives au viewport)
+    const clickX = event.clientX - svgRect.left
+    const clickY = event.clientY - svgRect.top
+    
+    // Trouver le groupe de projection transformé
+    const projectionGroup = svgElement.querySelector('g[class*="rsm-zoomable-group"]')
+    if (!projectionGroup) {
+      const [longitude, latitude] = geoCentroid(geo)
+      setPosition({
+        coordinates: [longitude, latitude],
+        zoom: Math.min(6, Math.max(2.5, position.zoom + 1)),
+      })
+      return
+    }
+
+    // Obtenir la transformation actuelle
+    const transform = projectionGroup.getAttribute('transform') || ''
+    const translateMatch = transform.match(/translate\(([^,]+),([^)]+)\)/)
+    const scaleMatch = transform.match(/scale\(([^)]+)\)/)
+    
+    const currentTranslateX = translateMatch ? parseFloat(translateMatch[1]) : 0
+    const currentTranslateY = translateMatch ? parseFloat(translateMatch[2]) : 0
+    const currentScale = scaleMatch ? parseFloat(scaleMatch[1]) : position.zoom
+
+    // Coordonnées dans l'espace du groupe transformé
+    const groupX = (clickX - svgRect.width / 2 - currentTranslateX) / currentScale
+    const groupY = (clickY - svgRect.height / 2 - currentTranslateY) / currentScale
+
+    // Utiliser la projection inverse pour convertir en coordonnées géographiques
+    const projection = geoMercator()
+      .scale(145)
+      .center([0, 18])
+      .translate([svgRect.width / 2, svgRect.height / 2])
+
+    const coords = projection.invert([groupX + svgRect.width / 2, groupY + svgRect.height / 2])
+    
+    if (coords && coords[0] !== null && coords[1] !== null) {
+      setPosition({
+        coordinates: [coords[0], coords[1]],
+        zoom: Math.min(6, Math.max(2.5, position.zoom + 1)),
+      })
+    } else {
+      // Fallback sur le centroid
+      const [longitude, latitude] = geoCentroid(geo)
+      setPosition({
+        coordinates: [longitude, latitude],
+        zoom: Math.min(6, Math.max(2.5, position.zoom + 1)),
+      })
+    }
   }
 
   const activeTag = mapTags.find((tag) => tag.id === activeTagId) ?? null
 
   return (
-    <div className="world-map-simple">
+    <div className="world-map-simple" ref={mapContainerRef}>
       <ComposableMap
         projection="geoMercator"
         projectionConfig={{ scale: 145, center: [0, 18] }}
@@ -82,7 +145,7 @@ const WorldMapSimple = memo(function WorldMapSimple({ onCourseSelect }: WorldMap
                       fill="var(--color-text-primary, #e5e7eb)"
                       stroke="var(--color-border-default, #2a3038)"
                       strokeWidth={0.6}
-                      onClick={() => handleGeographyClick(geo)}
+                      onClick={(event) => handleGeographyClick(geo, event)}
                       style={{
                         default: { outline: 'none', cursor: 'pointer' },
                         hover: { 
@@ -125,7 +188,7 @@ const WorldMapSimple = memo(function WorldMapSimple({ onCourseSelect }: WorldMap
                   stroke="var(--color-bg-primary, #0b0e11)"
                   strokeWidth={1}
                   style={{ cursor: 'pointer' }}
-                  onClick={() => handleTagClick(tag)}
+                  onClick={(e) => handleTagClick(tag, e)}
                 />
                 <foreignObject 
                   x={-30} 
@@ -152,10 +215,7 @@ const WorldMapSimple = memo(function WorldMapSimple({ onCourseSelect }: WorldMap
                     <button
                       type="button"
                       className="map-tag"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleTagClick(tag)
-                      }}
+                      onClick={(e) => handleTagClick(tag, e)}
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',

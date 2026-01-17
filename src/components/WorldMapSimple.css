@@ -21,6 +21,16 @@
   transform-origin: center;
 }
 
+/* S'assurer que la card s'affiche au-dessus de tout */
+.world-map-simple .rsm-annotation {
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.world-map-simple .rsm-annotation foreignObject {
+  z-index: 1000;
+}
+
 /* Styles pour les noms de pays */
 .world-map-simple text {
   font-family: 'Space Grotesk', sans-serif;
