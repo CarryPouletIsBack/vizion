@@ -29,6 +29,7 @@ type CourseItem = {
     average_grade: number
     type: 'climb' | 'descent' | 'flat'
   }>
+  startCoordinates?: [number, number]
 }
 
 type EventItem = {
