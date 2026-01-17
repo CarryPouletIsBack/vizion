@@ -203,7 +203,28 @@ export default function SaisonPage({
         
         // Extraire les coordonnées de départ
         startCoordinates = extractGpxStartCoordinates(gpxText) || undefined
-        console.log('📊 Stats GPX:', { distanceKm, elevationGain, profilePoints: profile?.length, startCoordinates })
+        
+        // Extraire les métadonnées et waypoints
+        const metadata = extractGpxMetadata(gpxText)
+        const waypoints = extractGpxWaypoints(gpxText)
+        
+        console.log('📊 Stats GPX:', { 
+          distanceKm, 
+          elevationGain, 
+          profilePoints: profile?.length, 
+          startCoordinates,
+          metadata: metadata.name ? { name: metadata.name, author: metadata.author, link: metadata.link } : null,
+          waypointsCount: waypoints.length,
+          waypoints: waypoints.slice(0, 5).map(w => ({ name: w.name, ele: w.ele, distance: w.extensions?.distance }))
+        })
+        
+        // Si le GPX contient un nom dans les métadonnées et que le nom de la course est vide ou "Sans titre", utiliser le nom du GPX
+        if (metadata.name && (!name || name.toLowerCase() === 'sans titre')) {
+          if (courseNameRef.current) {
+            courseNameRef.current.value = metadata.name
+          }
+          console.log('📝 Nom de course mis à jour depuis GPX:', metadata.name)
+        }
         
         // Conversion GPX → SVG côté client (fonctionne en production)
         const rawSvg = gpxToSvg(gpxText)
