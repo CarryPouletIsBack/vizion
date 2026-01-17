@@ -5,6 +5,14 @@
       "destination": "/api/:path*"
     },
     {
+      "source": "/assets/:path*",
+      "destination": "/assets/:path*"
+    },
+    {
+      "source": "/(.*\\.(js|css|json|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
+      "destination": "/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
