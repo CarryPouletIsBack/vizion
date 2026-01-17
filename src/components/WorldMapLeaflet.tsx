@@ -211,9 +211,10 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect }: WorldM
         />
         
         {/* Afficher les continents avec GeoJSON en couleur #E5E7EB */}
-        {worldGeoJson && (
+        {worldGeoJson && worldGeoJson.type === 'FeatureCollection' && Array.isArray(worldGeoJson.features) && worldGeoJson.features.length > 0 && (
           <GeoJSON
-            data={worldGeoJson as any}
+            key="world-continents"
+            data={worldGeoJson}
             style={() => ({
               color: 'transparent',
               weight: 0,
