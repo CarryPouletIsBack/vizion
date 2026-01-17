@@ -71,6 +71,20 @@
   cursor: pointer;
 }
 
+/* Désactiver le curseur pointer et le clic sur la colonne Options */
+.events-chart .highcharts-datagrid-cell:last-child {
+  cursor: default;
+  pointer-events: auto;
+}
+
+.events-chart .highcharts-datagrid-row:has(.events-grid__options-wrapper) {
+  cursor: default;
+}
+
+.events-chart .highcharts-datagrid-row:has(.events-grid__options-wrapper) .highcharts-datagrid-cell:not(:last-child) {
+  cursor: pointer;
+}
+
 .events-chart .highcharts-datagrid-row:nth-child(even) {
   background: rgba(11, 14, 17, 0.4);
 }
