@@ -9,6 +9,7 @@ type PointWithElevation = [number, number, number] // [lat, lon, ele]
  * Parse un fichier GPX et extrait les points (lat, lon, ele)
  */
 export function parseGpxPoints(gpxText: string): PointWithElevation[] {
+  if (!gpxText || typeof gpxText !== 'string') return []
   const parser = new DOMParser()
   const doc = parser.parseFromString(gpxText, 'application/xml')
   const points: PointWithElevation[] = []

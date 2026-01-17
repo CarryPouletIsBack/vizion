@@ -70,6 +70,7 @@ export default function SaisonPage({
 
   const sanitizeSvg = (svgText: string) => {
     try {
+      if (!svgText || typeof svgText !== 'string') return svgText
       const parser = new DOMParser()
       const doc = parser.parseFromString(svgText, 'image/svg+xml')
       const svg = doc.querySelector('svg')
@@ -105,6 +106,7 @@ export default function SaisonPage({
 
   const parseGpxStats = (gpxText: string) => {
     try {
+      if (!gpxText || typeof gpxText !== 'string') return { distanceKm: 0, elevationGain: 0, profile: [] }
       const parser = new DOMParser()
       const doc = parser.parseFromString(gpxText, 'application/xml')
       const points = Array.from(doc.querySelectorAll('trkpt, rtept'))
