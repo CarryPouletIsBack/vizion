@@ -175,7 +175,7 @@ export default function CoursesPage({
                   <div>
                     {loading ? (
                       <p>
-                        État de préparation : <Skeleton width="40px" height="16px" style={{ display: 'inline-block' }} />
+                        État de préparation : <Skeleton width="40px" height="16px" className="skeleton-inline" />
                       </p>
                     ) : (
                       <p>
