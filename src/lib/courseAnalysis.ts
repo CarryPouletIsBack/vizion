@@ -298,12 +298,24 @@ export function analyzeCourseReadiness(
   const coverageRatio = Math.round((distanceCoverage * 0.4 + elevationCoverage * 0.4 + regularityScore * 0.2) * 100)
 
   let summary = ''
-  if (readiness === 'ready') {
-    summary = `Ton niveau d'entraînement actuel couvre environ ${coverageRatio}% des exigences de cette course. Tu es sur la bonne voie.`
-  } else if (readiness === 'needs_work') {
-    summary = `À 6 mois de la course, ton volume actuel couvre environ ${coverageRatio}% des exigences. C'est insuffisant mais rattrapable avec une montée progressive.`
+  // Affiner le résumé avec les stats du Grand Raid si disponibles
+  if (stats) {
+    const abandonRisk = stats.abandonRate > 20 ? 'élevé' : stats.abandonRate > 15 ? 'modéré' : 'faible'
+    if (readiness === 'ready') {
+      summary = `Ton niveau d'entraînement couvre ${coverageRatio}% des exigences. Avec ${stats.finisherRate}% de finishers en 2025, tu es sur la bonne voie si tu maintiens ta régularité.`
+    } else if (readiness === 'needs_work') {
+      summary = `À 6 mois de la course, ton volume couvre ${coverageRatio}% des exigences. Avec ${stats.abandonRate}% d'abandons en 2025, une montée progressive est nécessaire pour finir.`
+    } else {
+      summary = `Ton niveau actuel couvre ${coverageRatio}% des exigences. Avec ${stats.abandonRate}% d'abandons en 2025, un plan d'action immédiat est nécessaire pour éviter l'abandon.`
+    }
   } else {
-    summary = `Aujourd'hui, ton niveau d'entraînement couvre environ ${coverageRatio}% des exigences de cette course. Un plan d'action est nécessaire.`
+    if (readiness === 'ready') {
+      summary = `Ton niveau d'entraînement actuel couvre environ ${coverageRatio}% des exigences de cette course. Tu es sur la bonne voie.`
+    } else if (readiness === 'needs_work') {
+      summary = `À 6 mois de la course, ton volume actuel couvre environ ${coverageRatio}% des exigences. C'est insuffisant mais rattrapable avec une montée progressive.`
+    } else {
+      summary = `Aujourd'hui, ton niveau d'entraînement couvre environ ${coverageRatio}% des exigences de cette course. Un plan d'action est nécessaire.`
+    }
   }
 
   // === OBJECTIFS DES 4 PROCHAINES SEMAINES ===

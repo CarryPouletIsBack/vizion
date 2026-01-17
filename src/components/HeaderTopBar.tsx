@@ -20,7 +20,7 @@ type AppUser = {
 }
 
 export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
-  const [user, setUser] = useState<AppUser | null>(null)
+  const [user, setUser] = useState<AppUser | null | 'loading'>('loading') // 'loading' pour éviter le flash
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [loginModalMode, setLoginModalMode] = useState<'login' | 'signup'>('login')
 
@@ -50,20 +50,22 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
             }
           }
 
-          setUser({
-            id: supabaseUser.id,
-            email: supabaseUser.email || '',
-            firstname: stravaData?.athlete?.firstname || supabaseUser.user_metadata?.firstname,
-            lastname: stravaData?.athlete?.lastname || supabaseUser.user_metadata?.lastname,
-            profile: stravaData?.athlete?.profile || stravaData?.athlete?.profile_medium || stravaData?.athlete?.profile_large,
-          })
+          if (mounted) {
+            setUser({
+              id: supabaseUser.id,
+              email: supabaseUser.email || '',
+              firstname: stravaData?.athlete?.firstname || supabaseUser.user_metadata?.firstname,
+              lastname: stravaData?.athlete?.lastname || supabaseUser.user_metadata?.lastname,
+              profile: stravaData?.athlete?.profile || stravaData?.athlete?.profile_medium || stravaData?.athlete?.profile_large,
+            })
+          }
         } else {
-          setUser(null)
+          if (mounted) setUser(null)
         }
       } catch (error) {
         if (!mounted) return
         console.warn('Impossible de charger l\'utilisateur:', error)
-        setUser(null)
+        if (mounted) setUser(null)
       }
     }
 
@@ -164,7 +166,7 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
         {/* Contenu masqué */}
       </div>
 
-      {user ? (
+      {user === 'loading' ? null : user ? (
         <div className="saison-topbar__user">
           {user.profile && (
             <img
