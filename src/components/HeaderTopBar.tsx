@@ -9,7 +9,12 @@ type HeaderTopBarProps = {
 
 export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
   const handleStravaConnect = async () => {
-    await redirectToStravaAuth()
+    try {
+      await redirectToStravaAuth()
+    } catch (error) {
+      console.error('Erreur lors de la connexion Strava:', error)
+      alert(error instanceof Error ? error.message : 'Erreur lors de la connexion à Strava. Vérifiez la configuration.')
+    }
   }
 
   return (

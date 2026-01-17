@@ -11,8 +11,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const clientId = process.env.STRAVA_CLIENT_ID
 
-  if (!clientId) {
-    return res.status(500).json({ error: 'STRAVA_CLIENT_ID not configured' })
+  if (!clientId || clientId.trim() === '') {
+    console.error('STRAVA_CLIENT_ID not configured in Vercel environment variables')
+    return res.status(500).json({ 
+      error: 'STRAVA_CLIENT_ID not configured',
+      message: 'Veuillez configurer STRAVA_CLIENT_ID dans les variables d\'environnement Vercel (Settings > Environment Variables)'
+    })
   }
 
   // Retourner uniquement le client_id (sécurisé)
