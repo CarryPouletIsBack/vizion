@@ -256,32 +256,33 @@ export function analyzeCourseReadiness(
   }
 
   // === GÉNÉRATION DU RÉSUMÉ EN 1 PHRASE ===
-  const coverageRatio = Math.min(
-    100,
-    Math.round(
-      ((weeklyDistanceKm / courseWeeklyEquivalent) * 0.4 +
-        (weeklyElevationGain / courseWeeklyDPlus) * 0.4 +
-        (regularity === 'bonne' ? 1 : regularity === 'moyenne' ? 0.5 : 0) * 20) *
-        100
-    )
-  )
+  // Calculer le ratio de couverture de manière plus précise
+  const distanceCoverage = Math.min(1, weeklyDistanceKm / courseWeeklyEquivalent)
+  const elevationCoverage = Math.min(1, weeklyElevationGain / courseWeeklyDPlus)
+  const regularityScore = regularity === 'bonne' ? 1 : regularity === 'moyenne' ? 0.6 : 0.3
+  const coverageRatio = Math.round((distanceCoverage * 0.4 + elevationCoverage * 0.4 + regularityScore * 0.2) * 100)
 
   let summary = ''
   if (readiness === 'ready') {
     summary = `Ton niveau d'entraînement actuel couvre environ ${coverageRatio}% des exigences de cette course. Tu es sur la bonne voie.`
   } else if (readiness === 'needs_work') {
-    summary = `À 6 mois de la course, ton volume actuel est insuffisant mais rattrapable avec une montée progressive.`
+    summary = `À 6 mois de la course, ton volume actuel couvre environ ${coverageRatio}% des exigences. C'est insuffisant mais rattrapable avec une montée progressive.`
   } else {
     summary = `Aujourd'hui, ton niveau d'entraînement couvre environ ${coverageRatio}% des exigences de cette course. Un plan d'action est nécessaire.`
   }
 
   // === OBJECTIFS DES 4 PROCHAINES SEMAINES ===
-  const targetVolumeMin = Math.max(weeklyDistanceKm * 1.1, courseWeeklyEquivalent * 0.5)
-  const targetVolumeMax = Math.min(courseWeeklyEquivalent * 0.8, weeklyDistanceKm * 1.5)
-  const targetDPlusMin = Math.max(weeklyElevationGain * 1.1, courseWeeklyDPlus * 0.5)
-  const targetDPlusMax = Math.min(courseWeeklyDPlus * 0.8, weeklyElevationGain * 1.5)
+  // Calculer des objectifs progressifs et cohérents (toujours min < max)
+  const baseVolumeTarget = Math.round(courseWeeklyEquivalent * 0.5)
+  const targetVolumeMin = Math.max(Math.round(weeklyDistanceKm * 1.15), baseVolumeTarget - 5)
+  const targetVolumeMax = Math.max(targetVolumeMin + 5, Math.round(courseWeeklyEquivalent * 0.7))
+  
+  const baseDPlusTarget = Math.round(courseWeeklyDPlus * 0.5)
+  const targetDPlusMin = Math.max(Math.round(weeklyElevationGain * 1.15), baseDPlusTarget - 100)
+  const targetDPlusMax = Math.max(targetDPlusMin + 200, Math.round(courseWeeklyDPlus * 0.7))
+  
   const targetFrequency = regularity === 'faible' ? 3 : regularity === 'moyenne' ? 4 : 4
-  const targetLongRunHours = longRunThreshold / 8 // Estimation : 8 km/h en moyenne
+  const targetLongRunHours = Math.max(2, Math.round((longRunThreshold / 8) * 10) / 10) // Estimation : 8 km/h en moyenne, minimum 2h
 
   // === CATÉGORISATION DES RECOMMANDATIONS ===
   const immediateActions: string[] = []
@@ -316,7 +317,7 @@ export function analyzeCourseReadiness(
   // Projection si suit les objectifs (amélioration progressive)
   let projectionIfFollows: { m3: 'ready' | 'needs_work' | 'risk'; m1: 'ready' | 'needs_work' | 'risk' }
   if (readiness === 'risk') {
-    // Si risque → peut passer à needs_work en 3 mois, et ready ou needs_work en 1 mois
+    // Si risque → peut passer à needs_work en 3 mois, et ready en 1 mois si pas trop de problèmes critiques
     projectionIfFollows = {
       m3: 'needs_work',
       m1: criticalIssues.length >= 3 ? 'needs_work' : 'ready',
