@@ -7,7 +7,7 @@ import reunionFlag from '../assets/5375c6ef182ea756eeb23fb723865d5c353eb10b.png'
 import grandRaidLogo from '../assets/da2a1ce5e69564e56a29b5912fd151a8f515e136.png'
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
-import WorldMapSimple from '../components/WorldMapSimple'
+import WorldMapLeaflet from '../components/WorldMapLeaflet'
 import { gpxToSvg } from '../lib/gpxToSvg'
 import { extractRouteIdFromUrl } from '../lib/stravaRouteParser'
 
@@ -381,7 +381,7 @@ export default function SaisonPage({
           <div className="saison-map-block">
             <section className="map-section">
               <div className="map-wrapper">
-                <WorldMapSimple onCourseSelect={onCourseSelect} />
+                <WorldMapLeaflet onCourseSelect={onCourseSelect} />
               </div>
             </section>
 

@@ -1,0 +1,192 @@
+.world-map-leaflet {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* Styles pour les markers personnalisés */
+.custom-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.map-tag-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.map-tag-pin {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent, #bfc900);
+  border: 2px solid var(--color-bg-primary, #0b0e11);
+  margin-bottom: 4px;
+}
+
+.map-tag-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border-radius: 8px;
+  background: var(--color-bg-surface, #161b21);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 0.5px solid rgba(42, 46, 26, 0.2);
+  font-size: 11px;
+  letter-spacing: 1.43px;
+  color: var(--color-text-primary, #e5e7eb);
+  cursor: pointer;
+  font-family: inherit;
+  margin: 0;
+  outline: none;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.map-tag-flag {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Styles pour la popup/card */
+.map-card-popup {
+  padding: 0 !important;
+  margin-bottom: 20px !important;
+}
+
+.map-card-popup .leaflet-popup-content-wrapper {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.map-card-popup .leaflet-popup-content {
+  margin: 0;
+  padding: 0;
+  width: 292px !important;
+}
+
+.map-card-button {
+  width: 100%;
+  border-radius: 8px;
+  border: 0.5px solid rgba(42, 46, 26, 0.2);
+  background: var(--color-bg-surface, #161b21);
+  backdrop-filter: blur(25px);
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.map-card__media {
+  width: 100%;
+  aspect-ratio: 325 / 265;
+  background: var(--color-bg-primary, #0b0e11);
+}
+
+.map-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.map-card__heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px 0;
+  font-size: 18px;
+  letter-spacing: 2.34px;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.map-card__flag {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.map-card__flag img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.map-card__info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.map-card__details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 16px;
+  letter-spacing: 2.08px;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.map-card__details p {
+  margin: 0;
+}
+
+.map-card__gpx {
+  width: 36px;
+  height: auto;
+  opacity: 0.8;
+}
+
+.map-card__footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.6);
+}
+
+.map-card__footer-col {
+  padding: 2px 12px;
+  border-left: 0.5px solid rgba(255, 255, 255, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--color-texte-titre-var, #fff8f5);
+}
+
+.map-card__footer-col:first-child {
+  border-left: none;
+}
+
+.map-card__footer-col p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.map-card__countdown {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Personnaliser le style de la carte Leaflet pour correspondre au design */
+.world-map-leaflet .leaflet-container {
+  background: var(--color-bg-primary, #0b0e11);
+}
+
+.world-map-leaflet .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9);
+}
