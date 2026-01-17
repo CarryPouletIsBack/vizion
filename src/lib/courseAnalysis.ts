@@ -1,4 +1,5 @@
-import type { StravaMetrics, StravaSegment } from '../types/strava'
+import type { StravaMetrics } from '../types/strava'
+import type { StravaSegment } from './stravaSegments'
 import { estimateTrailTime, type TimeEstimate } from './trailTimeEstimator'
 
 /**
