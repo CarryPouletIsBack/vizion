@@ -20,6 +20,12 @@ export type TimeEstimate = {
   totalHours: number
   totalMinutesRemainder: number
   formatted: string // Format "Xh Ymin"
+  // Fourchette (min-max) pour donner une estimation plus réaliste
+  minMinutes: number
+  maxMinutes: number
+  minFormatted: string // Format "Xh Ymin"
+  maxFormatted: string // Format "Xh Ymin"
+  rangeFormatted: string // Format "Xh Ymin - Zh Wmin"
   basePace: number // Allure de base utilisée (min/km)
   finalPace: number // Allure finale après ajustements (min/km)
 }
@@ -104,11 +110,28 @@ export function estimateTrailTime(
   const totalHours = Math.floor(totalMinutes / 60)
   const totalMinutesRemainder = Math.round(totalMinutes % 60)
 
+  // 9. Calculer une fourchette (min-max) pour donner une estimation plus réaliste
+  // Variation de ±15% pour tenir compte de l'incertitude (terrain, fatigue, météo réelle, etc.)
+  const variationPercent = 0.15
+  const minMinutes = Math.round(totalMinutes * (1 - variationPercent))
+  const maxMinutes = Math.round(totalMinutes * (1 + variationPercent))
+  
+  const formatTime = (minutes: number): string => {
+    const h = Math.floor(minutes / 60)
+    const m = Math.round(minutes % 60)
+    return `${h}h ${m}min`
+  }
+
   return {
     totalMinutes,
     totalHours,
     totalMinutesRemainder,
     formatted: `${totalHours}h ${totalMinutesRemainder}min`,
+    minMinutes,
+    maxMinutes,
+    minFormatted: formatTime(minMinutes),
+    maxFormatted: formatTime(maxMinutes),
+    rangeFormatted: `${formatTime(minMinutes)} - ${formatTime(maxMinutes)}`,
     basePace,
     finalPace: adjustedPace,
   }

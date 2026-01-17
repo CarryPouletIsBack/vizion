@@ -269,10 +269,10 @@ export default function SingleCoursePage({
                         ⏱️ Temps estimé de course
                       </p>
                       <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-accent, #bfc900)' }}>
-                        {analysis.timeEstimate.formatted}
+                        {analysis.timeEstimate.rangeFormatted}
                       </p>
                       <p style={{ fontSize: '11px', color: 'var(--color-text-secondary, #9ca3af)', marginTop: '4px', fontStyle: 'italic' }}>
-                        Basé sur ton allure actuelle, le dénivelé et la distance
+                        Basé sur ton allure actuelle, le dénivelé et la distance (fourchette indicative)
                       </p>
                     </div>
                   )}

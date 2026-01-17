@@ -357,11 +357,11 @@ export function analyzeCourseReadiness(
     // Ajouter une recommandation basée sur le temps estimé si très long
     if (timeEstimate.totalHours > 20) {
       recommendations.push(
-        `Temps estimé : ${timeEstimate.formatted}. Prévoyez une stratégie de gestion de l'effort sur la durée.`
+        `Temps estimé : ${timeEstimate.rangeFormatted}. Prévoyez une stratégie de gestion de l'effort sur la durée.`
       )
     } else if (timeEstimate.totalHours > 12) {
       recommendations.push(
-        `Temps estimé : ${timeEstimate.formatted}. Travaillez votre endurance fondamentale pour tenir la distance.`
+        `Temps estimé : ${timeEstimate.rangeFormatted}. Travaillez votre endurance fondamentale pour tenir la distance.`
       )
     }
   } catch (error) {
