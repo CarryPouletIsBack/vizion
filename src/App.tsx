@@ -86,7 +86,10 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
       .order('created_at', { ascending: false })
 
     if (coursesError) {
-      console.error('Erreur lors du chargement des courses:', coursesError)
+      // Ne pas afficher d'erreur si c'est juste une absence de permissions (utilisateur non connecté)
+      if (coursesError.code !== 'PGRST116' && coursesError.code !== '42501' && coursesError.code !== 'PGRST301') {
+        console.error('Erreur lors du chargement des courses:', coursesError)
+      }
     }
 
     // Transformer les données Supabase en EventItem[]

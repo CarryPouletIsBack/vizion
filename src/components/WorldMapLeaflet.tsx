@@ -76,18 +76,26 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect }: WorldM
   // Charger les courses depuis Supabase
   useEffect(() => {
     const loadCourses = async () => {
-      const { data, error } = await supabase
-        .from('courses')
-        .select('*')
-        .not('start_coordinates', 'is', null)
+      try {
+        const { data, error } = await supabase
+          .from('courses')
+          .select('*')
+          .not('start_coordinates', 'is', null)
 
-      if (error) {
-        console.error('Erreur lors du chargement des courses:', error)
-        return
-      }
+        if (error) {
+          // Ne pas afficher d'erreur si c'est juste une absence de permissions (utilisateur non connecté)
+          if (error.code !== 'PGRST116' && error.code !== '42501' && error.code !== 'PGRST301') {
+            console.error('Erreur lors du chargement des courses:', error)
+          }
+          return
+        }
 
-      if (data) {
-        setCourses(data as CourseRow[])
+        if (data) {
+          setCourses(data as CourseRow[])
+        }
+      } catch (err) {
+        // Ignorer les erreurs silencieusement si l'utilisateur n'est pas connecté
+        console.warn('Impossible de charger les courses (utilisateur non connecté?)', err)
       }
     }
 
