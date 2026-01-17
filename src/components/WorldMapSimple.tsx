@@ -67,12 +67,35 @@ const WorldMapSimple = memo(function WorldMapSimple({ onCourseSelect }: WorldMap
 
         {mapTags.map((tag) => (
           <Marker key={tag.id} coordinates={tag.coordinates}>
-            <foreignObject x={-24} y={-12} width={64} height={28} style={{ overflow: 'visible' }}>
-              <div xmlns="http://www.w3.org/1999/xhtml" style={{ width: '100%', height: '100%' }}>
+            <foreignObject 
+              x={-30} 
+              y={-14} 
+              width={60} 
+              height={28}
+              requiredExtensions="http://www.w3.org/1999/xhtml"
+              style={{ 
+                overflow: 'visible',
+                pointerEvents: 'auto',
+              }}
+            >
+              <div 
+                xmlns="http://www.w3.org/1999/xhtml" 
+                style={{ 
+                  width: '100%', 
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'auto',
+                }}
+              >
                 <button
                   type="button"
                   className="map-tag"
-                  onClick={() => handleTagClick(tag)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleTagClick(tag)
+                  }}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -81,6 +104,7 @@ const WorldMapSimple = memo(function WorldMapSimple({ onCourseSelect }: WorldMap
                     borderRadius: '8px',
                     background: 'var(--color-bg-surface, #161b21)',
                     backdropFilter: 'blur(25px)',
+                    WebkitBackdropFilter: 'blur(25px)',
                     border: '0.5px solid rgba(42, 46, 26, 0.2)',
                     fontSize: '11px',
                     letterSpacing: '1.43px',
@@ -91,7 +115,10 @@ const WorldMapSimple = memo(function WorldMapSimple({ onCourseSelect }: WorldMap
                     outline: 'none',
                     visibility: 'visible',
                     opacity: 1,
-                    zIndex: 10,
+                    position: 'relative',
+                    transform: 'none',
+                    whiteSpace: 'nowrap',
+                    boxSizing: 'border-box',
                   }}
                 >
                   <span className="map-tag__flag" style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>

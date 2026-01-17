@@ -19,10 +19,21 @@
 .world-map-simple foreignObject {
   overflow: visible !important;
   pointer-events: auto !important;
+  transform: none !important;
 }
 
 .world-map-simple foreignObject * {
   pointer-events: auto !important;
+  transform: none !important;
+}
+
+/* S'assurer que les Marker suivent correctement les coordonnées */
+.world-map-simple g[class*="rsm-marker"] {
+  transform-origin: 0 0 !important;
+}
+
+.world-map-simple g[class*="rsm-marker"] > g {
+  transform-origin: 0 0 !important;
 }
 
 .map-tag {
