@@ -12,8 +12,14 @@ import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import { supabase, type CourseRow } from '../lib/supabase'
 import './WorldMapLeaflet.css'
 
-// Import du GeoJSON des continents
-import worldGeoJson from '../data/world-map-features.json'
+// Import du TopoJSON des continents et conversion en GeoJSON
+import worldTopoJson from '../data/world-map-features.json'
+import * as topojson from 'topojson-client'
+
+// Convertir TopoJSON en GeoJSON
+const worldGeoJson = worldTopoJson.type === 'Topology' && (worldTopoJson as any).objects?.world
+  ? topojson.feature(worldTopoJson as any, (worldTopoJson as any).objects.world)
+  : worldTopoJson
 
 // Fix pour les icônes Leaflet par défaut
 delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -177,12 +183,9 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect }: WorldM
         />
         
         {/* Afficher les continents avec GeoJSON en couleur #E5E7EB */}
-        {/* Convertir TopoJSON en GeoJSON si nécessaire */}
         {worldGeoJson && (
           <GeoJSON
-            data={worldGeoJson.type === 'Topology' 
-              ? (worldGeoJson as any).objects?.world 
-              : worldGeoJson}
+            data={worldGeoJson as any}
             style={() => ({
               color: 'transparent',
               weight: 0,
