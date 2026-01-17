@@ -101,105 +101,84 @@ export default function EventsColumnFilteringChart({
 
     gridRef.current = new DataGrid(containerRef.current, gridOptions as any)
 
-    // Gestionnaire pour les clics sur les boutons d'options - doit être appelé en premier
+    // Gestionnaire pour les clics sur les boutons d'options
     const handleOptionsClick = (event: Event) => {
       const mouseEvent = event as MouseEvent
+      event.preventDefault()
+      event.stopPropagation()
+      event.stopImmediatePropagation()
+      
       const target = mouseEvent.target as HTMLElement | null
       const optionsButton = target?.closest<HTMLElement>('.events-grid__options')
       const optionsWrapper = target?.closest<HTMLElement>('.events-grid__options-wrapper')
       
-      if (optionsButton || optionsWrapper) {
-        mouseEvent.preventDefault()
-        mouseEvent.stopPropagation()
-        mouseEvent.stopImmediatePropagation()
-        
-        const eventId = (optionsButton || optionsWrapper)?.getAttribute('data-event-id')
+      const element = optionsButton || optionsWrapper
+      if (element) {
+        const eventId = element.getAttribute('data-event-id')
         if (eventId) {
-          const element = optionsButton || optionsWrapper
-          if (element) {
-            const rect = element.getBoundingClientRect()
-            setMenuOpen({ eventId, x: rect.right, y: rect.bottom })
-          }
+          const rect = element.getBoundingClientRect()
+          setMenuOpen({ eventId, x: rect.right, y: rect.bottom })
         }
-        return false
       }
     }
 
+    // Gestionnaire pour les clics sur les lignes (sauf colonne Options)
     const handleRowClick = (event: Event) => {
       const mouseEvent = event as MouseEvent
       const target = mouseEvent.target as HTMLElement | null
       
-      // Si on clique sur le bouton d'options ou son wrapper, ne pas ouvrir l'événement
-      const optionsButton = target?.closest<HTMLElement>('.events-grid__options')
-      const optionsWrapper = target?.closest<HTMLElement>('.events-grid__options-wrapper')
-      
-      if (optionsButton || optionsWrapper) {
-        mouseEvent.preventDefault()
-        mouseEvent.stopPropagation()
-        mouseEvent.stopImmediatePropagation()
-        // Appeler handleOptionsClick pour ouvrir le menu
-        handleOptionsClick(event)
-        return false
+      // Ignorer si on clique sur les options ou le menu
+      if (target?.closest('.events-grid__options') || 
+          target?.closest('.events-grid__options-wrapper') ||
+          target?.closest('.events-grid__menu')) {
+        return
       }
 
-      // Ne pas sélectionner si on clique sur le menu
-      if (target?.closest('.events-grid__menu')) {
-        mouseEvent.preventDefault()
-        mouseEvent.stopPropagation()
-        return false
-      }
-
-      // Vérifier si on clique dans la colonne Options (dernière colonne) - ne pas ouvrir l'événement
+      // Vérifier si on clique dans la dernière colonne (Options)
       const cell = target?.closest<HTMLElement>('.highcharts-datagrid-cell')
       if (cell) {
         const row = cell.closest<HTMLElement>('.highcharts-datagrid-row')
-        if (row) {
+        if (row && containerRef.current) {
           const cells = Array.from(row.querySelectorAll('.highcharts-datagrid-cell'))
           if (cells.indexOf(cell) === cells.length - 1) {
-            // C'est la dernière colonne (Options)
-            mouseEvent.preventDefault()
-            mouseEvent.stopPropagation()
-            mouseEvent.stopImmediatePropagation()
-            return false
+            // C'est la colonne Options - ne pas ouvrir l'événement
+            return
           }
         }
       }
 
-      // Sinon, gérer le clic sur la ligne
+      // Ouvrir l'événement
       const rowEl = target?.closest<HTMLElement>('.highcharts-datagrid-row')
       if (!rowEl || !containerRef.current) return
 
       const rows = Array.from(containerRef.current.querySelectorAll('.highcharts-datagrid-row'))
       const rowIndex = rows.indexOf(rowEl)
-      if (rowIndex < 0) return
-
-      const selected = pagedEvents[rowIndex]
-      if (selected?.id) {
-        onEventSelect?.(selected.id)
+      if (rowIndex >= 0 && rowIndex < pagedEvents.length) {
+        const selected = pagedEvents[rowIndex]
+        if (selected?.id) {
+          onEventSelect?.(selected.id)
+        }
       }
     }
 
-    // Ajouter d'abord le gestionnaire pour les options (priorité haute)
-    containerRef.current.addEventListener('click', handleOptionsClick, true)
+    // Ajouter les gestionnaires avec capture phase
+    containerRef.current.addEventListener('click', handleOptionsClick, { capture: true, passive: false })
+    containerRef.current.addEventListener('click', handleRowClick, { capture: true, passive: false })
     
-    // Puis le gestionnaire pour les lignes (priorité normale)
-    containerRef.current.addEventListener('click', handleRowClick, true)
-    
-    // Ajouter aussi un gestionnaire directement sur les boutons d'options après le rendu
+    // Ajouter aussi un gestionnaire directement sur les boutons après le rendu
     setTimeout(() => {
       if (containerRef.current) {
-        const optionsButtons = containerRef.current.querySelectorAll('.events-grid__options, .events-grid__options-wrapper')
-        optionsButtons.forEach((btn) => {
-          btn.addEventListener('click', handleOptionsClick, true)
-          // Empêcher la propagation même au niveau du bouton
-          btn.addEventListener('mousedown', (e) => {
+        const optionsElements = containerRef.current.querySelectorAll('.events-grid__options, .events-grid__options-wrapper')
+        optionsElements.forEach((element) => {
+          element.addEventListener('click', handleOptionsClick, { capture: true, passive: false })
+          element.addEventListener('mousedown', (e) => {
             e.preventDefault()
             e.stopPropagation()
             e.stopImmediatePropagation()
-          }, true)
+          }, { capture: true, passive: false })
         })
       }
-    }, 100)
+    }, 200)
     
     // Fermer le menu si on clique ailleurs
     const handleOutsideClick = (event: Event) => {
@@ -217,17 +196,12 @@ export default function EventsColumnFilteringChart({
         gridInstance.destroy()
       }
       gridRef.current = null
-      containerRef.current?.removeEventListener('click', handleRowClick, true)
-      containerRef.current?.removeEventListener('click', handleOptionsClick, true)
+      containerRef.current?.removeEventListener('click', handleOptionsClick, { capture: true } as any)
+      containerRef.current?.removeEventListener('click', handleRowClick, { capture: true } as any)
       if (containerRef.current) {
-        const optionsButtons = containerRef.current.querySelectorAll('.events-grid__options, .events-grid__options-wrapper')
-        optionsButtons.forEach((btn) => {
-          btn.removeEventListener('click', handleOptionsClick, true)
-          btn.removeEventListener('mousedown', (e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            e.stopImmediatePropagation()
-          }, true)
+        const optionsElements = containerRef.current.querySelectorAll('.events-grid__options, .events-grid__options-wrapper')
+        optionsElements.forEach((element) => {
+          element.removeEventListener('click', handleOptionsClick, { capture: true } as any)
         })
       }
       document.removeEventListener('click', handleOutsideClick)

@@ -71,17 +71,15 @@
   cursor: pointer;
 }
 
-/* Désactiver le curseur pointer et le clic sur la colonne Options */
+/* Désactiver le clic sur la colonne Options */
 .events-chart .highcharts-datagrid-cell:last-child {
   cursor: default;
+  pointer-events: none;
+}
+
+.events-chart .highcharts-datagrid-cell:last-child .events-grid__options-wrapper,
+.events-chart .highcharts-datagrid-cell:last-child .events-grid__options {
   pointer-events: auto;
-}
-
-.events-chart .highcharts-datagrid-row:has(.events-grid__options-wrapper) {
-  cursor: default;
-}
-
-.events-chart .highcharts-datagrid-row:has(.events-grid__options-wrapper) .highcharts-datagrid-cell:not(:last-child) {
   cursor: pointer;
 }
 
