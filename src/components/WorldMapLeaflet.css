@@ -184,45 +184,27 @@
 
 /* Personnaliser le style de la carte Leaflet pour correspondre au design */
 .world-map-leaflet .leaflet-container {
-  background: transparent;
+  background: transparent !important;
   font-family: 'Space Grotesk', sans-serif;
 }
 
-/* Style pour avoir continents en #E5E7EB et océans transparents */
-/* On inverse les couleurs pour obtenir continents clairs */
+/* Masquer complètement les tuiles OpenStreetMap (océans) */
 .world-map-leaflet .leaflet-tile-pane {
-  filter: 
-    invert(1) 
-    hue-rotate(180deg) 
-    brightness(0.9) 
-    contrast(1.1)
-    saturate(0);
+  display: none !important;
 }
 
-/* Rendre les océans complètement transparents */
-.world-map-leaflet .leaflet-tile-pane img {
-  mix-blend-mode: multiply;
-  opacity: 1;
+/* Alternative : rendre les tuiles complètement transparentes */
+.world-map-leaflet .leaflet-tile-container {
+  opacity: 0 !important;
 }
 
-/* Masquer les océans en les rendant transparents */
-.world-map-leaflet .leaflet-tile-container img {
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-}
-
-/* Forcer les océans à être transparents via le conteneur de la carte */
+/* S'assurer que le conteneur de la carte a un background transparent */
 .world-map-leaflet .leaflet-container {
   background: transparent !important;
 }
 
-/* Masquer complètement les océans dans la section map */
+/* Masquer les océans dans la section map */
 .map-section .world-map-leaflet .leaflet-tile-pane,
 .map-section .world-map-leaflet .leaflet-tile-container {
-  background: transparent !important;
-}
-
-.map-section .world-map-leaflet .leaflet-tile-pane img {
-  opacity: 0.3;
-  mix-blend-mode: multiply;
+  display: none !important;
 }

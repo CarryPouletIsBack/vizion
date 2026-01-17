@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { memo, useMemo, useState, useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap, GeoJSON } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -11,6 +11,9 @@ import grandRaidLogo from '../assets/da2a1ce5e69564e56a29b5912fd151a8f515e136.pn
 import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import { supabase, type CourseRow } from '../lib/supabase'
 import './WorldMapLeaflet.css'
+
+// Import du GeoJSON des continents
+import worldGeoJson from '../data/world-map-features.json'
 
 // Fix pour les icônes Leaflet par défaut
 delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -165,10 +168,23 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect }: WorldM
         doubleClickZoom={true}
         dragging={true}
       >
+        {/* Tuiles OpenStreetMap complètement masquées pour ne pas afficher les océans */}
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={19}
+          opacity={0}
+        />
+        
+        {/* Afficher les continents avec GeoJSON en couleur #E5E7EB */}
+        <GeoJSON
+          data={worldGeoJson as any}
+          style={() => ({
+            color: 'transparent',
+            weight: 0,
+            fillColor: '#E5E7EB',
+            fillOpacity: 1,
+          })}
         />
         
         <MapClickHandler onMapClick={handleMapClick} />
