@@ -121,7 +121,10 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
           <button
             className="btn btn--ghost"
             type="button"
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              console.log('Bouton Se connecter cliqué')
               setLoginModalMode('login')
               setIsLoginModalOpen(true)
             }}
@@ -131,7 +134,10 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
           <button
             className="btn btn--primary"
             type="button"
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              console.log('Bouton Créer un compte cliqué')
               setLoginModalMode('signup')
               setIsLoginModalOpen(true)
             }}
