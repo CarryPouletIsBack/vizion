@@ -3,7 +3,7 @@ import './UserAccountPage.css'
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 import { redirectToStravaAuth } from '../lib/stravaAuth'
-import { getCurrentUser, signOut, updateProfile, deleteAccount } from '../lib/auth'
+import { getCurrentUser, signOut, updateProfile } from '../lib/auth'
 
 type UserAccountPageProps = {
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
