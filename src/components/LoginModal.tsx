@@ -66,12 +66,21 @@ export default function LoginModal({ isOpen, initialMode = 'login', onClose, onL
 
   // Debug en production
   useEffect(() => {
+    console.log('LoginModal - isOpen:', isOpen, 'mode:', mode, 'initialMode:', initialMode)
     if (isOpen) {
       console.log('LoginModal ouverte avec mode:', mode, 'initialMode:', initialMode)
     }
   }, [isOpen, mode, initialMode])
 
-  if (!isOpen) return null
+  // Ne pas retourner null, toujours rendre la structure mais la cacher avec CSS
+  // Cela évite les problèmes de rendu en production
+  if (!isOpen) {
+    return (
+      <div className="login-modal-overlay" style={{ display: 'none' }} aria-hidden="true">
+        <div className="login-modal" />
+      </div>
+    )
+  }
 
   const handleLogin = async (data: LoginFormData) => {
     setIsLoading(true)

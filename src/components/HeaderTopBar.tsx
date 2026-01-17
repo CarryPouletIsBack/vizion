@@ -23,6 +23,11 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [loginModalMode, setLoginModalMode] = useState<'login' | 'signup'>('login')
 
+  // Debug en production
+  useEffect(() => {
+    console.log('HeaderTopBar - isLoginModalOpen:', isLoginModalOpen, 'loginModalMode:', loginModalMode)
+  }, [isLoginModalOpen, loginModalMode])
+
   useEffect(() => {
     // Récupérer les données de l'utilisateur depuis localStorage
     const loadUser = () => {
@@ -124,9 +129,16 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              console.log('Bouton Se connecter cliqué')
+              e.stopImmediatePropagation()
+              console.log('[HeaderTopBar] Bouton Se connecter cliqué')
+              console.log('[HeaderTopBar] État avant:', { isLoginModalOpen, loginModalMode })
               setLoginModalMode('login')
               setIsLoginModalOpen(true)
+              console.log('[HeaderTopBar] État après setState')
+              // Forcer un re-render pour debug
+              setTimeout(() => {
+                console.log('[HeaderTopBar] État après timeout:', { isLoginModalOpen, loginModalMode })
+              }, 100)
             }}
           >
             Se connecter
@@ -137,9 +149,16 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              console.log('Bouton Créer un compte cliqué')
+              e.stopImmediatePropagation()
+              console.log('[HeaderTopBar] Bouton Créer un compte cliqué')
+              console.log('[HeaderTopBar] État avant:', { isLoginModalOpen, loginModalMode })
               setLoginModalMode('signup')
               setIsLoginModalOpen(true)
+              console.log('[HeaderTopBar] État après setState')
+              // Forcer un re-render pour debug
+              setTimeout(() => {
+                console.log('[HeaderTopBar] État après timeout:', { isLoginModalOpen, loginModalMode })
+              }, 100)
             }}
           >
             Créer un compte
