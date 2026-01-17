@@ -197,6 +197,22 @@ export default function SingleCoursePage({
                       {analysis.summary}
                     </p>
                   )}
+                  {/* Verdict du Coach */}
+                  {analysis.coachVerdict && (
+                    <div
+                      style={{
+                        marginTop: '16px',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        background: 'rgba(191, 201, 0, 0.1)',
+                        border: '1px solid rgba(191, 201, 0, 0.3)',
+                      }}
+                    >
+                      <p style={{ margin: 0, fontSize: '13px', lineHeight: '1.6', color: 'var(--color-text-primary, #e5e7eb)', fontStyle: 'italic' }}>
+                        💬 <strong>Verdict du Coach :</strong> {analysis.coachVerdict}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Section "Ce que tu peux faire MAINTENANT" */}
