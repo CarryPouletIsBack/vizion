@@ -101,27 +101,47 @@ export default function EventsColumnFilteringChart({
 
     gridRef.current = new DataGrid(containerRef.current, gridOptions as any)
 
-    const handleRowClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null
-      
-      // Si on clique sur le bouton d'options, ouvrir le menu
+    // Gestionnaire pour les clics sur les boutons d'options
+    const handleOptionsClick = (event: Event) => {
+      const mouseEvent = event as MouseEvent
+      const target = mouseEvent.target as HTMLElement | null
       const optionsButton = target?.closest<HTMLElement>('.events-grid__options')
       if (optionsButton) {
-        event.stopPropagation()
+        mouseEvent.preventDefault()
+        mouseEvent.stopPropagation()
+        mouseEvent.stopImmediatePropagation()
         const eventId = optionsButton.getAttribute('data-event-id')
         if (eventId) {
           const rect = optionsButton.getBoundingClientRect()
           setMenuOpen({ eventId, x: rect.right, y: rect.bottom })
         }
-        return
+        return false
+      }
+    }
+
+    const handleRowClick = (event: Event) => {
+      const mouseEvent = event as MouseEvent
+      const target = mouseEvent.target as HTMLElement | null
+      
+      // Si on clique sur le bouton d'options, ne pas ouvrir l'événement
+      const optionsButton = target?.closest<HTMLElement>('.events-grid__options')
+      if (optionsButton) {
+        mouseEvent.preventDefault()
+        mouseEvent.stopPropagation()
+        mouseEvent.stopImmediatePropagation()
+        return false
+      }
+
+      // Ne pas sélectionner si on clique sur le menu
+      if (target?.closest('.events-grid__menu')) {
+        mouseEvent.preventDefault()
+        mouseEvent.stopPropagation()
+        return false
       }
 
       // Sinon, gérer le clic sur la ligne
       const rowEl = target?.closest<HTMLElement>('.highcharts-datagrid-row')
       if (!rowEl || !containerRef.current) return
-
-      // Ne pas sélectionner si on clique sur le menu
-      if (target?.closest('.events-grid__menu')) return
 
       const rows = Array.from(containerRef.current.querySelectorAll('.highcharts-datagrid-row'))
       const rowIndex = rows.indexOf(rowEl)
@@ -133,12 +153,24 @@ export default function EventsColumnFilteringChart({
       }
     }
 
-    containerRef.current.addEventListener('click', handleRowClick)
+    // Utiliser la phase de capture pour intercepter le clic avant qu'il ne se propage
+    containerRef.current.addEventListener('click', handleRowClick, true)
+    
+    // Ajouter aussi un gestionnaire directement sur les boutons d'options après le rendu
+    setTimeout(() => {
+      if (containerRef.current) {
+        const optionsButtons = containerRef.current.querySelectorAll('.events-grid__options')
+        optionsButtons.forEach((btn) => {
+          btn.addEventListener('click', handleOptionsClick, true)
+        })
+      }
+    }, 100)
     
     // Fermer le menu si on clique ailleurs
-    const handleOutsideClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null
-      if (!target?.closest('.events-grid__menu') && !target?.closest('.events-grid__options')) {
+    const handleOutsideClick = (event: Event) => {
+      const mouseEvent = event as MouseEvent
+      const clickTarget = mouseEvent.target as HTMLElement | null
+      if (!clickTarget?.closest('.events-grid__menu') && !clickTarget?.closest('.events-grid__options')) {
         setMenuOpen(null)
       }
     }
@@ -150,7 +182,13 @@ export default function EventsColumnFilteringChart({
         gridInstance.destroy()
       }
       gridRef.current = null
-      containerRef.current?.removeEventListener('click', handleRowClick)
+      containerRef.current?.removeEventListener('click', handleRowClick, true)
+      if (containerRef.current) {
+        const optionsButtons = containerRef.current.querySelectorAll('.events-grid__options')
+        optionsButtons.forEach((btn) => {
+          btn.removeEventListener('click', handleOptionsClick, true)
+        })
+      }
       document.removeEventListener('click', handleOutsideClick)
       if (containerRef.current) {
         containerRef.current.innerHTML = ''
