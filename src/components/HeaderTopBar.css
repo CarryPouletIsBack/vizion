@@ -88,14 +88,14 @@
 
 .saison-topbar__actions {
   display: flex;
-  justify-content: flex-start;
+  justify-content: flex-end;
   gap: 12px;
-  margin-left: 0;
+  margin-left: auto;
 }
 
 @media (max-width: 768px) {
   .saison-topbar__actions {
-    margin-left: 0;
+    margin-left: auto;
   }
 }
 

@@ -74,6 +74,57 @@ export default defineConfig({
         })
       },
     },
+    {
+      name: 'strava-token',
+      configureServer(server) {
+        server.middlewares.use('/api/strava/token', async (req, res) => {
+          if (req.method !== 'POST') {
+            res.statusCode = 405
+            res.end('Method Not Allowed')
+            return
+          }
+
+          const chunks: Buffer[] = []
+          req.on('data', (chunk) => chunks.push(chunk))
+          req.on('end', async () => {
+            try {
+              const body = Buffer.concat(chunks).toString('utf-8')
+              const payload = JSON.parse(body) as { code: string; client_id: string; client_secret: string }
+
+              // Échanger le code contre un token via l'API Strava
+              const tokenResponse = await fetch('https://www.strava.com/oauth/token', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  client_id: payload.client_id,
+                  client_secret: payload.client_secret,
+                  code: payload.code,
+                  grant_type: 'authorization_code',
+                }),
+              })
+
+              if (!tokenResponse.ok) {
+                const errorText = await tokenResponse.text()
+                res.statusCode = tokenResponse.status
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify({ error: errorText }))
+                return
+              }
+
+              const tokenData = await tokenResponse.json()
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify(tokenData))
+            } catch (error) {
+              res.statusCode = 500
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ error: 'Token exchange failed' }))
+            }
+          })
+        })
+      },
+    },
   ],
   resolve: {
     alias: {

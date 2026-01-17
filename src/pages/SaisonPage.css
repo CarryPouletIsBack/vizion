@@ -17,7 +17,7 @@
   display: flex;
   align-items: flex-start;
   position: fixed;
-  top: calc(18px + var(--topbar-height, 56px));
+  top: calc(var(--topbar-height, 56px) + 16px);
   left: 12px;
   width: 200px;
   z-index: 90;

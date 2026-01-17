@@ -1,0 +1,36 @@
+.strava-callback-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--color-bg-primary, #0b0e11);
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.strava-callback__content {
+  text-align: center;
+  padding: 24px;
+}
+
+.strava-callback__content h1 {
+  font-size: 24px;
+  margin: 0 0 16px;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.strava-callback__content p {
+  font-size: 16px;
+  margin: 0 0 24px;
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.strava-callback__content button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  background: var(--color-brand-primary, #d4df00);
+  color: var(--color-bg-primary, #0b0e11);
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}

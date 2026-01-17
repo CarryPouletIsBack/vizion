@@ -49,9 +49,36 @@ Les événements et courses sont persistés dans Supabase :
 - Pas de `!important` dans le CSS.
 - Le code est commenté en français quand nécessaire.
 
-## Connexion Strava (séparation des applis)
+## Connexion Strava OAuth
 
-- L’appli Vizion doit avoir son propre couple `client_id` / `client_secret` et ses propres URLs de redirection (pas celles de anthony-merault.fr).  
-- Les tokens Strava sont distincts par application : connecter Vizion n’efface ni ne coupe l’accès de l’autre site.  
-- En dev local, utiliser une redirection `http://localhost:5173` (ou le port actif) et stocker les secrets côté serveur (pas dans le front).  
-- Prévoir un cache côté backend/proxy pour limiter les appels et respecter les quotas Strava.
+### Configuration
+
+1. **Créer une application Strava** :
+   - Aller sur https://www.strava.com/settings/api
+   - Créer une nouvelle application
+   - Noter le `Client ID` et `Client Secret`
+
+2. **Configurer la Redirect URI** :
+   - En développement : `http://localhost:5173/auth/strava/callback`
+   - En production : `https://vizion-blush.vercel.app/auth/strava/callback`
+   - ⚠️ La Redirect URI doit correspondre **exactement** à celle configurée dans Strava
+
+3. **Variables d'environnement** :
+   - Créer un fichier `.env` à partir de `.env.example`
+   - Remplir `VITE_STRAVA_CLIENT_ID` et `VITE_STRAVA_CLIENT_SECRET`
+   - ⚠️ En production, le `client_secret` ne doit **jamais** être exposé côté client
+   - Pour la production, créer un endpoint backend sécurisé pour l'échange du code
+
+### Flow OAuth
+
+1. L'utilisateur clique sur "Se connecter" → redirection vers Strava
+2. Strava redirige vers `/auth/strava/callback?code=...`
+3. Le code est échangé contre un `access_token` et `refresh_token`
+4. Les tokens sont stockés (localStorage temporaire, Supabase en production)
+
+### Notes importantes
+
+- L'appli Vizion doit avoir son propre couple `client_id` / `client_secret` (distinct de anthony-merault.fr)
+- Les tokens Strava sont distincts par application : connecter Vizion n'efface pas l'accès de l'autre site
+- Prévoir un cache côté backend pour limiter les appels et respecter les quotas Strava
+- En production, utiliser un backend sécurisé pour l'échange du code (ne pas exposer le `client_secret`)

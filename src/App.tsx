@@ -5,9 +5,10 @@ import CoursesPage from './pages/CoursesPage'
 import EventsPage from './pages/EventsPage'
 import SaisonPage from './pages/SaisonPage'
 import SingleCoursePage from './pages/SingleCoursePage'
+import StravaCallbackPage from './pages/StravaCallbackPage'
 import { supabase, type EventRow, type CourseRow } from './lib/supabase'
 
-type AppView = 'saison' | 'course' | 'events' | 'courses'
+type AppView = 'saison' | 'course' | 'events' | 'courses' | 'strava-callback'
 
 type CourseItem = {
   id: string
@@ -133,6 +134,10 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
 
 function App() {
   const [view, setView] = useState<AppView>(() => {
+    // Détecter si on est sur la page de callback Strava
+    if (typeof window !== 'undefined' && window.location.pathname === '/auth/strava/callback') {
+      return 'strava-callback'
+    }
     try {
       const stored = localStorage.getItem('vizion:view')
       return (stored as AppView) || 'saison'
@@ -140,6 +145,13 @@ function App() {
       return 'saison'
     }
   })
+
+  // Écouter les changements d'URL pour détecter le callback Strava
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.pathname === '/auth/strava/callback') {
+      setView('strava-callback')
+    }
+  }, [])
   const [events, setEvents] = useState<EventItem[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(() => {
@@ -410,6 +422,14 @@ function App() {
           events={events}
           selectedEventId={selectedEventId}
           onSelectCourse={handleSelectCourse}
+        />
+      )}
+      {view === 'strava-callback' && (
+        <StravaCallbackPage
+          onAuthSuccess={() => {
+            setView('saison')
+            window.history.replaceState({}, '', '/')
+          }}
         />
       )}
     </div>
