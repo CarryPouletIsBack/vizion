@@ -115,7 +115,6 @@ export default function CoursesPage({
                     ) : (
                       <img src={gpxIcon} alt="GPX" />
                     )}
-                    {card.gpxName && <p className="course-card__gpx-name">{card.gpxName}</p>}
                   </div>
                 </div>
                 <footer className="course-card__footer">

@@ -94,15 +94,6 @@ export default function SingleCoursePage({
               <p className="single-course-title">{courseTitle.toUpperCase()}</p>
               <p className="single-course-subtitle">{courseEventName}</p>
             </div>
-            <div className="single-course-card">
-              <div>
-                <p className="single-course-card__title">Ajouter un événement ou une course</p>
-                <p className="single-course-card__subtitle">Commencer dès à présent à vous préparez</p>
-              </div>
-              <span className="single-course-card__chevron" aria-hidden="true">
-                ›
-              </span>
-            </div>
           </section>
 
           <section className="single-course-content">
