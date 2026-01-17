@@ -179,6 +179,48 @@ export default function SingleCoursePage({
                       </p>
                     </div>
                   </div>
+                  {/* Résumé en 1 phrase */}
+                  {analysis.summary && (
+                    <p style={{ marginTop: '16px', fontSize: '14px', lineHeight: '1.5', color: 'var(--color-text-primary, #e5e7eb)' }}>
+                      {analysis.summary}
+                    </p>
+                  )}
+                </div>
+
+                {/* Section "Ce que tu peux faire MAINTENANT" */}
+                <div className="single-course-panel__card">
+                  <p className="single-course-panel__title">🎯 OBJECTIF DES 4 PROCHAINES SEMAINES</p>
+                  {analysis.next4WeeksGoals && (
+                    <div style={{ marginTop: '12px' }}>
+                      <ul className="single-course-panel__list" style={{ marginBottom: '12px' }}>
+                        <li>
+                          <span>Volume cible</span>
+                          <span>
+                            {analysis.next4WeeksGoals.volumeKm.min}–{analysis.next4WeeksGoals.volumeKm.max} km / semaine
+                          </span>
+                        </li>
+                        <li>
+                          <span>D+ cible</span>
+                          <span>
+                            {analysis.next4WeeksGoals.dPlus.min}–{analysis.next4WeeksGoals.dPlus.max} m / semaine
+                          </span>
+                        </li>
+                        <li>
+                          <span>Fréquence</span>
+                          <span>{analysis.next4WeeksGoals.frequency} sorties / semaine</span>
+                        </li>
+                        <li>
+                          <span>Sortie longue</span>
+                          <span>1 sortie &gt; {analysis.next4WeeksGoals.longRunHours}h</span>
+                        </li>
+                      </ul>
+                      <p style={{ marginTop: '12px', fontSize: '12px', color: 'var(--color-text-secondary, #9ca3af)', fontStyle: 'italic' }}>
+                        Si ces objectifs sont atteints, ton état de préparation passera de{' '}
+                        {analysis.readiness === 'risk' ? '🔴 Risque' : analysis.readiness === 'needs_work' ? '🟠 À renforcer' : '🟢 Prêt'} à{' '}
+                        {analysis.projection.ifFollowsGoals.m3 === 'ready' ? '🟢 Prêt' : analysis.projection.ifFollowsGoals.m3 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="single-course-panel__card">
@@ -224,45 +266,99 @@ export default function SingleCoursePage({
 
                 <div className="single-course-panel__card">
                   <p className="single-course-panel__title">AJUSTEMENTS RECOMMANDÉS</p>
-                  {analysis.issues.length > 0 && (
-                    <div style={{ marginBottom: '12px' }}>
-                      <p style={{ fontSize: '12px', color: '#ef4444', marginBottom: '8px', fontWeight: 500 }}>
-                        Points d'attention :
+                  
+                  {/* Priorité immédiate */}
+                  {analysis.immediateActions && analysis.immediateActions.length > 0 && (
+                    <div style={{ marginTop: '12px', marginBottom: '16px' }}>
+                      <p style={{ fontSize: '13px', color: '#ef4444', marginBottom: '8px', fontWeight: 600 }}>
+                        🚨 Priorité immédiate
                       </p>
-                      <ul className="single-course-panel__list single-course-panel__list--bullets" style={{ marginBottom: '12px' }}>
-                        {analysis.issues.map((issue) => (
-                          <li key={issue} style={{ color: '#ef4444', fontSize: '12px' }}>
-                            {issue}
+                      <ul className="single-course-panel__list single-course-panel__list--bullets">
+                        {analysis.immediateActions.map((action, idx) => (
+                          <li key={idx} style={{ fontSize: '12px', marginBottom: '4px' }}>
+                            {action}
                           </li>
                         ))}
                       </ul>
                     </div>
                   )}
-                  {analysis.strengths.length > 0 && (
-                    <div style={{ marginBottom: '12px' }}>
+
+                  {/* Important mais secondaire */}
+                  {analysis.secondaryActions && analysis.secondaryActions.length > 0 && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <p style={{ fontSize: '13px', color: '#fbbf24', marginBottom: '8px', fontWeight: 600 }}>
+                        ⚠️ Important mais secondaire
+                      </p>
+                      <ul className="single-course-panel__list single-course-panel__list--bullets">
+                        {analysis.secondaryActions.map((action, idx) => (
+                          <li key={idx} style={{ fontSize: '12px', marginBottom: '4px' }}>
+                            {action}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* À tester */}
+                  {analysis.testActions && analysis.testActions.length > 0 && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '8px', fontWeight: 600 }}>
+                        🧪 À tester
+                      </p>
+                      <ul className="single-course-panel__list single-course-panel__list--bullets">
+                        {analysis.testActions.map((action, idx) => (
+                          <li key={idx} style={{ fontSize: '12px', marginBottom: '4px' }}>
+                            {action}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {/* Projection type "simulateur F1" */}
+                <div className="single-course-panel__card">
+                  <p className="single-course-panel__title">🧠 PROJECTION</p>
+                  <div style={{ marginTop: '12px' }}>
+                    <div style={{ marginBottom: '16px' }}>
+                      <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '8px', fontWeight: 500 }}>
+                        Si tu continues ainsi
+                      </p>
+                      <ul className="single-course-panel__list" style={{ fontSize: '12px' }}>
+                        <li>
+                          <span>État prévu à M-3</span>
+                          <span>
+                            {analysis.projection.ifContinues.m3 === 'ready' ? '🟢 Prêt' : analysis.projection.ifContinues.m3 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}
+                          </span>
+                        </li>
+                        <li>
+                          <span>État prévu à M-1</span>
+                          <span>
+                            {analysis.projection.ifContinues.m1 === 'ready' ? '🟢 Prêt' : analysis.projection.ifContinues.m1 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                    <div>
                       <p style={{ fontSize: '12px', color: '#22c55e', marginBottom: '8px', fontWeight: 500 }}>
-                        Points forts :
+                        Si tu suis les objectifs recommandés
                       </p>
-                      <ul className="single-course-panel__list single-course-panel__list--bullets" style={{ marginBottom: '12px' }}>
-                        {analysis.strengths.map((strength) => (
-                          <li key={strength} style={{ color: '#22c55e', fontSize: '12px' }}>
-                            {strength}
-                          </li>
-                        ))}
+                      <ul className="single-course-panel__list" style={{ fontSize: '12px' }}>
+                        <li>
+                          <span>État prévu à M-3</span>
+                          <span>
+                            {analysis.projection.ifFollowsGoals.m3 === 'ready' ? '🟢 Prêt' : analysis.projection.ifFollowsGoals.m3 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}
+                          </span>
+                        </li>
+                        <li>
+                          <span>État prévu à M-1</span>
+                          <span>
+                            {analysis.projection.ifFollowsGoals.m1 === 'ready' ? '🟢 Prêt (partiellement)' : analysis.projection.ifFollowsGoals.m1 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}
+                          </span>
+                        </li>
                       </ul>
                     </div>
-                  )}
-                  <ul className="single-course-panel__list single-course-panel__list--bullets">
-                    {analysis.recommendations.map((rec) => (
-                      <li key={rec}>{rec}</li>
-                    ))}
-                  </ul>
-                  <p className="single-course-panel__objective">
-                    objectif prochain mois :{' '}
-                    <strong>
-                      {metrics?.targetDPlusPerWeek ? `> ${metrics.targetDPlusPerWeek} m d+ / semaine` : 'à définir'}
-                    </strong>
-                  </p>
+                  </div>
                 </div>
               </div>
             </div>

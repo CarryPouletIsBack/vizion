@@ -20,6 +20,27 @@ export type CourseAnalysis = {
   strengths: string[]
   regularity: 'bonne' | 'moyenne' | 'faible'
   regularityDetails: string
+  // Nouvelles données pour améliorer l'UX
+  summary: string // Résumé en 1 phrase humaine
+  immediateActions: string[] // Actions prioritaires immédiates
+  secondaryActions: string[] // Actions importantes mais secondaires
+  testActions: string[] // Actions à tester
+  next4WeeksGoals: {
+    volumeKm: { min: number; max: number }
+    dPlus: { min: number; max: number }
+    frequency: number
+    longRunHours: number
+  }
+  projection: {
+    ifContinues: {
+      m3: 'ready' | 'needs_work' | 'risk'
+      m1: 'ready' | 'needs_work' | 'risk'
+    }
+    ifFollowsGoals: {
+      m3: 'ready' | 'needs_work' | 'risk'
+      m1: 'ready' | 'needs_work' | 'risk'
+    }
+  }
 }
 
 /**
@@ -41,6 +62,20 @@ export function analyzeCourseReadiness(
       strengths: [],
       regularity: 'faible',
       regularityDetails: 'Aucune donnée disponible',
+      summary: 'Connectez-vous à Strava pour obtenir une analyse personnalisée de votre préparation.',
+      immediateActions: ['Connecter votre compte Strava'],
+      secondaryActions: [],
+      testActions: [],
+      next4WeeksGoals: {
+        volumeKm: { min: 20, max: 30 },
+        dPlus: { min: 800, max: 1200 },
+        frequency: 3,
+        longRunHours: 2.5,
+      },
+      projection: {
+        ifContinues: { m3: 'risk', m1: 'risk' },
+        ifFollowsGoals: { m3: 'needs_work', m1: 'ready' },
+      },
     }
   }
 
@@ -220,6 +255,86 @@ export function analyzeCourseReadiness(
     readinessLabel = 'Prêt'
   }
 
+  // === GÉNÉRATION DU RÉSUMÉ EN 1 PHRASE ===
+  const coverageRatio = Math.min(
+    100,
+    Math.round(
+      ((weeklyDistanceKm / courseWeeklyEquivalent) * 0.4 +
+        (weeklyElevationGain / courseWeeklyDPlus) * 0.4 +
+        (regularity === 'bonne' ? 1 : regularity === 'moyenne' ? 0.5 : 0) * 20) *
+        100
+    )
+  )
+
+  let summary = ''
+  if (readiness === 'ready') {
+    summary = `Ton niveau d'entraînement actuel couvre environ ${coverageRatio}% des exigences de cette course. Tu es sur la bonne voie.`
+  } else if (readiness === 'needs_work') {
+    summary = `À 6 mois de la course, ton volume actuel est insuffisant mais rattrapable avec une montée progressive.`
+  } else {
+    summary = `Aujourd'hui, ton niveau d'entraînement couvre environ ${coverageRatio}% des exigences de cette course. Un plan d'action est nécessaire.`
+  }
+
+  // === OBJECTIFS DES 4 PROCHAINES SEMAINES ===
+  const targetVolumeMin = Math.max(weeklyDistanceKm * 1.1, courseWeeklyEquivalent * 0.5)
+  const targetVolumeMax = Math.min(courseWeeklyEquivalent * 0.8, weeklyDistanceKm * 1.5)
+  const targetDPlusMin = Math.max(weeklyElevationGain * 1.1, courseWeeklyDPlus * 0.5)
+  const targetDPlusMax = Math.min(courseWeeklyDPlus * 0.8, weeklyElevationGain * 1.5)
+  const targetFrequency = regularity === 'faible' ? 3 : regularity === 'moyenne' ? 4 : 4
+  const targetLongRunHours = longRunThreshold / 8 // Estimation : 8 km/h en moyenne
+
+  // === CATÉGORISATION DES RECOMMANDATIONS ===
+  const immediateActions: string[] = []
+  const secondaryActions: string[] = []
+  const testActions: string[] = []
+
+  recommendations.forEach((rec) => {
+    if (rec.includes('fréquence') || rec.includes('régularité') || rec.includes('sorties longues progressives')) {
+      immediateActions.push(rec)
+    } else if (rec.includes('nutrition') || rec.includes('tester')) {
+      testActions.push(rec)
+    } else {
+      secondaryActions.push(rec)
+    }
+  })
+
+  // Si pas assez d'actions immédiates, prendre les premières recommandations critiques
+  if (immediateActions.length === 0 && recommendations.length > 0) {
+    immediateActions.push(recommendations[0])
+    if (recommendations.length > 1) {
+      secondaryActions.push(...recommendations.slice(1))
+    }
+  }
+
+  // === PROJECTION (SIMULATEUR F1) ===
+  // Projection si continue ainsi (pas d'amélioration)
+  const projectionIfContinues = {
+    m3: readiness as 'ready' | 'needs_work' | 'risk', // Pas d'amélioration en 3 mois
+    m1: readiness as 'ready' | 'needs_work' | 'risk', // Pas d'amélioration en 5 mois
+  }
+
+  // Projection si suit les objectifs (amélioration progressive)
+  let projectionIfFollows: { m3: 'ready' | 'needs_work' | 'risk'; m1: 'ready' | 'needs_work' | 'risk' }
+  if (readiness === 'risk') {
+    // Si risque → peut passer à needs_work en 3 mois, et ready ou needs_work en 1 mois
+    projectionIfFollows = {
+      m3: 'needs_work',
+      m1: criticalIssues.length >= 3 ? 'needs_work' : 'ready',
+    }
+  } else if (readiness === 'needs_work') {
+    // Si needs_work → peut passer à ready en 3 mois, et ready en 1 mois
+    projectionIfFollows = {
+      m3: 'ready',
+      m1: 'ready',
+    }
+  } else {
+    // Si ready → reste ready
+    projectionIfFollows = {
+      m3: 'ready',
+      m1: 'ready',
+    }
+  }
+
   return {
     readiness,
     readinessLabel,
@@ -228,5 +343,25 @@ export function analyzeCourseReadiness(
     strengths,
     regularity,
     regularityDetails,
+    summary,
+    immediateActions: [...new Set(immediateActions)],
+    secondaryActions: [...new Set(secondaryActions)],
+    testActions: [...new Set(testActions)],
+    next4WeeksGoals: {
+      volumeKm: {
+        min: Math.round(targetVolumeMin),
+        max: Math.round(targetVolumeMax),
+      },
+      dPlus: {
+        min: Math.round(targetDPlusMin),
+        max: Math.round(targetDPlusMax),
+      },
+      frequency: targetFrequency,
+      longRunHours: Math.round(targetLongRunHours * 10) / 10,
+    },
+    projection: {
+      ifContinues: projectionIfContinues,
+      ifFollowsGoals: projectionIfFollows,
+    },
   }
 }
