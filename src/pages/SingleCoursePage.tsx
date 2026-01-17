@@ -113,7 +113,7 @@ export default function SingleCoursePage({
                 )}
               </div>
               <div className="single-course-course__card">
-                <SingleCourseElevationChart data={profileData} />
+                <SingleCourseElevationChart data={profileData} metrics={metrics} />
               </div>
             </div>
 
