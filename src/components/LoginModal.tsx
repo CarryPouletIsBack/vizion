@@ -36,12 +36,15 @@ export default function LoginModal({ isOpen, initialMode = 'login', onClose, onL
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Mettre à jour le mode quand initialMode change
+  // Mettre à jour le mode quand initialMode change ou quand la modal s'ouvre
   useEffect(() => {
     if (isOpen) {
       setMode(initialMode)
+      // Réinitialiser les formulaires quand la modal s'ouvre
+      resetLogin()
+      resetSignup()
     }
-  }, [isOpen, initialMode])
+  }, [isOpen, initialMode, resetLogin, resetSignup])
 
   const {
     register: registerLogin,
