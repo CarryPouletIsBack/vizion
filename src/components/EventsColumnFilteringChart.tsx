@@ -115,8 +115,8 @@ export default function EventsColumnFilteringChart({
             const value = String((this as unknown as { value?: string }).value ?? '')
             const index = Number(value.split('-').pop() || 0)
             const eventId = pagedEvents[index]?.id ?? ''
-            // Utiliser onclick directement dans le HTML pour éviter les problèmes de délégation d'événements
-            return `<div class="events-grid__options-wrapper" data-eventid="${eventId}"><button class="events-grid__options" type="button" aria-label="Options" data-eventid="${eventId}" onclick="window.handleEventOptionsClick && window.handleEventOptionsClick(event, '${eventId}')">⋯</button></div>`
+            // Utiliser onclick directement dans le HTML ET data-eventid pour double sécurité
+            return `<div class="events-grid__options-wrapper" data-eventid="${eventId}"><button class="events-grid__options" type="button" aria-label="Options" data-eventid="${eventId}" onclick="if(window.handleEventOptionsClick){window.handleEventOptionsClick(event,'${eventId}');event.stopPropagation();}">⋯</button></div>`
           },
         },
       },
