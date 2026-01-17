@@ -1,13 +1,16 @@
 # VIZION — Simulateur de préparation Trail (MVP)
 
-Application React/Vite pour un simulateur de préparation trail basé sur l’analyse de courses et l’import GPX. Le projet suit la maquette Figma et les règles de développement définies dans `DEV_RULES.md`.
+Application React/Vite pour un simulateur de préparation trail basé sur l'analyse de courses, l'import GPX et l'intégration Strava. Le projet suit la maquette Figma et les règles de développement définies dans `DEV_RULES.md`.
 
-## Stack
+## Stack Technique
 
-- React + TypeScript + Vite
-- Styling CSS (tokens dans `src/styles/tokens.css`)
-- Map: `react-simple-maps`
-- DataGrid: `@highcharts/dashboards`
+- **Frontend** : React 18 + TypeScript + Vite
+- **Styling** : CSS (tokens dans `src/styles/tokens.css`)
+- **Cartographie** : Leaflet + `react-leaflet`
+- **Graphiques** : Highcharts (profil d'élévation, données)
+- **Backend** : Supabase (Base de données + Auth)
+- **API Strava** : Intégration complète (OAuth + données enrichies)
+- **Icônes** : React Icons (`react-icons`)
 
 ## Démarrer
 
@@ -16,75 +19,197 @@ npm install
 npm run dev
 ```
 
-## Fonctionnalités clés (MVP)
+L'application sera accessible sur `http://localhost:5173`
 
-- Écrans: Saison, Événements, Courses, Single Course
-- Popups de création événement/course
-- Import GPX + génération d’un tracé SVG
-- Affichage des stats GPX (distance + D+)
-- Navigation simple via état interne (pas de router pour l’instant)
+## Fonctionnalités Clés (MVP)
 
-## Conversion GPX → SVG
+### 🗺️ Navigation et Interface
 
-Le tracé SVG est généré via un script Python local, appelé par un middleware Vite.
+- **Écran Saison** : Carte du monde interactive avec pastilles de courses
+- **Écran Événements** : Tableau avec filtres (Highcharts DataGrid)
+- **Écran Courses** : Grille de cartes de courses avec statistiques
+- **Écran Single Course** : Détails complets d'une course (GPX, profil, analyse)
+- **Compte utilisateur** : Gestion du profil et connexion Strava
 
-- Script: `scripts/gpx_to_svg.py`
-- Endpoint: `POST /api/gpx-to-svg`
-- Fichiers temporaires: `/tmp/vizion-gpx`
+### 📊 Intégration Strava
 
-## Persistance des données (Supabase)
+#### Connexion OAuth
 
-Les événements et courses sont persistés dans Supabase :
+- Authentification Strava via OAuth 2.0
+- Stockage sécurisé des tokens (Supabase)
+- Gestion automatique du refresh token
 
-- Tables : `events` et `courses`
-- Chargement automatique au démarrage
-- Création automatique d'events si nécessaire
-- Conversion des images/SVG en base64 pour le stockage
-- Parsing correct du profile JSONB depuis Supabase
-- ✅ **Testé et fonctionnel** : création de courses avec GPX, persistance après refresh
+#### Données récupérées
+
+**Athlète** (`/api/strava/athlete`) :
+- Profil (nom, ville, pays, sexe, poids, FTP)
+- Clubs, vélos, chaussures avec distances
+- Préférences de mesure
+
+**Activités** (`/api/strava/activities`) :
+- Distance, D+, temps (moving/elapsed)
+- FC moyenne/max, cadence, vitesse
+- Suffer Score, calories, achievements
+- Best efforts, segment efforts, splits
+- Métadonnées (type workout, équipement, flags)
+
+### 📈 Moteur d'Analyse de Préparation
+
+Le moteur compare les métriques Strava avec les exigences de la course pour déterminer le niveau de préparation :
+
+#### Calcul de couverture
+
+- **Distance hebdomadaire** : Minimum 40 km/semaine (objectif idéal : 70% de l'exigence finale)
+- **D+ hebdomadaire** : Minimum 1500 m/semaine (objectif idéal : 70% de l'exigence finale)
+- **Sortie longue** : Minimum 70 km (objectif idéal : 60% de la distance de course)
+- **D+ max en une sortie** : Minimum 6000 m (objectif idéal : 70% du D+ de course)
+- **Régularité** : Fréquence des sorties (bonne/moyenne/faible)
+
+#### Recommandations catégorisées
+
+- 🚨 **Priorité immédiate** : Actions critiques à effectuer rapidement
+- ⚠️ **Important mais secondaire** : Ajustements nécessaires mais non urgents
+- 🧪 **À tester** : Tests de nutrition, équipement, stratégies
+
+#### Statistiques Grand Raid 2025
+
+Intégration des données réelles du Grand Raid Réunion 2025 :
+- Points d'abandon critiques
+- Distribution des temps de finishers
+- Taux d'abandon par section
+
+### ⚙️ Moteur de Simulation
+
+Simulation interactive des performances sur la course :
+
+#### Paramètres ajustables
+
+- **État de forme** : 50-120% (slider)
+- **Temps par ravitaillement** : 2-20 min
+- **Score d'Engagement (Technicité)** : Bon descendeur / Moyen / Prudent
+- **Indice d'Endurance** : Elite / Expérimenté / Intermédiaire / Débutant
+
+#### Projections
+
+- Temps estimé mis à jour en temps réel
+- Barrières horaires critiques (basées sur points d'abandon)
+- Dégradation de performance selon l'indice d'endurance
+
+### 🗺️ Import et Affichage GPX
+
+#### Conversion GPX → SVG
+
+- Parsing GPX côté client (pas de backend requis)
+- Génération SVG du tracé
+- Extraction des waypoints uniquement
+- Affichage dans les cartes de courses et page Single Course
+
+#### Profil d'élévation
+
+- Graphique Highcharts interactif
+- Score d'Engagement (technicité) par segments :
+  - 🟢 **Vert (Roulant)** : Pente < 15%
+  - 🟠 **Orange (Technique)** : Pente 15-25% ou descente -10 à -20%
+  - 🔴 **Rouge (Chaos)** : Pente > 25% ou descente < -20%
+- Estimation du profil du coureur (ligne pointillée)
+- Synchronisation hover entre graphique et trace GPX
+
+### 📊 Estimation de Temps
+
+Basée sur la logique de [pacing-trail.fr](https://pacing-trail.fr/calculateur-de-temps-de-course-trail/) :
+
+- **Allure de base** : Calculée depuis les métriques Strava
+- **Ajustements** :
+  - Dénivelé (+1.5% par 1000m D+)
+  - Distance (dégradation progressive)
+  - Météo (température)
+  - Poids du sac
+  - Technicité en descente
+  - Dégradation selon indice d'endurance
+- **Fourchette min-max** : ±15% pour tenir compte de l'incertitude
+
+## Structure du Projet
+
+```
+vizion-app/
+├── api/strava/           # Routes API Vercel pour Strava
+│   ├── activities.ts     # Récupération activités
+│   └── athlete.ts        # Récupération profil athlète
+├── src/
+│   ├── components/       # Composants React réutilisables
+│   │   ├── SimulationEngine.tsx
+│   │   ├── SingleCourseElevationChart.tsx
+│   │   └── ...
+│   ├── pages/            # Pages principales
+│   │   ├── SaisonPage.tsx
+│   │   ├── EventsPage.tsx
+│   │   ├── CoursesPage.tsx
+│   │   └── SingleCoursePage.tsx
+│   ├── lib/              # Logique métier
+│   │   ├── courseAnalysis.ts      # Moteur d'analyse
+│   │   ├── stravaEngine.ts        # Calcul métriques Strava
+│   │   ├── trailTimeEstimator.ts  # Estimation temps
+│   │   ├── profileTechnicity.ts   # Analyse technicité
+│   │   └── ...
+│   ├── types/            # Types TypeScript
+│   │   └── strava.ts
+│   ├── data/             # Données statiques
+│   │   └── grandRaidStats.ts
+│   └── hooks/            # Hooks React personnalisés
+│       ├── useStravaMetrics.ts
+│       └── useGpxHoverMarker.ts
+```
+
+## Persistance des Données (Supabase)
+
+- **Tables** : `events`, `courses`, `users`
+- **Chargement automatique** au démarrage
+- **Création automatique** d'events si nécessaire
+- **Stockage** : Images et SVG en base64 dans la base
+- **Row Level Security (RLS)** : Accès sécurisé par utilisateur
+
+## Configuration Strava OAuth
+
+### Variables d'environnement Vercel
+
+- `STRAVA_CLIENT_ID` : Client ID Strava
+- `STRAVA_CLIENT_SECRET` : Client Secret Strava
+
+### Redirect URIs
+
+- **Développement** : `http://localhost:5173/auth/strava/callback`
+- **Production** : `https://vizion-blush.vercel.app/auth/strava/callback`
+
+⚠️ La Redirect URI doit correspondre **exactement** à celle configurée dans Strava.
+
+## Règles de Développement
+
+- **Pas de `!important`** dans le CSS
+- **Code commenté en français** quand nécessaire
+- **Mobile-first** : Approche responsive
+- **Composants modulaires** : Réutilisables et maintenables
+- **Validation des données** : TypeScript strict
+
+## Améliorations Futures
+
+- [ ] Synchronisation automatique Strava (webhooks)
+- [ ] Comparaison multi-courses
+- [ ] Export PDF du rapport de préparation
+- [ ] Intégration météo pour l'estimation de temps
+- [ ] Partage de préparation avec coach/amis
+- [ ] Historique des analyses dans le temps
 
 ## Notes
 
-- Les pages sont en mode desktop-first.
-- Pas de `!important` dans le CSS.
-- Le code est commenté en français quand nécessaire.
+- Les icônes utilisent `react-icons` (remplacement des emojis)
+- Les graphiques utilisent Highcharts
+- La carte utilise Leaflet pour une meilleure interactivité
+- L'analyse est basée sur les 6-12 dernières semaines d'activités Strava
 
-## Connexion Strava OAuth
+## Déploiement
 
-### Configuration
+Le projet est déployé sur Vercel : [https://vizion-blush.vercel.app](https://vizion-blush.vercel.app)
 
-1. **Créer une application Strava** :
-   - Aller sur https://www.strava.com/settings/api
-   - Créer une nouvelle application (ou utiliser celle existante de `portfolio-react-anthony`)
-   - Noter le `Client ID` et `Client Secret`
+---
 
-2. **Configurer la Redirect URI dans Strava** :
-   - En développement : `http://localhost:5173/auth/strava/callback`
-   - En production : `https://vizion-blush.vercel.app/auth/strava/callback`
-   - ⚠️ La Redirect URI doit correspondre **exactement** à celle configurée dans Strava
-
-3. **Variables d'environnement Vercel** :
-   - Aller dans Vercel > Settings > Environment Variables
-   - Ajouter les variables suivantes (déjà configurées pour `portfolio-react-anthony`) :
-     - `STRAVA_CLIENT_ID` : Votre Client ID Strava
-     - `STRAVA_CLIENT_SECRET` : Votre Client Secret Strava
-   - ⚠️ Ces variables sont sécurisées côté serveur (endpoints API Vercel)
-
-4. **Développement local** :
-   - Créer un fichier `.env.local` à partir de `.env.example`
-   - Remplir `STRAVA_CLIENT_ID` et `STRAVA_CLIENT_SECRET` pour le développement local
-   - Les endpoints API utiliseront ces variables en local
-
-### Flow OAuth
-
-1. L'utilisateur clique sur "Se connecter" → redirection vers Strava
-2. Strava redirige vers `/auth/strava/callback?code=...`
-3. Le code est échangé contre un `access_token` et `refresh_token`
-4. Les tokens sont stockés (localStorage temporaire, Supabase en production)
-
-### Notes importantes
-
-- L'appli Vizion doit avoir son propre couple `client_id` / `client_secret` (distinct de anthony-merault.fr)
-- Les tokens Strava sont distincts par application : connecter Vizion n'efface pas l'accès de l'autre site
-- Prévoir un cache côté backend pour limiter les appels et respecter les quotas Strava
-- En production, utiliser un backend sécurisé pour l'échange du code (ne pas exposer le `client_secret`)
+**Développé avec ❤️ pour les trailers passionnés**
