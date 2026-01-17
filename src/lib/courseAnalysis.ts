@@ -300,7 +300,6 @@ export function analyzeCourseReadiness(
   let summary = ''
   // Affiner le résumé avec les stats du Grand Raid si disponibles
   if (stats) {
-    const abandonRisk = stats.abandonRate > 20 ? 'élevé' : stats.abandonRate > 15 ? 'modéré' : 'faible'
     if (readiness === 'ready') {
       summary = `Ton niveau d'entraînement couvre ${coverageRatio}% des exigences. Avec ${stats.finisherRate}% de finishers en 2025, tu es sur la bonne voie si tu maintiens ta régularité.`
     } else if (readiness === 'needs_work') {
@@ -332,9 +331,12 @@ export function analyzeCourseReadiness(
   const targetLongRunHours = Math.max(2, Math.round((longRunThreshold / 8) * 10) / 10) // Estimation : 8 km/h en moyenne, minimum 2h
 
   // === CATÉGORISATION DES RECOMMANDATIONS ===
-  const immediateActions: string[] = [...tempImmediateActions] // Ajouter les actions critiques basées sur les stats
+  const immediateActions: string[] = []
   const secondaryActions: string[] = []
   const testActions: string[] = []
+  
+  // Ajouter les actions critiques basées sur les stats en premier
+  immediateActions.push(...tempImmediateActions)
 
   // Prioriser les recommandations critiques basées sur les stats
   recommendations.forEach((rec) => {
