@@ -9,6 +9,10 @@
       "destination": "/assets/:path*"
     },
     {
+      "source": "/app-background.png",
+      "destination": "/app-background.png"
+    },
+    {
       "source": "/(.*\\.(js|css|json|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
       "destination": "/$1"
     },
