@@ -63,19 +63,9 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
     }
 
     if (!eventsData || eventsData.length === 0) {
-      // Données par défaut si rien n'est stocké
-      return [
-        {
-          id: 'event-1',
-          name: 'Grand Raid',
-          country: 'Ile de la Réunion',
-          startLabel: '6 mois',
-          imageUrl: undefined,
-          courses: [
-            { id: 'course-1', name: 'Grand raid' },
-          ],
-        },
-      ]
+      // Retourner un tableau vide si rien n'est stocké
+      // Les données par défaut seront créées lors de la première création d'event/course
+      return []
     }
 
     // Charger les courses pour chaque event
@@ -194,10 +184,31 @@ function App() {
     elevationGain?: number
     profile?: Array<[number, number]>
   }) => {
-    const fallbackEventId = selectedEventId ?? events[0]?.id
+    let fallbackEventId = selectedEventId ?? events[0]?.id
+
+    // Si aucun event n'existe, créer un event par défaut
     if (!fallbackEventId) {
-      console.error('Aucun event sélectionné pour créer la course')
-      return
+      const { data: newEvent, error: eventError } = await supabase
+        .from('events')
+        .insert({
+          name: 'Nouvel événement',
+          country: 'Publiée',
+          start_label: 'À définir',
+        })
+        .select()
+        .single()
+
+      if (eventError || !newEvent) {
+        console.error('Erreur lors de la création de l\'event par défaut:', eventError)
+        return
+      }
+
+      fallbackEventId = newEvent.id
+      setSelectedEventId(fallbackEventId)
+
+      // Recharger les events pour avoir le nouvel event dans la liste
+      const loadedEvents = await loadEventsFromSupabase()
+      setEvents(loadedEvents)
     }
 
     setSelectedEventId(fallbackEventId)
@@ -241,6 +252,11 @@ function App() {
       const newEventId = newEvent.id
 
       // Insérer la course avec le nouvel event_id
+      // Arrondir elevation_gain à 2 décimales
+      const elevationGainRounded = payload.elevationGain
+        ? Number(payload.elevationGain.toFixed(2))
+        : null
+
       const { error } = await supabase.from('courses').insert({
         event_id: newEventId,
         name: cleanName,
@@ -248,7 +264,7 @@ function App() {
         gpx_name: payload.gpxName || null,
         gpx_svg: gpxSvg || null,
         distance_km: payload.distanceKm || null,
-        elevation_gain: payload.elevationGain || null,
+        elevation_gain: elevationGainRounded,
         profile: payload.profile ? JSON.stringify(payload.profile) : null,
       })
 
@@ -266,6 +282,11 @@ function App() {
     }
 
     // Insérer dans Supabase avec un event_id valide
+    // Arrondir elevation_gain à 2 décimales
+    const elevationGainRounded = payload.elevationGain
+      ? Number(payload.elevationGain.toFixed(2))
+      : null
+
     const { error } = await supabase.from('courses').insert({
       event_id: fallbackEventId,
       name: cleanName,
@@ -273,7 +294,7 @@ function App() {
       gpx_name: payload.gpxName || null,
       gpx_svg: gpxSvg || null,
       distance_km: payload.distanceKm || null,
-      elevation_gain: payload.elevationGain || null,
+      elevation_gain: elevationGainRounded,
       profile: payload.profile ? JSON.stringify(payload.profile) : null,
     })
 
