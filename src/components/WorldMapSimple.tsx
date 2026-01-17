@@ -1,7 +1,6 @@
 // @ts-nocheck
-import { memo, useMemo, useRef, useState } from 'react'
-import { geoCentroid, geoMercator } from 'd3-geo'
-import { Annotation, ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps'
+import { memo, useMemo, useState } from 'react'
+import { Annotation, ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps'
 
 import features from '../data/world-map-features.json'
 import franceFlag from '../assets/0d2a1183d2a0d185452acf52145cc62ece475c35.png'
@@ -24,10 +23,7 @@ type MapTag = {
 }
 
 const WorldMapSimple = memo(function WorldMapSimple({ onCourseSelect }: WorldMapSimpleProps) {
-  // État du zoom et du déplacement pour permettre l’interaction.
-  const [position, setPosition] = useState({ coordinates: [0, 0] as [number, number], zoom: 1.35 })
   const [activeTagId, setActiveTagId] = useState<string | null>(null)
-  const svgRef = useRef<SVGSVGElement | null>(null)
 
   const mapTags = useMemo<MapTag[]>(
     () => [
@@ -38,40 +34,8 @@ const WorldMapSimple = memo(function WorldMapSimple({ onCourseSelect }: WorldMap
     []
   )
 
-  const projection = useMemo(() => {
-    return geoMercator().scale(145).center([0, 18])
-  }, [])
-
-  const handleGeographyClick = (geo: GeoJSON.Feature, event: React.MouseEvent<SVGPathElement>) => {
-    // Zoomer sur la zone cliquée en recentrant la carte.
-    let coordinates: [number, number] | null = null
-
-    if (svgRef.current) {
-      const rect = svgRef.current.getBoundingClientRect()
-      const point: [number, number] = [event.clientX - rect.left, event.clientY - rect.top]
-      const inverted = projection.invert(point)
-      if (inverted) {
-        coordinates = [inverted[0], inverted[1]]
-      }
-    }
-
-    if (!coordinates) {
-      const [longitude, latitude] = geoCentroid(geo)
-      coordinates = [longitude, latitude]
-    }
-
-    setPosition({
-      coordinates,
-      zoom: Math.min(6, Math.max(2.2, position.zoom + 1)),
-    })
-  }
-
   const handleTagClick = (tag: MapTag) => {
     setActiveTagId(tag.id)
-    setPosition({
-      coordinates: tag.coordinates,
-      zoom: Math.min(6, Math.max(2.2, position.zoom + 1)),
-    })
   }
 
   const activeTag = mapTags.find((tag) => tag.id === activeTagId) ?? null
@@ -79,57 +43,71 @@ const WorldMapSimple = memo(function WorldMapSimple({ onCourseSelect }: WorldMap
   return (
     <div className="world-map-simple">
       <ComposableMap
-        ref={svgRef}
         projection="geoMercator"
         projectionConfig={{ scale: 145, center: [0, 18] }}
       >
-        <ZoomableGroup
-          zoom={position.zoom}
-          center={position.coordinates}
-          minZoom={0.9}
-          maxZoom={6}
-          onMoveEnd={(nextPosition) => setPosition(nextPosition)}
-        >
-          <Geographies geography={features}>
-            {({ geographies }) =>
-              geographies.map((geo) => (
-                <Geography
-                  key={geo.rsmKey}
-                  geography={geo}
-                  fill="var(--color-text-primary, #e5e7eb)"
-                  stroke="var(--color-border-default, #2a3038)"
-                  strokeWidth={0.6}
-                  onClick={(event) => handleGeographyClick(geo, event)}
-                  style={{
-                    default: { outline: 'none', cursor: 'pointer' },
-                    hover: { outline: 'none', cursor: 'pointer' },
-                    pressed: { outline: 'none', cursor: 'pointer' },
-                  }}
-                />
-              ))
-            }
-          </Geographies>
+        <Geographies geography={features}>
+          {({ geographies }) =>
+            geographies.map((geo) => (
+              <Geography
+                key={geo.rsmKey}
+                geography={geo}
+                fill="var(--color-text-primary, #e5e7eb)"
+                stroke="var(--color-border-default, #2a3038)"
+                strokeWidth={0.6}
+                style={{
+                  default: { outline: 'none', cursor: 'default' },
+                  hover: { outline: 'none', cursor: 'default' },
+                  pressed: { outline: 'none', cursor: 'default' },
+                }}
+              />
+            ))
+          }
+        </Geographies>
 
-          {mapTags.map((tag) => (
-            <Marker key={tag.id} coordinates={tag.coordinates}>
-              <foreignObject x={-24} y={-12} width={64} height={28}>
+        {mapTags.map((tag) => (
+          <Marker key={tag.id} coordinates={tag.coordinates}>
+            <foreignObject x={-24} y={-12} width={64} height={28} style={{ overflow: 'visible' }}>
+              <div xmlns="http://www.w3.org/1999/xhtml" style={{ width: '100%', height: '100%' }}>
                 <button
                   type="button"
                   className="map-tag"
                   onClick={() => handleTagClick(tag)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '2px 4px',
+                    borderRadius: '8px',
+                    background: 'var(--color-bg-surface, #161b21)',
+                    backdropFilter: 'blur(25px)',
+                    border: '0.5px solid rgba(42, 46, 26, 0.2)',
+                    fontSize: '11px',
+                    letterSpacing: '1.43px',
+                    color: 'var(--color-text-primary, #e5e7eb)',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    margin: 0,
+                    outline: 'none',
+                    visibility: 'visible',
+                    opacity: 1,
+                    zIndex: 10,
+                  }}
                 >
-                  <span className="map-tag__flag">
-                    <img src={tag.flag} alt="" aria-hidden="true" />
+                  <span className="map-tag__flag" style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
+                    <img src={tag.flag} alt="" aria-hidden="true" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                   </span>
                   <span>{tag.label}</span>
                 </button>
-              </foreignObject>
-            </Marker>
-          ))}
+              </div>
+            </foreignObject>
+          </Marker>
+        ))}
 
-          {activeTag && (
-            <Annotation subject={activeTag.coordinates} dx={32} dy={-20} connectorProps={{ stroke: 'none' }}>
-              <foreignObject x={0} y={-140} width={292} height={180}>
+        {activeTag && (
+          <Annotation subject={activeTag.coordinates} dx={32} dy={-20} connectorProps={{ stroke: 'none' }}>
+            <foreignObject x={0} y={-140} width={292} height={180} style={{ overflow: 'visible' }}>
+              <div xmlns="http://www.w3.org/1999/xhtml">
                 <button type="button" className="map-card" onClick={onCourseSelect}>
                   <div className="map-card__media">
                     <img src={grandRaidLogo} alt="Grand raid" />
@@ -158,10 +136,10 @@ const WorldMapSimple = memo(function WorldMapSimple({ onCourseSelect }: WorldMap
                     </div>
                   </div>
                 </button>
-              </foreignObject>
-            </Annotation>
-          )}
-        </ZoomableGroup>
+              </div>
+            </foreignObject>
+          </Annotation>
+        )}
       </ComposableMap>
     </div>
   )

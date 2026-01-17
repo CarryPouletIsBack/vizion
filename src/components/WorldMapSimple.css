@@ -15,24 +15,33 @@
   transform-origin: center;
 }
 
-.world-map-simple .rsm-zoomable-group {
-  transition: transform 350ms linear;
-  transform-origin: center;
+/* Assurer la visibilité des foreignObject en production */
+.world-map-simple foreignObject {
+  overflow: visible !important;
+  pointer-events: auto !important;
+}
+
+.world-map-simple foreignObject * {
+  pointer-events: auto !important;
 }
 
 .map-tag {
-  display: inline-flex;
+  display: inline-flex !important;
   align-items: center;
   gap: 6px;
   padding: 2px 4px;
   border-radius: 8px;
-  background: var(--color-bg-surface, #161b21);
+  background: var(--color-bg-surface, #161b21) !important;
   backdrop-filter: blur(25px);
   border: 0.5px solid rgba(42, 46, 26, 0.2);
   font-size: 11px;
   letter-spacing: 1.43px;
-  color: var(--color-text-primary, #e5e7eb);
+  color: var(--color-text-primary, #e5e7eb) !important;
   cursor: pointer;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 10;
+  position: relative;
 }
 
 .map-tag__flag {
