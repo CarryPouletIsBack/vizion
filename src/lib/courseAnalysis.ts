@@ -61,47 +61,6 @@ export function analyzeCourseReadiness(
   // Utiliser les stats du Grand Raid par défaut si disponibles
   const stats = raceStats || (course.name?.toLowerCase().includes('grand raid') || course.name?.toLowerCase().includes('diagonale') ? grandRaidStats : undefined)
   
-  // Si stats disponibles, les utiliser pour affiner l'analyse
-  if (stats) {
-    // Identifier les points d'abandon critiques
-    const criticalAbandonPoints = getCriticalAbandonPoints(stats, 3)
-    if (criticalAbandonPoints.length > 0) {
-      const topAbandonPoint = criticalAbandonPoints[0]
-      issues.push(
-        `Point d'abandon critique identifié : "${topAbandonPoint.name}" (${topAbandonPoint.distanceKm} km) - ${topAbandonPoint.abandons} abandons en 2025`
-      )
-      recommendations.push(
-        `Préparer spécifiquement le passage de "${topAbandonPoint.name}" (${topAbandonPoint.distanceKm} km) - zone à fort taux d'abandon`
-      )
-    }
-
-    // Analyser les points critiques avant la distance actuelle du coureur
-    if (metrics && metrics.longRunDistanceKm > 0) {
-      const criticalBeforeDistance = getCriticalPointBeforeDistance(stats, metrics.longRunDistanceKm)
-      if (criticalBeforeDistance && criticalBeforeDistance.abandons > 50) {
-        recommendations.push(
-          `Attention : "${criticalBeforeDistance.name}" (${criticalBeforeDistance.distanceKm} km) est un point d'abandon majeur avant votre distance max actuelle`
-        )
-      }
-    }
-
-    // Utiliser le taux d'abandon global pour ajuster le niveau de risque
-    if (stats.abandonRate > 20) {
-      recommendations.push(
-        `Cette course a un taux d'abandon de ${stats.abandonRate}% (${stats.totalAbandons} abandons sur ${stats.totalStarters} partants). Préparation rigoureuse nécessaire.`
-      )
-    }
-
-    // Utiliser les temps de finishers pour améliorer l'estimation
-    if (stats.finisherTimes.distribution.length > 0) {
-      const medianTime = stats.finisherTimes.distribution[Math.floor(stats.finisherTimes.distribution.length / 2)]
-      if (medianTime) {
-        recommendations.push(
-          `Temps médian des finishers : ~${medianTime.hours}h (${medianTime.percentage}% des finishers)`
-        )
-      }
-    }
-  }
   // Si pas de métriques, retourner un état par défaut
   if (!metrics) {
     return {
