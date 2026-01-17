@@ -292,40 +292,6 @@ function App() {
       hasSegments: !!payload.stravaSegments,
     })
 
-    let fallbackEventId = selectedEventId ?? events[0]?.id
-    console.log('🎯 Event ID sélectionné:', fallbackEventId)
-
-    // Si aucun event n'existe, créer un event par défaut
-    if (!fallbackEventId) {
-      console.log('📝 Création d\'un event par défaut...')
-      const { data: newEvent, error: eventError } = await supabase
-        .from('events')
-        .insert({
-          name: 'Nouvel événement',
-          country: 'Publiée',
-          start_label: 'À définir',
-        })
-        .select()
-        .single()
-
-      if (eventError || !newEvent) {
-        console.error('❌ Erreur lors de la création de l\'event par défaut:', eventError)
-        alert('Erreur lors de la création de l\'événement. Vérifiez la console.')
-        return
-      }
-
-      fallbackEventId = newEvent.id
-      setSelectedEventId(fallbackEventId)
-      console.log('✅ Event par défaut créé:', fallbackEventId)
-
-      // Recharger les events pour avoir le nouvel event dans la liste
-      const loadedEvents = await loadEventsFromSupabase()
-      setEvents(loadedEvents)
-    }
-
-    setSelectedEventId(fallbackEventId)
-    setView('courses')
-
     const cleanName = payload.name.trim()
     if (!cleanName || cleanName.toLowerCase() === 'sans titre') {
       console.warn('⚠️ Nom invalide, annulation')
@@ -344,66 +310,63 @@ function App() {
     // Le SVG est déjà une string, pas besoin de conversion
     const gpxSvg = payload.gpxSvg
 
-    // Vérifier que l'event_id existe dans la base (ne doit pas être un ID par défaut comme 'event-1')
-    const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fallbackEventId)
-    if (!isValidUuid) {
-      console.warn('⚠️ L\'event_id n\'est pas un UUID valide:', fallbackEventId)
-      // Si c'est un ID par défaut, créer l'event d'abord
+    // Déterminer l'event_id à utiliser
+    let eventIdToUse: string | null = null
+
+    // 1. Vérifier si un event_id est sélectionné et existe dans la base
+    if (selectedEventId) {
+      const { data: existingEvent } = await supabase
+        .from('events')
+        .select('id')
+        .eq('id', selectedEventId)
+        .single()
+
+      if (existingEvent) {
+        eventIdToUse = selectedEventId
+        console.log('✅ Utilisation de l\'événement sélectionné:', eventIdToUse)
+      }
+    }
+
+    // 2. Si pas d'event valide, vérifier le premier event de la liste
+    if (!eventIdToUse && events.length > 0 && events[0]?.id) {
+      const { data: existingEvent } = await supabase
+        .from('events')
+        .select('id')
+        .eq('id', events[0].id)
+        .single()
+
+      if (existingEvent) {
+        eventIdToUse = events[0].id
+        console.log('✅ Utilisation du premier événement de la liste:', eventIdToUse)
+      }
+    }
+
+    // 3. Si toujours pas d'event valide, créer un nouvel événement
+    if (!eventIdToUse) {
+      console.log('📝 Création d\'un nouvel événement...')
       const { data: newEvent, error: eventError } = await supabase
         .from('events')
         .insert({
-          name: 'Grand Raid',
-          country: 'Ile de la Réunion',
-          start_label: '6 mois',
+          name: 'Nouvel événement',
+          country: 'Publiée',
+          start_label: 'À définir',
         })
         .select()
         .single()
 
       if (eventError || !newEvent) {
-        console.error('❌ Erreur lors de la création de l\'event par défaut:', eventError)
-        alert('Erreur lors de la création de l\'événement. Vérifiez la console.')
+        console.error('❌ Erreur lors de la création de l\'événement:', eventError)
+        alert(`Erreur lors de la création de l'événement: ${eventError?.message || 'Erreur inconnue'}`)
         return
       }
 
-      // Utiliser le nouvel event_id
-      const newEventId = newEvent.id
-      console.log('✅ Nouvel event créé:', newEventId)
+      eventIdToUse = newEvent.id
+      console.log('✅ Nouvel événement créé:', eventIdToUse)
 
-      // Insérer la course avec le nouvel event_id
-      // Arrondir elevation_gain à 2 décimales
-      const elevationGainRounded = payload.elevationGain
-        ? Number(payload.elevationGain.toFixed(2))
-        : null
-
-      console.log('💾 Insertion course dans Supabase...')
-      const { error, data } = await supabase.from('courses').insert({
-        event_id: newEventId,
-        name: cleanName,
-        image_url: imageUrl || null,
-        gpx_name: payload.gpxName || null,
-        gpx_svg: gpxSvg || null,
-        distance_km: payload.distanceKm || null,
-        elevation_gain: elevationGainRounded,
-        profile: payload.profile ? JSON.stringify(payload.profile) : null,
-        start_coordinates: payload.startCoordinates || null,
-        strava_route_id: payload.stravaRouteId || null,
-        strava_segments: payload.stravaSegments ? JSON.stringify(payload.stravaSegments) : null,
-      }).select()
-
-      if (error) {
-        console.error('❌ Erreur lors de la création de la course:', error)
-        console.error('Détails:', JSON.stringify(error, null, 2))
-        alert(`Erreur lors de la création de la course: ${error.message}`)
-        return
-      }
-
-      console.log('✅ Course créée avec succès:', data)
-
-      // Recharger les events depuis Supabase
+      // Recharger les events pour avoir le nouvel event dans la liste
       const loadedEvents = await loadEventsFromSupabase()
       setEvents(loadedEvents)
-      setSelectedEventId(newEventId)
-      return
+      setSelectedEventId(eventIdToUse)
     }
 
     // Insérer dans Supabase avec un event_id valide
@@ -412,9 +375,9 @@ function App() {
       ? Number(payload.elevationGain.toFixed(2))
       : null
 
-    console.log('💾 Insertion course dans Supabase avec event_id:', fallbackEventId)
+    console.log('💾 Insertion course dans Supabase avec event_id:', eventIdToUse)
     const { error, data } = await supabase.from('courses').insert({
-      event_id: fallbackEventId,
+      event_id: eventIdToUse,
       name: cleanName,
       image_url: imageUrl || null,
       gpx_name: payload.gpxName || null,
@@ -439,6 +402,8 @@ function App() {
     // Recharger les events depuis Supabase
     const loadedEvents = await loadEventsFromSupabase()
     setEvents(loadedEvents)
+    setSelectedEventId(eventIdToUse)
+    setView('courses')
     console.log('✅ Events rechargés, total:', loadedEvents.length)
   }
 
