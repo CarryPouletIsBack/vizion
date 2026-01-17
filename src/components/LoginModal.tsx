@@ -64,6 +64,13 @@ export default function LoginModal({ isOpen, initialMode = 'login', onClose, onL
     }
   }, [isOpen, initialMode, resetLogin, resetSignup])
 
+  // Debug en production
+  useEffect(() => {
+    if (isOpen) {
+      console.log('LoginModal ouverte avec mode:', mode, 'initialMode:', initialMode)
+    }
+  }, [isOpen, mode, initialMode])
+
   if (!isOpen) return null
 
   const handleLogin = async (data: LoginFormData) => {
