@@ -1,9 +1,7 @@
 import './SingleCoursePage.css'
 
 import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
-import grandRaidLogo from '../assets/da2a1ce5e69564e56a29b5912fd151a8f515e136.png'
 import HeaderTopBar from '../components/HeaderTopBar'
-import SingleCourseHeatmap from '../components/SingleCourseHeatmap'
 import SingleCourseElevationChart from '../components/SingleCourseElevationChart'
 import useGpxHoverMarker from '../hooks/useGpxHoverMarker'
 import useStravaMetrics from '../hooks/useStravaMetrics'
@@ -41,7 +39,6 @@ export default function SingleCoursePage({
 
   const courseTitle = selectedCourse?.name ?? 'Course'
   const courseEventName = (selectedCourse as { eventName?: string } | undefined)?.eventName ?? 'Grand Raid'
-  const courseImage = selectedCourse?.imageUrl ?? grandRaidLogo
   const courseStats =
     selectedCourse?.distanceKm && selectedCourse?.elevationGain
       ? `${selectedCourse.distanceKm.toFixed(0)} km · ${Math.round(selectedCourse.elevationGain)} D+`
