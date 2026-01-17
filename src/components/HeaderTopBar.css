@@ -9,7 +9,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 8px 14px;
-  background: var(--color-bg-primary, #0b0e11);
+  background: transparent;
 }
 
 .saison-topbar__logo {

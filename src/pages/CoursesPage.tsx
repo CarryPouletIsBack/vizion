@@ -5,6 +5,7 @@ import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import grandRaidLogo from '../assets/da2a1ce5e69564e56a29b5912fd151a8f515e136.png'
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
+import Skeleton from '../components/Skeleton'
 import useStravaMetrics from '../hooks/useStravaMetrics'
 
 type CoursesPageProps = {
@@ -81,7 +82,7 @@ export default function CoursesPage({
   events,
   selectedEventId,
 }: CoursesPageProps) {
-  const { metrics } = useStravaMetrics()
+  const { metrics, loading } = useStravaMetrics()
   const selectedEvent = events.find((event) => event.id === selectedEventId) ?? events[0]
   const courseCards =
     selectedEvent?.courses
@@ -172,9 +173,15 @@ export default function CoursesPage({
                 </div>
                 <footer className="course-card__footer">
                   <div>
-                    <p>
-                      État de préparation : <strong>{card.readiness}</strong>
-                    </p>
+                    {loading ? (
+                      <p>
+                        État de préparation : <Skeleton width="40px" height="16px" style={{ display: 'inline-block' }} />
+                      </p>
+                    ) : (
+                      <p>
+                        État de préparation : <strong>{card.readiness}</strong>
+                      </p>
+                    )}
                   </div>
                   <div>
                     <p>Début de la course</p>
