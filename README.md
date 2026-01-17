@@ -41,6 +41,7 @@ Les événements et courses sont persistés dans Supabase :
 - Création automatique d'events si nécessaire
 - Conversion des images/SVG en base64 pour le stockage
 - Parsing correct du profile JSONB depuis Supabase
+- ✅ **Testé et fonctionnel** : création de courses avec GPX, persistance après refresh
 
 ## Notes
 
