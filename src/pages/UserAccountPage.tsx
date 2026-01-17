@@ -3,24 +3,22 @@ import './UserAccountPage.css'
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 import { redirectToStravaAuth } from '../lib/stravaAuth'
+import { getCurrentUser, signOut } from '../lib/auth'
 
 type UserAccountPageProps = {
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
 }
 
-type StravaUser = {
-  id: number
-  username: string
-  firstname: string
-  lastname: string
+type AppUser = {
+  id: string
+  email: string
+  firstname?: string
+  lastname?: string
   profile?: string
-  city?: string
-  country?: string
-  created_at?: string
 }
 
 export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
-  const [user, setUser] = useState<StravaUser | null>(null)
+  const [user, setUser] = useState<AppUser | null>(null)
   const [isStravaConnected, setIsStravaConnected] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 

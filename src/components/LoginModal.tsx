@@ -237,8 +237,11 @@ export default function LoginModal({ isOpen, initialMode = 'login', onClose, onL
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7.01 13.828h4.169" />
           </svg>
-          Se connecter avec Strava
+          {mode === 'login' ? 'Se connecter avec Strava' : 'S\'inscrire avec Strava'} (optionnel)
         </button>
+        <p className="login-modal__strava-note">
+          Vous pourrez connecter Strava plus tard depuis votre compte
+        </p>
 
         <div className="login-modal__footer">
           <button type="button" className="login-modal__switch" onClick={handleModeSwitch}>

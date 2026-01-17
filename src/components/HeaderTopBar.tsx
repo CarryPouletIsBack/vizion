@@ -4,22 +4,23 @@ import './HeaderTopBar.css'
 
 import logoVision from '../assets/c5c94aad0b681f3e62439f66f02703ba7c8b5826.svg'
 import { redirectToStravaAuth } from '../lib/stravaAuth'
+import { signIn, signUp, signOut, onAuthStateChange, getCurrentUser } from '../lib/auth'
 import LoginModal from './LoginModal'
 
 type HeaderTopBarProps = {
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
 }
 
-type StravaUser = {
-  id: number
-  username: string
-  firstname: string
-  lastname: string
-  profile?: string // URL de la photo de profil
+type AppUser = {
+  id: string
+  email: string
+  firstname?: string
+  lastname?: string
+  profile?: string // URL de la photo de profil (Strava)
 }
 
 export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
-  const [user, setUser] = useState<StravaUser | null>(null)
+  const [user, setUser] = useState<AppUser | null>(null)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [loginModalMode, setLoginModalMode] = useState<'login' | 'signup'>('login')
 
@@ -29,41 +30,94 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
   }, [isLoginModalOpen, loginModalMode])
 
   useEffect(() => {
-    // Récupérer les données de l'utilisateur depuis localStorage
-    const loadUser = () => {
+    // Charger l'utilisateur Supabase
+    const loadSupabaseUser = async () => {
       try {
-        const tokenData = localStorage.getItem('vizion:strava_token')
-        if (tokenData) {
-          const parsed = JSON.parse(tokenData)
-          if (parsed.athlete) {
-            // L'API Strava retourne profile, profile_medium, ou profile_large
-            const profileUrl = parsed.athlete.profile || parsed.athlete.profile_medium || parsed.athlete.profile_large
-            setUser({
-              id: parsed.athlete.id,
-              username: parsed.athlete.username || '',
-              firstname: parsed.athlete.firstname || '',
-              lastname: parsed.athlete.lastname || '',
-              profile: profileUrl,
-            })
+        const supabaseUser = await getCurrentUser()
+        if (supabaseUser) {
+          // Charger les données Strava si disponibles
+          const tokenData = localStorage.getItem('vizion:strava_token')
+          let stravaData = null
+          if (tokenData) {
+            try {
+              stravaData = JSON.parse(tokenData)
+            } catch (e) {
+              // Ignorer les erreurs de parsing
+            }
           }
+
+          setUser({
+            id: supabaseUser.id,
+            email: supabaseUser.email || '',
+            firstname: stravaData?.athlete?.firstname || supabaseUser.user_metadata?.firstname,
+            lastname: stravaData?.athlete?.lastname || supabaseUser.user_metadata?.lastname,
+            profile: stravaData?.athlete?.profile || stravaData?.athlete?.profile_medium || stravaData?.athlete?.profile_large,
+          })
+        } else {
+          setUser(null)
         }
       } catch (error) {
-        console.warn('Impossible de charger les données utilisateur:', error)
+        console.warn('Impossible de charger l\'utilisateur:', error)
+        setUser(null)
       }
     }
 
-    loadUser()
+    loadSupabaseUser()
 
-    // Écouter les changements dans localStorage (si l'utilisateur se connecte sur un autre onglet)
+    // Écouter les changements d'authentification Supabase
+    const { data: { subscription } } = onAuthStateChange(async (supabaseUser) => {
+      if (supabaseUser) {
+        // Charger les données Strava si disponibles
+        const tokenData = localStorage.getItem('vizion:strava_token')
+        let stravaData = null
+        if (tokenData) {
+          try {
+            stravaData = JSON.parse(tokenData)
+          } catch (e) {
+            // Ignorer les erreurs de parsing
+          }
+        }
+
+        setUser({
+          id: supabaseUser.id,
+          email: supabaseUser.email || '',
+          firstname: stravaData?.athlete?.firstname || supabaseUser.user_metadata?.firstname,
+          lastname: stravaData?.athlete?.lastname || supabaseUser.user_metadata?.lastname,
+          profile: stravaData?.athlete?.profile || stravaData?.athlete?.profile_medium || stravaData?.athlete?.profile_large,
+        })
+      } else {
+        setUser(null)
+      }
+    })
+
+    // Écouter les changements dans localStorage pour Strava
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'vizion:strava_token') {
-        loadUser()
+      if (e.key === 'vizion:strava_token' && user) {
+        try {
+          const tokenData = e.newValue
+          if (tokenData) {
+            const parsed = JSON.parse(tokenData)
+            if (parsed.athlete) {
+              setUser({
+                ...user,
+                firstname: parsed.athlete.firstname || user.firstname,
+                lastname: parsed.athlete.lastname || user.lastname,
+                profile: parsed.athlete.profile || parsed.athlete.profile_medium || parsed.athlete.profile_large || user.profile,
+              })
+            }
+          }
+        } catch (error) {
+          // Ignorer les erreurs
+        }
       }
     }
 
     window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
-  }, [])
+    return () => {
+      subscription.unsubscribe()
+      window.removeEventListener('storage', handleStorageChange)
+    }
+  }, [user])
 
   const handleStravaConnect = async () => {
     try {
@@ -74,12 +128,17 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('vizion:strava_token')
-    localStorage.removeItem('vizion:strava-metrics')
-    setUser(null)
-    // Optionnel : recharger la page pour mettre à jour l'état
-    window.location.reload()
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      localStorage.removeItem('vizion:strava_token')
+      localStorage.removeItem('vizion:strava-metrics')
+      setUser(null)
+      window.location.reload()
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error)
+      alert('Erreur lors de la déconnexion')
+    }
   }
 
   return (
@@ -108,7 +167,7 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
           )}
           <div className="saison-topbar__user-info">
             <span className="saison-topbar__user-name">
-              {user.firstname} {user.lastname}
+              {user.firstname && user.lastname ? `${user.firstname} ${user.lastname}` : user.email}
             </span>
           </div>
           <button
@@ -169,14 +228,23 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
         initialMode={loginModalMode}
         onClose={() => setIsLoginModalOpen(false)}
         onLogin={async (email, password) => {
-          // TODO: Implémenter la connexion avec Supabase
-          console.log('Login:', email, password)
-          alert('Fonctionnalité de connexion à implémenter')
+          try {
+            await signIn(email, password)
+            setIsLoginModalOpen(false)
+            // L'utilisateur sera mis à jour via onAuthStateChange
+          } catch (error) {
+            throw error
+          }
         }}
         onSignup={async (email, password) => {
-          // TODO: Implémenter l'inscription avec Supabase
-          console.log('Signup:', email, password)
-          alert('Fonctionnalité d\'inscription à implémenter')
+          try {
+            await signUp(email, password)
+            setIsLoginModalOpen(false)
+            alert('Compte créé avec succès ! Vérifiez votre email pour confirmer votre compte.')
+            // L'utilisateur sera mis à jour via onAuthStateChange après confirmation email
+          } catch (error) {
+            throw error
+          }
         }}
         onStravaConnect={handleStravaConnect}
       />
