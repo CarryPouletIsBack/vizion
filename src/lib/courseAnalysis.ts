@@ -1,4 +1,5 @@
 import type { StravaMetrics, StravaSegment } from '../types/strava'
+import { estimateTrailTime, type TimeEstimate } from './trailTimeEstimator'
 
 /**
  * Données d'une course pour l'analyse
@@ -41,6 +42,7 @@ export type CourseAnalysis = {
       m1: 'ready' | 'needs_work' | 'risk'
     }
   }
+  timeEstimate?: TimeEstimate // Estimation du temps de course
 }
 
 /**
@@ -76,6 +78,7 @@ export function analyzeCourseReadiness(
         ifContinues: { m3: 'risk', m1: 'risk' },
         ifFollowsGoals: { m3: 'needs_work', m1: 'ready' },
       },
+      timeEstimate: undefined, // Pas d'estimation sans métriques
     }
   }
 
@@ -336,6 +339,36 @@ export function analyzeCourseReadiness(
     }
   }
 
+  // === ESTIMATION DU TEMPS DE COURSE ===
+  let timeEstimate: TimeEstimate | undefined
+  try {
+    timeEstimate = estimateTrailTime(
+      {
+        distanceKm: course.distanceKm,
+        elevationGain: course.elevationGain,
+        temperature: 15, // Température par défaut (peut être ajustée plus tard)
+        bagWeight: 2, // Poids du sac par défaut : 2 kg
+        refuelStops: Math.ceil(course.distanceKm / 20), // 1 ravitaillement tous les 20 km
+        refuelTimePerStop: 2,
+      },
+      metrics
+    )
+
+    // Ajouter une recommandation basée sur le temps estimé si très long
+    if (timeEstimate.totalHours > 20) {
+      recommendations.push(
+        `Temps estimé : ${timeEstimate.formatted}. Prévoyez une stratégie de gestion de l'effort sur la durée.`
+      )
+    } else if (timeEstimate.totalHours > 12) {
+      recommendations.push(
+        `Temps estimé : ${timeEstimate.formatted}. Travaillez votre endurance fondamentale pour tenir la distance.`
+      )
+    }
+  } catch (error) {
+    console.warn('Erreur lors de l\'estimation du temps de course:', error)
+    timeEstimate = undefined
+  }
+
   return {
     readiness,
     readinessLabel,
@@ -364,5 +397,6 @@ export function analyzeCourseReadiness(
       ifContinues: projectionIfContinues,
       ifFollowsGoals: projectionIfFollows,
     },
+    timeEstimate,
   }
 }

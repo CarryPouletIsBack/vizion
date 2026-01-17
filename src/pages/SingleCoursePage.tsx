@@ -262,6 +262,20 @@ export default function SingleCoursePage({
                       </span>
                     </li>
                   </ul>
+                  {/* Estimation du temps de course */}
+                  {analysis.timeEstimate && (
+                    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                      <p style={{ fontSize: '12px', color: 'var(--color-text-secondary, #9ca3af)', marginBottom: '8px' }}>
+                        ⏱️ Temps estimé de course
+                      </p>
+                      <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-accent, #bfc900)' }}>
+                        {analysis.timeEstimate.formatted}
+                      </p>
+                      <p style={{ fontSize: '11px', color: 'var(--color-text-secondary, #9ca3af)', marginTop: '4px', fontStyle: 'italic' }}>
+                        Basé sur ton allure actuelle, le dénivelé et la distance
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="single-course-panel__card">
