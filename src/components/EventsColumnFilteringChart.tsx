@@ -74,16 +74,17 @@ export default function EventsColumnFilteringChart({
         },
       },
       columns: {
-        Nom: {
-          cellFormatter: function () {
-            const value = String((this as unknown as { value?: string }).value ?? '')
-            const index = Number(value.split('-').pop() || 0)
-            const image = eventImages[index] || eventImages[0]
-            const title = pagedEvents[index]?.name ?? 'Sans titre'
-            const eventId = pagedEvents[index]?.id ?? ''
-            return `<div class="events-grid__name" data-event-id="${eventId}"><span class="events-grid__thumb"><img src="${image}" alt="" /></span><span>${title}</span></div>`
-          },
-        },
+                    Nom: {
+                      cellFormatter: function () {
+                        const value = String((this as unknown as { value?: string }).value ?? '')
+                        const index = Number(value.split('-').pop() || 0)
+                        const image = eventImages[index] || eventImages[0]
+                        const title = pagedEvents[index]?.name ?? 'Sans titre'
+                        const eventId = pagedEvents[index]?.id ?? ''
+                        // Utiliser un attribut data-* valide pour Highcharts
+                        return `<div class="events-grid__name" data-eventid="${eventId}"><span class="events-grid__thumb"><img src="${image}" alt="" /></span><span>${title}</span></div>`
+                      },
+                    },
         Pays: {},
         'Début': {},
         'Nombre de course': {},
