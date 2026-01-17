@@ -21,6 +21,7 @@ type StravaUser = {
 export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
   const [user, setUser] = useState<StravaUser | null>(null)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [loginModalMode, setLoginModalMode] = useState<'login' | 'signup'>('login')
 
   useEffect(() => {
     // Récupérer les données de l'utilisateur depuis localStorage
@@ -120,14 +121,20 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
           <button
             className="btn btn--ghost"
             type="button"
-            onClick={() => setIsLoginModalOpen(true)}
+            onClick={() => {
+              setLoginModalMode('login')
+              setIsLoginModalOpen(true)
+            }}
           >
             Se connecter
           </button>
           <button
             className="btn btn--primary"
             type="button"
-            onClick={() => setIsLoginModalOpen(true)}
+            onClick={() => {
+              setLoginModalMode('signup')
+              setIsLoginModalOpen(true)
+            }}
           >
             Créer un compte
           </button>
@@ -136,6 +143,7 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
 
       <LoginModal
         isOpen={isLoginModalOpen}
+        initialMode={loginModalMode}
         onClose={() => setIsLoginModalOpen(false)}
         onLogin={async (email, password) => {
           // TODO: Implémenter la connexion avec Supabase

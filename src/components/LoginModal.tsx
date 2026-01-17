@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -25,15 +25,23 @@ type SignupFormData = z.infer<typeof signupSchema>
 
 type LoginModalProps = {
   isOpen: boolean
+  initialMode?: 'login' | 'signup'
   onClose: () => void
   onLogin?: (email: string, password: string) => Promise<void>
   onSignup?: (email: string, password: string) => Promise<void>
   onStravaConnect?: () => void
 }
 
-export default function LoginModal({ isOpen, onClose, onLogin, onSignup, onStravaConnect }: LoginModalProps) {
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
+export default function LoginModal({ isOpen, initialMode = 'login', onClose, onLogin, onSignup, onStravaConnect }: LoginModalProps) {
+  const [mode, setMode] = useState<'login' | 'signup'>(initialMode)
   const [isLoading, setIsLoading] = useState(false)
+
+  // Mettre à jour le mode quand initialMode change
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode)
+    }
+  }, [isOpen, initialMode])
 
   const {
     register: registerLogin,
