@@ -129,16 +129,15 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              e.stopImmediatePropagation()
+              const nativeEvent = e.nativeEvent
+              if (nativeEvent.stopImmediatePropagation) {
+                nativeEvent.stopImmediatePropagation()
+              }
               console.log('[HeaderTopBar] Bouton Se connecter cliqué')
               console.log('[HeaderTopBar] État avant:', { isLoginModalOpen, loginModalMode })
               setLoginModalMode('login')
               setIsLoginModalOpen(true)
               console.log('[HeaderTopBar] État après setState')
-              // Forcer un re-render pour debug
-              setTimeout(() => {
-                console.log('[HeaderTopBar] État après timeout:', { isLoginModalOpen, loginModalMode })
-              }, 100)
             }}
           >
             Se connecter
@@ -149,16 +148,15 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              e.stopImmediatePropagation()
+              const nativeEvent = e.nativeEvent
+              if (nativeEvent.stopImmediatePropagation) {
+                nativeEvent.stopImmediatePropagation()
+              }
               console.log('[HeaderTopBar] Bouton Créer un compte cliqué')
               console.log('[HeaderTopBar] État avant:', { isLoginModalOpen, loginModalMode })
               setLoginModalMode('signup')
               setIsLoginModalOpen(true)
               console.log('[HeaderTopBar] État après setState')
-              // Forcer un re-render pour debug
-              setTimeout(() => {
-                console.log('[HeaderTopBar] État après timeout:', { isLoginModalOpen, loginModalMode })
-              }, 100)
             }}
           >
             Créer un compte
