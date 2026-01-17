@@ -1,0 +1,33 @@
+import { createClient } from '@supabase/supabase-js'
+
+// Configuration Supabase
+const supabaseUrl = 'https://bzltfvqzquqkvfnwcmmr.supabase.co'
+const supabaseAnonKey = 'sb_publishable_uU3vmqDdKuULADE7bGzRow_aEsu4F2N'
+
+// Client Supabase
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// Types pour les tables
+export type EventRow = {
+  id: string
+  name: string
+  country: string
+  start_label: string
+  image_url: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type CourseRow = {
+  id: string
+  event_id: string
+  name: string
+  image_url: string | null
+  gpx_name: string | null
+  gpx_svg: string | null
+  distance_km: number | null
+  elevation_gain: number | null
+  profile: Array<[number, number]> | null
+  created_at: string
+  updated_at: string
+}

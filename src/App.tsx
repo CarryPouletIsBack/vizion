@@ -5,6 +5,7 @@ import CoursesPage from './pages/CoursesPage'
 import EventsPage from './pages/EventsPage'
 import SaisonPage from './pages/SaisonPage'
 import SingleCoursePage from './pages/SingleCoursePage'
+import { supabase, type EventRow, type CourseRow } from './lib/supabase'
 
 type AppView = 'saison' | 'course' | 'events' | 'courses'
 
@@ -47,29 +48,83 @@ async function blobUrlToBase64(blobUrl: string): Promise<string | undefined> {
   }
 }
 
-// Fonction pour charger les events depuis localStorage
-function loadEventsFromStorage(): EventItem[] {
+// Fonction pour charger les events depuis Supabase
+async function loadEventsFromSupabase(): Promise<EventItem[]> {
   try {
-    const stored = localStorage.getItem('vizion:events')
-    if (stored) {
-      return JSON.parse(stored)
+    // Charger les events avec leurs courses
+    const { data: eventsData, error: eventsError } = await supabase
+      .from('events')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (eventsError) {
+      console.error('Erreur lors du chargement des events:', eventsError)
+      return []
     }
-  } catch {
-    // Erreur de parsing, retourner les données par défaut
+
+    if (!eventsData || eventsData.length === 0) {
+      // Données par défaut si rien n'est stocké
+      return [
+        {
+          id: 'event-1',
+          name: 'Grand Raid',
+          country: 'Ile de la Réunion',
+          startLabel: '6 mois',
+          imageUrl: undefined,
+          courses: [
+            { id: 'course-1', name: 'Grand raid' },
+          ],
+        },
+      ]
+    }
+
+    // Charger les courses pour chaque event
+    const { data: coursesData, error: coursesError } = await supabase
+      .from('courses')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (coursesError) {
+      console.error('Erreur lors du chargement des courses:', coursesError)
+    }
+
+    // Transformer les données Supabase en EventItem[]
+    const eventsMap = new Map<string, EventItem>()
+    eventsData.forEach((event: EventRow) => {
+      eventsMap.set(event.id, {
+        id: event.id,
+        name: event.name,
+        country: event.country,
+        startLabel: event.start_label,
+        imageUrl: event.image_url || undefined,
+        courses: [],
+      })
+    })
+
+    // Associer les courses à leurs events
+    if (coursesData) {
+      coursesData.forEach((course: CourseRow) => {
+        const event = eventsMap.get(course.event_id)
+        if (event) {
+          event.courses.push({
+            id: course.id,
+            name: course.name,
+            imageUrl: course.image_url || undefined,
+            gpxName: course.gpx_name || undefined,
+            gpxSvg: course.gpx_svg || undefined,
+            distanceKm: course.distance_km || undefined,
+            elevationGain: course.elevation_gain || undefined,
+            profile: course.profile || undefined,
+          })
+        }
+      })
+    }
+
+    return Array.from(eventsMap.values())
+  } catch (error) {
+    console.error('Erreur lors du chargement depuis Supabase:', error)
+    return []
   }
-  // Données par défaut si rien n'est stocké
-  return [
-    {
-      id: 'event-1',
-      name: 'Grand Raid',
-      country: 'Ile de la Réunion',
-      startLabel: '6 mois',
-      imageUrl: undefined,
-      courses: [
-        { id: 'course-1', name: 'Grand raid' },
-      ],
-    },
-  ]
 }
 
 function App() {
@@ -81,7 +136,8 @@ function App() {
       return 'saison'
     }
   })
-  const [events, setEvents] = useState<EventItem[]>(loadEventsFromStorage)
+  const [events, setEvents] = useState<EventItem[]>([])
+  const [loading, setLoading] = useState(true)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(() => {
     try {
       return localStorage.getItem('vizion:selectedEventId')
@@ -109,17 +165,24 @@ function App() {
       imageUrl = await blobUrlToBase64(imageUrl)
     }
 
-    setEvents((prev) => {
-      const nextEvent: EventItem = {
-        id: `event-${Date.now()}`,
+    // Insérer dans Supabase
+    const { error } = await supabase
+      .from('events')
+      .insert({
         name: cleanName,
         country: 'Publiée',
-        startLabel: 'À définir',
-        imageUrl,
-        courses: [],
-      }
-      return [nextEvent, ...prev]
-    })
+        start_label: 'À définir',
+        image_url: imageUrl || null,
+      })
+
+    if (error) {
+      console.error('Erreur lors de la création de l\'event:', error)
+      return
+    }
+
+    // Recharger les events depuis Supabase
+    const loadedEvents = await loadEventsFromSupabase()
+    setEvents(loadedEvents)
   }
 
   const handleCreateCourse = async (payload: {
@@ -131,7 +194,12 @@ function App() {
     elevationGain?: number
     profile?: Array<[number, number]>
   }) => {
-    const fallbackEventId = selectedEventId ?? events[0]?.id ?? `event-${Date.now()}`
+    const fallbackEventId = selectedEventId ?? events[0]?.id
+    if (!fallbackEventId) {
+      console.error('Aucun event sélectionné pour créer la course')
+      return
+    }
+
     setSelectedEventId(fallbackEventId)
     setView('courses')
 
@@ -149,41 +217,26 @@ function App() {
     // Le SVG est déjà une string, pas besoin de conversion
     const gpxSvg = payload.gpxSvg
 
-    setEvents((prev) => {
-      const targetEventId = fallbackEventId
-      const nextCourse: CourseItem = {
-        id: `course-${Date.now()}`,
-        name: cleanName,
-        imageUrl,
-        gpxName: payload.gpxName,
-        gpxSvg,
-        distanceKm: payload.distanceKm,
-        elevationGain: payload.elevationGain,
-        profile: payload.profile,
-      }
-
-      if (!prev.find((event) => event.id === targetEventId)) {
-        return [
-          {
-            id: targetEventId,
-            name: 'Sans titre',
-            country: 'Publiée',
-            startLabel: 'À définir',
-            imageUrl,
-            courses: [nextCourse],
-          },
-        ]
-      }
-
-      return prev.map((event) =>
-        event.id === targetEventId
-          ? {
-              ...event,
-              courses: [nextCourse, ...event.courses],
-            }
-          : event,
-      )
+    // Insérer dans Supabase
+    const { error } = await supabase.from('courses').insert({
+      event_id: fallbackEventId,
+      name: cleanName,
+      image_url: imageUrl || null,
+      gpx_name: payload.gpxName || null,
+      gpx_svg: gpxSvg || null,
+      distance_km: payload.distanceKm || null,
+      elevation_gain: payload.elevationGain || null,
+      profile: payload.profile || null,
     })
+
+    if (error) {
+      console.error('Erreur lors de la création de la course:', error)
+      return
+    }
+
+    // Recharger les events depuis Supabase
+    const loadedEvents = await loadEventsFromSupabase()
+    setEvents(loadedEvents)
   }
 
   const handleSelectEvent = (eventId: string) => {
@@ -228,15 +281,24 @@ function App() {
     }
   }, [selectedCourseId])
 
-  // Sauvegarder les events dans localStorage à chaque modification
+  // Charger les events depuis Supabase au démarrage
   useEffect(() => {
-    try {
-      localStorage.setItem('vizion:events', JSON.stringify(events))
-    } catch (error) {
-      // Erreur de stockage (peut être due à la limite de taille de localStorage)
-      console.warn('Impossible de sauvegarder les events dans localStorage', error)
+    const loadEvents = async () => {
+      setLoading(true)
+      const loadedEvents = await loadEventsFromSupabase()
+      setEvents(loadedEvents)
+      setLoading(false)
     }
-  }, [events])
+    loadEvents()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="app-root" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <p>Chargement...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="app-root">

@@ -13,6 +13,7 @@
     "@d3/zoom-to-bounding-box": "https://api.observablehq.com/@d3/zoom-to-bounding-box.tgz?v=3",
     "@highcharts/dashboards": "^2.3.0",
     "@observablehq/runtime": "^5.9.9",
+    "@supabase/supabase-js": "^2.90.1",
     "d3": "^7.9.0",
     "d3-tile": "^1.0.0",
     "highcharts": "^12.1.0",
