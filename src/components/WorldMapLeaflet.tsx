@@ -16,10 +16,22 @@ import './WorldMapLeaflet.css'
 import worldTopoJson from '../data/world-map-features.json'
 import * as topojson from 'topojson-client'
 
-// Convertir TopoJSON en GeoJSON
-const worldGeoJson = worldTopoJson.type === 'Topology' && (worldTopoJson as any).objects?.world
-  ? topojson.feature(worldTopoJson as any, (worldTopoJson as any).objects.world)
-  : worldTopoJson
+// Convertir TopoJSON en GeoJSON avec gestion d'erreur
+let worldGeoJson: any = null
+try {
+  if (worldTopoJson && typeof worldTopoJson === 'object') {
+    const topo = worldTopoJson as any
+    if (topo.type === 'Topology' && topo.objects?.world) {
+      worldGeoJson = topojson.feature(topo, topo.objects.world)
+    } else if (topo.type === 'FeatureCollection' || topo.type === 'Feature') {
+      // Déjà un GeoJSON
+      worldGeoJson = topo
+    }
+  }
+} catch (error) {
+  console.warn('Erreur lors de la conversion TopoJSON en GeoJSON:', error)
+  worldGeoJson = null
+}
 
 // Fix pour les icônes Leaflet par défaut
 delete (L.Icon.Default.prototype as any)._getIconUrl
