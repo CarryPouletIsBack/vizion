@@ -28,16 +28,37 @@ type EventItem = {
   courses: CourseItem[]
 }
 
-function App() {
-  const [view, setView] = useState<AppView>(() => {
-    try {
-      const stored = localStorage.getItem('vizion:view')
-      return (stored as AppView) || 'saison'
-    } catch {
-      return 'saison'
+// Fonction utilitaire pour convertir une URL blob en base64
+async function blobUrlToBase64(blobUrl: string): Promise<string | undefined> {
+  try {
+    const response = await fetch(blobUrl)
+    const blob = await response.blob()
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const base64 = reader.result as string
+        resolve(base64)
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    return undefined
+  }
+}
+
+// Fonction pour charger les events depuis localStorage
+function loadEventsFromStorage(): EventItem[] {
+  try {
+    const stored = localStorage.getItem('vizion:events')
+    if (stored) {
+      return JSON.parse(stored)
     }
-  })
-  const [events, setEvents] = useState<EventItem[]>([
+  } catch {
+    // Erreur de parsing, retourner les données par défaut
+  }
+  // Données par défaut si rien n'est stocké
+  return [
     {
       id: 'event-1',
       name: 'Grand Raid',
@@ -48,7 +69,19 @@ function App() {
         { id: 'course-1', name: 'Grand raid' },
       ],
     },
-  ])
+  ]
+}
+
+function App() {
+  const [view, setView] = useState<AppView>(() => {
+    try {
+      const stored = localStorage.getItem('vizion:view')
+      return (stored as AppView) || 'saison'
+    } catch {
+      return 'saison'
+    }
+  })
+  const [events, setEvents] = useState<EventItem[]>(loadEventsFromStorage)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(() => {
     try {
       return localStorage.getItem('vizion:selectedEventId')
@@ -64,10 +97,16 @@ function App() {
     }
   })
 
-  const handleCreateEvent = (payload: { name: string; imageUrl?: string }) => {
+  const handleCreateEvent = async (payload: { name: string; imageUrl?: string }) => {
     const cleanName = payload.name.trim()
     if (!cleanName || cleanName.toLowerCase() === 'sans titre') {
       return
+    }
+
+    // Convertir l'image blob URL en base64 si nécessaire
+    let imageUrl = payload.imageUrl
+    if (imageUrl && imageUrl.startsWith('blob:')) {
+      imageUrl = await blobUrlToBase64(imageUrl)
     }
 
     setEvents((prev) => {
@@ -76,21 +115,21 @@ function App() {
         name: cleanName,
         country: 'Publiée',
         startLabel: 'À définir',
-        imageUrl: payload.imageUrl,
+        imageUrl,
         courses: [],
       }
       return [nextEvent, ...prev]
     })
   }
 
-  const handleCreateCourse = (payload: {
+  const handleCreateCourse = async (payload: {
     name: string
     imageUrl?: string
     gpxName?: string
     gpxSvg?: string
     distanceKm?: number
     elevationGain?: number
-  profile?: Array<[number, number]>
+    profile?: Array<[number, number]>
   }) => {
     const fallbackEventId = selectedEventId ?? events[0]?.id ?? `event-${Date.now()}`
     setSelectedEventId(fallbackEventId)
@@ -101,14 +140,23 @@ function App() {
       return
     }
 
+    // Convertir les blob URLs en base64 si nécessaire
+    let imageUrl = payload.imageUrl
+    if (imageUrl && imageUrl.startsWith('blob:')) {
+      imageUrl = await blobUrlToBase64(imageUrl)
+    }
+
+    // Le SVG est déjà une string, pas besoin de conversion
+    const gpxSvg = payload.gpxSvg
+
     setEvents((prev) => {
       const targetEventId = fallbackEventId
       const nextCourse: CourseItem = {
         id: `course-${Date.now()}`,
         name: cleanName,
-        imageUrl: payload.imageUrl,
+        imageUrl,
         gpxName: payload.gpxName,
-        gpxSvg: payload.gpxSvg,
+        gpxSvg,
         distanceKm: payload.distanceKm,
         elevationGain: payload.elevationGain,
         profile: payload.profile,
@@ -121,7 +169,7 @@ function App() {
             name: 'Sans titre',
             country: 'Publiée',
             startLabel: 'À définir',
-            imageUrl: payload.imageUrl,
+            imageUrl,
             courses: [nextCourse],
           },
         ]
@@ -179,6 +227,16 @@ function App() {
       // Pas de stockage dispo
     }
   }, [selectedCourseId])
+
+  // Sauvegarder les events dans localStorage à chaque modification
+  useEffect(() => {
+    try {
+      localStorage.setItem('vizion:events', JSON.stringify(events))
+    } catch (error) {
+      // Erreur de stockage (peut être due à la limite de taille de localStorage)
+      console.warn('Impossible de sauvegarder les events dans localStorage', error)
+    }
+  }, [events])
 
   return (
     <div className="app-root">
