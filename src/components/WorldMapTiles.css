@@ -1,0 +1,17 @@
+.world-map {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0b0e11;
+}
+
+.world-map__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* Rendu plus lisible sur fond sombre (évite un rendu "tout noir"). */
+  filter: grayscale(1) brightness(1.4) contrast(1.15);
+  opacity: 0.98;
+}

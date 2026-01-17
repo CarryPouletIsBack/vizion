@@ -1,0 +1,13 @@
+.single-course-elevation-chart {
+  width: 100%;
+  height: 200px;
+}
+
+.single-course-elevation-chart .highcharts-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.single-course-elevation-chart text {
+  font-family: 'Inter', sans-serif;
+}

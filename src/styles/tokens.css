@@ -1,0 +1,10 @@
+:root {
+  --color-bg-primary: #0b0e11;
+  --color-bg-surface: #161b21;
+  --color-border-default: #2a3038;
+  --color-text-primary: #e5e7eb;
+  --color-text-muted: rgba(229, 231, 235, 0.72);
+  --color-accent: #bfc900;
+  --color-brand-primary: #d4df00;
+  --color-brand-secondary: rgba(76, 141, 255, 0.12);
+}

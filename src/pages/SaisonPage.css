@@ -1,0 +1,524 @@
+/* Styles de l'écran Saison (maquette Figma). */
+.saison-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: calc(18px + var(--topbar-height, 56px)) 24px 32px;
+  min-height: 100vh;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+
+.saison-body {
+  position: relative;
+}
+
+.saison-side {
+  display: flex;
+  align-items: flex-start;
+  position: fixed;
+  top: calc(18px + var(--topbar-height, 56px));
+  left: 24px;
+  width: 200px;
+  z-index: 90;
+}
+
+.side-nav {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(11, 14, 17, 0.6);
+  backdrop-filter: blur(25px);
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.side-nav__item {
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary, #e5e7eb);
+  font-size: 18px;
+  letter-spacing: 2.34px;
+  text-transform: capitalize;
+  text-align: left;
+  cursor: pointer;
+  padding: 2px 0;
+  font-weight: 500;
+}
+
+.side-nav__item--active {
+  color: var(--color-accent, #bfc900);
+  font-size: 24px;
+  letter-spacing: 0;
+}
+
+.saison-main {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  row-gap: 40px;
+  margin-left: 224px;
+  width: calc(100% - 224px);
+}
+
+.saison-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.saison-title {
+  font-family: 'Cabin', sans-serif;
+  font-size: 40px;
+  color: var(--color-accent, #bfc900);
+  letter-spacing: 0.12em;
+  margin: 0 0 8px;
+}
+
+.saison-subtitle {
+  font-size: 16px;
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.info-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  width: min(473px, 100%);
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border-default, #2a3038);
+  background: var(--color-brand-secondary, rgba(76, 141, 255, 0.12));
+  color: var(--color-text-primary, #e5e7eb);
+  cursor: pointer;
+}
+
+.info-card__title {
+  font-size: 24px;
+  font-weight: 300;
+  margin: 0 0 6px;
+}
+
+.info-card__subtitle {
+  font-size: 14px;
+  margin: 0;
+}
+
+.info-card__chevron {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal {
+  width: min(537px, calc(100% - 32px));
+  border-radius: 28px;
+  background: rgba(76, 141, 255, 0.12);
+  border: 0.5px solid #ffffff;
+  color: var(--color-text-primary, #e5e7eb);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 12px;
+}
+
+.modal__header--center h2 {
+  text-align: center;
+  width: 100%;
+}
+
+.modal__header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.modal__close {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary, #e5e7eb);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.modal__subtitle {
+  margin: 0;
+  text-align: center;
+  font-size: 16px;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.modal__subtitle--left {
+  text-align: left;
+}
+
+.modal-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: 0.5px solid #464646;
+  background: rgba(95, 179, 106, 0.12);
+  color: var(--color-text-primary, #e5e7eb);
+  text-align: left;
+  cursor: pointer;
+}
+
+.modal-card__title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 300;
+}
+
+.modal-card__text {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.modal-back {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary, #e5e7eb);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.modal--form {
+  gap: 16px;
+}
+
+.modal-upload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.modal-upload__circle {
+  width: 118px;
+  height: 118px;
+  border-radius: 999px;
+  border: 2px dashed #949494;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #333333;
+  cursor: pointer;
+}
+
+.modal-upload__icon {
+  font-size: 16px;
+  color: #333333;
+}
+
+.modal-upload__label {
+  font-family: 'Akatab', sans-serif;
+  font-size: 11px;
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.modal-upload__plus {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: none;
+  background: #2b00ff;
+  color: #e5e7eb;
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: -13px;
+}
+
+.modal-upload__input {
+  display: none;
+}
+
+.modal-upload--double {
+  justify-content: space-between;
+}
+
+.modal-upload__block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.modal-field label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 18px;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.modal-field__required {
+  color: #ff3838;
+  margin-left: 4px;
+}
+
+.modal-input {
+  width: 100%;
+  background: #444444;
+  border: 0.5px solid #949494;
+  border-radius: 8px;
+  padding: 12px;
+  color: #666666;
+  font-family: 'Roboto', sans-serif;
+  font-size: 16px;
+  outline: none;
+}
+
+.modal-input::placeholder {
+  color: #666666;
+}
+
+.modal-footnote {
+  text-align: center;
+  font-size: 16px;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.modal-footnote__link {
+  text-decoration: underline;
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.modal-primary {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: none;
+  background: #f2ff00;
+  color: #6b7280;
+  font-size: 16px;
+  letter-spacing: 2.08px;
+  cursor: pointer;
+}
+
+.saison-map-block {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.map-section {
+  width: 100%;
+  position: relative;
+  z-index: 0;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.map-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2000 / 857;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.map-wrapper > .world-map-simple {
+  width: 100%;
+  height: 100%;
+}
+
+
+.courses-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.courses-heading {
+  text-align: center;
+}
+
+.courses-title {
+  font-family: 'Cabin', sans-serif;
+  font-size: 32px;
+  letter-spacing: 4.16px;
+  margin: 0 0 6px;
+}
+
+.courses-subtitle {
+  font-style: italic;
+  font-size: 14px;
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.courses-carousel {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(260px, 340px);
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.race-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-border-default, #2a3038);
+  background: var(--color-bg-surface, #161b21);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.race-card:focus-visible {
+  outline: 2px solid var(--color-brand-primary, #d4df00);
+  outline-offset: 2px;
+}
+
+.race-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px 0;
+  font-size: 20px;
+  letter-spacing: 0.12em;
+}
+
+.race-card__flag {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.race-card__flag img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.race-card__image {
+  background: var(--color-brand-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 245px;
+}
+
+.race-card__image img {
+  width: 180px;
+  height: 147px;
+  object-fit: contain;
+}
+
+.race-card__content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 14px;
+  font-size: 16px;
+  letter-spacing: 0.1em;
+}
+
+.race-card__content p {
+  margin: 0 0 8px;
+}
+
+.race-card__content img {
+  width: 30px;
+  height: 48px;
+}
+
+.race-card__footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 12px;
+}
+
+.race-card__footer div {
+  padding: 8px 14px;
+}
+
+.race-card__footer div + div {
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.race-card__footer p {
+  margin: 0;
+}
+
+.race-card__countdown {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+@media (max-width: 1024px) {
+  .saison-topbar {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .saison-topbar__actions {
+    justify-content: center;
+  }
+
+  .saison-body {
+    grid-template-columns: 1fr;
+  }
+
+  .saison-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
