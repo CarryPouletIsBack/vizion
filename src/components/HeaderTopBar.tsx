@@ -4,9 +4,10 @@ import './HeaderTopBar.css'
 
 import logoVision from '../assets/c5c94aad0b681f3e62439f66f02703ba7c8b5826.svg'
 import { redirectToStravaAuth } from '../lib/stravaAuth'
+import LoginModal from './LoginModal'
 
 type HeaderTopBarProps = {
-  onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course') => void
+  onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
 }
 
 type StravaUser = {
@@ -19,6 +20,7 @@ type StravaUser = {
 
 export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
   const [user, setUser] = useState<StravaUser | null>(null)
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
 
   useEffect(() => {
     // Récupérer les données de l'utilisateur depuis localStorage
@@ -115,14 +117,38 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
         </div>
       ) : (
         <div className="saison-topbar__actions">
-          <button className="btn btn--ghost" type="button" onClick={handleStravaConnect}>
+          <button
+            className="btn btn--ghost"
+            type="button"
+            onClick={() => setIsLoginModalOpen(true)}
+          >
             Se connecter
           </button>
-          <button className="btn btn--primary" type="button">
+          <button
+            className="btn btn--primary"
+            type="button"
+            onClick={() => setIsLoginModalOpen(true)}
+          >
             Créer un compte
           </button>
         </div>
       )}
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLogin={async (email, password) => {
+          // TODO: Implémenter la connexion avec Supabase
+          console.log('Login:', email, password)
+          alert('Fonctionnalité de connexion à implémenter')
+        }}
+        onSignup={async (email, password) => {
+          // TODO: Implémenter l'inscription avec Supabase
+          console.log('Signup:', email, password)
+          alert('Fonctionnalité d\'inscription à implémenter')
+        }}
+        onStravaConnect={handleStravaConnect}
+      />
     </header>
   )
 }

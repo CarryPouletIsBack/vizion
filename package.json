@@ -12,6 +12,7 @@
   "dependencies": {
     "@d3/zoom-to-bounding-box": "https://api.observablehq.com/@d3/zoom-to-bounding-box.tgz?v=3",
     "@highcharts/dashboards": "^2.3.0",
+    "@hookform/resolvers": "^5.2.2",
     "@observablehq/runtime": "^5.9.9",
     "@supabase/supabase-js": "^2.90.1",
     "@types/leaflet": "^1.9.21",
@@ -22,8 +23,10 @@
     "leaflet": "^1.9.4",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "react-hook-form": "^7.71.1",
     "react-leaflet": "^4.2.1",
-    "react-simple-maps": "^3.0.0"
+    "react-simple-maps": "^3.0.0",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

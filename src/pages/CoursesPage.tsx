@@ -7,7 +7,7 @@ import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 
 type CoursesPageProps = {
-  onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course') => void
+  onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
   onSelectCourse?: (courseId: string) => void
   events: Array<{
     id: string

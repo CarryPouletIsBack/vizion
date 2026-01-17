@@ -6,9 +6,10 @@ import EventsPage from './pages/EventsPage'
 import SaisonPage from './pages/SaisonPage'
 import SingleCoursePage from './pages/SingleCoursePage'
 import StravaCallbackPage from './pages/StravaCallbackPage'
+import UserAccountPage from './pages/UserAccountPage'
 import { supabase, type EventRow, type CourseRow } from './lib/supabase'
 
-type AppView = 'saison' | 'course' | 'events' | 'courses' | 'strava-callback'
+type AppView = 'saison' | 'course' | 'events' | 'courses' | 'strava-callback' | 'account'
 
 type CourseItem = {
   id: string
@@ -539,6 +540,11 @@ function App() {
             setView('saison')
             window.history.replaceState({}, '', '/')
           }}
+        />
+      )}
+      {view === 'account' && (
+        <UserAccountPage
+          onNavigate={handleNavigate}
         />
       )}
     </div>

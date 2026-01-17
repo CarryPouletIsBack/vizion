@@ -7,7 +7,7 @@ import SideNav from '../components/SideNav'
 import EventsColumnFilteringChart from '../components/EventsColumnFilteringChart'
 
 type EventsPageProps = {
-  onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course') => void
+  onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
   events: Array<{
     id: string
     name: string

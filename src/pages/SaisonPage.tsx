@@ -26,7 +26,7 @@ const raceCards = [
 
 type SaisonPageProps = {
   onCourseSelect?: () => void
-  onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course') => void
+  onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
   onCreateEvent?: (payload: { name: string; imageUrl?: string }) => void
   onCreateCourse?: (payload: {
     name: string
