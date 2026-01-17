@@ -101,6 +101,61 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
     }
   }, [onNavigate])
 
+  // Charger les statistiques Strava depuis l'API
+  useEffect(() => {
+    const loadStravaStats = async () => {
+      setStatsLoading(true)
+      try {
+        const tokenData = localStorage.getItem('vizion:strava_token')
+        if (!tokenData) {
+          setStravaStats({ activityCount: 0, totalDistance: 0, totalElevationGain: 0 })
+          setStatsLoading(false)
+          return
+        }
+
+        // Récupérer les activités depuis l'API
+        const parsed = JSON.parse(tokenData)
+        if (parsed.access_token) {
+          const response = await fetch('/api/strava/activities', {
+            headers: {
+              Authorization: `Bearer ${parsed.access_token}`,
+            },
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            const activities = data.activities || []
+            
+            const totalDistance = activities.reduce((sum: number, act: any) => sum + (act.distance || 0), 0)
+            const totalElevationGain = activities.reduce((sum: number, act: any) => sum + (act.total_elevation_gain || 0), 0)
+            
+            setStravaStats({
+              activityCount: activities.length,
+              totalDistance,
+              totalElevationGain,
+            })
+          } else {
+            setStravaStats({ activityCount: 0, totalDistance: 0, totalElevationGain: 0 })
+          }
+        } else {
+          setStravaStats({ activityCount: 0, totalDistance: 0, totalElevationGain: 0 })
+        }
+      } catch (error) {
+        console.warn('Erreur lors du chargement des statistiques Strava:', error)
+        setStravaStats({ activityCount: 0, totalDistance: 0, totalElevationGain: 0 })
+      } finally {
+        setStatsLoading(false)
+      }
+    }
+
+    if (isStravaConnected) {
+      loadStravaStats()
+    } else {
+      setStravaStats({ activityCount: 0, totalDistance: 0, totalElevationGain: 0 })
+      setStatsLoading(false)
+    }
+  }, [isStravaConnected])
+
   const handleStravaConnect = async () => {
     setIsLoading(true)
     try {
