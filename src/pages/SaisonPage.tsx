@@ -11,18 +11,6 @@ import WorldMapLeaflet from '../components/WorldMapLeaflet'
 import { gpxToSvg, extractGpxStartCoordinates } from '../lib/gpxToSvg'
 import { extractRouteIdFromUrl } from '../lib/stravaRouteParser'
 
-// Jeux de données temporaires pour la maquette MVP.
-const raceCards = [
-  {
-    id: 'grand-raid-2026',
-    year: '2026',
-    title: 'Grand raid',
-    subtitle: 'Diagonale des fous',
-    stats: '165 km – 9 800 D+',
-    readiness: '62%',
-    countdown: '6 mois',
-  },
-]
 
 type SaisonPageProps = {
   onCourseSelect?: () => void
@@ -393,52 +381,10 @@ export default function SaisonPage({
             <section className="courses-section">
               <div className="courses-heading">
                 <p className="courses-title">Mes courses en cours</p>
-                <p className="courses-subtitle">Vous n’avez pas encore de course en cours.</p>
+                <p className="courses-subtitle">Vous n'avez pas encore de course en cours.</p>
               </div>
               <div className="courses-carousel">
-                {raceCards.map((card) => (
-                  <article
-                    key={card.id}
-                    className="race-card"
-                    role="button"
-                    tabIndex={0}
-                    onClick={onCourseSelect}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        onCourseSelect?.()
-                      }
-                    }}
-                  >
-                    <header className="race-card__header">
-                      <span>{card.title}</span>
-                      <span>{card.year}</span>
-                      <span className="race-card__flag">
-                        <img src={reunionFlag} alt="" aria-hidden="true" />
-                      </span>
-                    </header>
-                    <div className="race-card__image">
-                      <img src={grandRaidLogo} alt="Grand Raid" />
-                    </div>
-                    <div className="race-card__content">
-                      <div>
-                        <p>{card.subtitle}</p>
-                        <p>{card.stats}</p>
-                      </div>
-                      <img src={gpxIcon} alt="GPX" />
-                    </div>
-                    <footer className="race-card__footer">
-                      <div>
-                        <p>
-                          État de préparation : <strong>{card.readiness}</strong>
-                        </p>
-                      </div>
-                      <div>
-                        <p>Début de la course</p>
-                        <p className="race-card__countdown">{card.countdown}</p>
-                      </div>
-                    </footer>
-                  </article>
-                ))}
+                {/* Les courses seront affichées ici une fois créées */}
               </div>
             </section>
           </div>
