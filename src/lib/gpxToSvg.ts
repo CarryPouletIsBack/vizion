@@ -54,18 +54,33 @@ function normalizeCoordinates(points: PointWithElevation[]): {
   const latRange = maxLat - minLat || 0.001
   const lonRange = maxLon - minLon || 0.001
 
-  const width = 800
-  const height = 600
+  // Dimensions cibles pour le conteneur (302px x 258px ≈ 1.17:1)
+  const targetWidth = 302
+  const targetHeight = 258
   const margin = 20
 
-  const scaleLat = (height - 2 * margin) / latRange
-  const scaleLon = (width - 2 * margin) / lonRange
-  const scale = Math.min(scaleLat, scaleLon)
+  // Calculer les facteurs d'échelle pour chaque dimension
+  const scaleLat = (targetHeight - 2 * margin) / latRange
+  const scaleLon = (targetWidth - 2 * margin) / lonRange
+  
+  // Utiliser le facteur d'échelle le plus petit pour maintenir les proportions
+  // mais limiter l'aspect ratio pour éviter les SVG trop verticaux
+  const aspectRatio = lonRange / latRange
+  const targetAspectRatio = targetWidth / targetHeight
+  
+  let scale: number
+  if (aspectRatio > targetAspectRatio) {
+    // Le tracé est plus large que le conteneur → limiter par la largeur
+    scale = scaleLon
+  } else {
+    // Le tracé est plus haut que le conteneur → limiter par la hauteur
+    scale = scaleLat
+  }
 
   const normalized: Point[] = []
   for (const [lat, lon] of points) {
     const x = margin + (lon - minLon) * scale
-    const y = height - margin - (lat - minLat) * scale
+    const y = targetHeight - margin - (lat - minLat) * scale
     normalized.push([x, y])
   }
 
