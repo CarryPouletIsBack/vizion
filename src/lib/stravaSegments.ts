@@ -1,6 +1,9 @@
 import type { StravaMetrics } from '../types/strava'
 import type { StravaSegment } from '../types/strava'
 
+// Réexporter le type pour faciliter les imports
+export type { StravaSegment } from '../types/strava'
+
 /**
  * Analyse les segments critiques d'une route pour un coureur
  */
