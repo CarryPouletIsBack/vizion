@@ -354,20 +354,42 @@ function App() {
         .select()
         .single()
 
-      if (eventError || !newEvent) {
+      if (eventError || !newEvent || !newEvent.id) {
         console.error('❌ Erreur lors de la création de l\'événement:', eventError)
         alert(`Erreur lors de la création de l'événement: ${eventError?.message || 'Erreur inconnue'}`)
         return
       }
 
       eventIdToUse = newEvent.id
-      console.log('✅ Nouvel événement créé:', eventIdToUse)
+      console.log('✅ Nouvel événement créé avec ID:', eventIdToUse)
 
       // Recharger les events pour avoir le nouvel event dans la liste
       const loadedEvents = await loadEventsFromSupabase()
       setEvents(loadedEvents)
       setSelectedEventId(eventIdToUse)
     }
+
+    // Vérification finale : eventIdToUse DOIT être défini
+    if (!eventIdToUse) {
+      console.error('❌ ERREUR CRITIQUE: eventIdToUse est null après toutes les vérifications')
+      alert('Erreur critique: impossible de déterminer un événement valide. Veuillez réessayer.')
+      return
+    }
+
+    // Vérifier une dernière fois que l'event existe vraiment en base
+    const { data: finalCheck, error: checkError } = await supabase
+      .from('events')
+      .select('id')
+      .eq('id', eventIdToUse)
+      .single()
+
+    if (checkError || !finalCheck) {
+      console.error('❌ ERREUR: L\'événement n\'existe pas en base:', eventIdToUse, checkError)
+      alert(`Erreur: l'événement sélectionné n'existe pas en base de données. Veuillez réessayer.`)
+      return
+    }
+
+    console.log('✅ Vérification finale OK, event_id valide:', eventIdToUse)
 
     // Insérer dans Supabase avec un event_id valide
     // Arrondir elevation_gain à 2 décimales
