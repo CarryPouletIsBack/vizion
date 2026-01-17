@@ -108,6 +108,7 @@
 .info-card__subtitle {
   font-size: 14px;
   margin: 0;
+  text-align: left;
 }
 
 .info-card__chevron {

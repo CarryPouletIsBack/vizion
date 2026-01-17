@@ -34,32 +34,9 @@ export default function StravaCallbackPage({ onAuthSuccess }: StravaCallbackPage
           return
         }
 
-        // Échanger le code contre un token (via un endpoint backend)
-        const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID
-        const clientSecret = import.meta.env.VITE_STRAVA_CLIENT_SECRET
-
-        if (!clientId || !clientSecret) {
-          throw new Error('Configuration Strava manquante. Vérifiez vos variables d\'environnement.')
-        }
-
-        const tokenResponse = await fetch('/api/strava/token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            code,
-            client_id: clientId,
-            client_secret: clientSecret,
-          }),
-        })
-
-        if (!tokenResponse.ok) {
-          const errorData = await tokenResponse.json()
-          throw new Error(errorData.error || 'Échec de l\'échange du code Strava')
-        }
-
-        const tokenData = await tokenResponse.json()
+        // Échanger le code contre un token (via l'endpoint API Vercel)
+        const { exchangeStravaCode } = await import('../lib/stravaAuth')
+        const tokenData = await exchangeStravaCode(code)
         console.log('Token Strava reçu:', tokenData)
 
         // TODO: Stocker le token dans Supabase (table users ou sessions)

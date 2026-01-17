@@ -55,19 +55,25 @@ Les événements et courses sont persistés dans Supabase :
 
 1. **Créer une application Strava** :
    - Aller sur https://www.strava.com/settings/api
-   - Créer une nouvelle application
+   - Créer une nouvelle application (ou utiliser celle existante de `portfolio-react-anthony`)
    - Noter le `Client ID` et `Client Secret`
 
-2. **Configurer la Redirect URI** :
+2. **Configurer la Redirect URI dans Strava** :
    - En développement : `http://localhost:5173/auth/strava/callback`
    - En production : `https://vizion-blush.vercel.app/auth/strava/callback`
    - ⚠️ La Redirect URI doit correspondre **exactement** à celle configurée dans Strava
 
-3. **Variables d'environnement** :
-   - Créer un fichier `.env` à partir de `.env.example`
-   - Remplir `VITE_STRAVA_CLIENT_ID` et `VITE_STRAVA_CLIENT_SECRET`
-   - ⚠️ En production, le `client_secret` ne doit **jamais** être exposé côté client
-   - Pour la production, créer un endpoint backend sécurisé pour l'échange du code
+3. **Variables d'environnement Vercel** :
+   - Aller dans Vercel > Settings > Environment Variables
+   - Ajouter les variables suivantes (déjà configurées pour `portfolio-react-anthony`) :
+     - `STRAVA_CLIENT_ID` : Votre Client ID Strava
+     - `STRAVA_CLIENT_SECRET` : Votre Client Secret Strava
+   - ⚠️ Ces variables sont sécurisées côté serveur (endpoints API Vercel)
+
+4. **Développement local** :
+   - Créer un fichier `.env.local` à partir de `.env.example`
+   - Remplir `STRAVA_CLIENT_ID` et `STRAVA_CLIENT_SECRET` pour le développement local
+   - Les endpoints API utiliseront ces variables en local
 
 ### Flow OAuth
 

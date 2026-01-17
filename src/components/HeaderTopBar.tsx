@@ -8,8 +8,8 @@ type HeaderTopBarProps = {
 }
 
 export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
-  const handleStravaConnect = () => {
-    redirectToStravaAuth()
+  const handleStravaConnect = async () => {
+    await redirectToStravaAuth()
   }
 
   return (

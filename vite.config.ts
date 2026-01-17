@@ -74,57 +74,113 @@ export default defineConfig({
         })
       },
     },
-    {
-      name: 'strava-token',
-      configureServer(server) {
-        server.middlewares.use('/api/strava/token', async (req, res) => {
-          if (req.method !== 'POST') {
-            res.statusCode = 405
-            res.end('Method Not Allowed')
-            return
-          }
+      {
+        name: 'strava-api',
+        configureServer(server) {
+          // Endpoint pour récupérer la config Strava (client_id uniquement)
+          server.middlewares.use('/api/strava/config', async (req, res) => {
+            if (req.method !== 'GET') {
+              res.statusCode = 405
+              res.end('Method Not Allowed')
+              return
+            }
 
-          const chunks: Buffer[] = []
-          req.on('data', (chunk) => chunks.push(chunk))
-          req.on('end', async () => {
-            try {
-              const body = Buffer.concat(chunks).toString('utf-8')
-              const payload = JSON.parse(body) as { code: string; client_id: string; client_secret: string }
+            const clientId = process.env.STRAVA_CLIENT_ID || ''
 
-              // Échanger le code contre un token via l'API Strava
-              const tokenResponse = await fetch('https://www.strava.com/oauth/token', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  client_id: payload.client_id,
-                  client_secret: payload.client_secret,
-                  code: payload.code,
-                  grant_type: 'authorization_code',
-                }),
-              })
-
-              if (!tokenResponse.ok) {
-                const errorText = await tokenResponse.text()
-                res.statusCode = tokenResponse.status
-                res.setHeader('Content-Type', 'application/json')
-                res.end(JSON.stringify({ error: errorText }))
-                return
-              }
-
-              const tokenData = await tokenResponse.json()
-              res.setHeader('Content-Type', 'application/json')
-              res.end(JSON.stringify(tokenData))
-            } catch (error) {
+            if (!clientId) {
               res.statusCode = 500
               res.setHeader('Content-Type', 'application/json')
-              res.end(JSON.stringify({ error: 'Token exchange failed' }))
+              res.end(JSON.stringify({ error: 'STRAVA_CLIENT_ID not configured' }))
+              return
             }
+
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ client_id: clientId }))
           })
-        })
+
+          // Endpoint pour échanger le code OAuth
+          server.middlewares.use('/api/strava/token', async (req, res) => {
+            if (req.method !== 'POST') {
+              res.statusCode = 405
+              res.end('Method Not Allowed')
+              return
+            }
+
+            const chunks: Buffer[] = []
+            req.on('data', (chunk) => chunks.push(chunk))
+            req.on('end', async () => {
+              try {
+                const body = Buffer.concat(chunks).toString('utf-8')
+                const payload = JSON.parse(body) as { code: string }
+
+                if (!payload.code) {
+                  res.statusCode = 400
+                  res.setHeader('Content-Type', 'application/json')
+                  res.end(JSON.stringify({ error: 'Missing code parameter' }))
+                  return
+                }
+
+                const clientId = process.env.STRAVA_CLIENT_ID || ''
+                const clientSecret = process.env.STRAVA_CLIENT_SECRET || ''
+
+                if (!clientId || !clientSecret) {
+                  res.statusCode = 500
+                  res.setHeader('Content-Type', 'application/json')
+                  res.end(JSON.stringify({ error: 'Strava credentials not configured' }))
+                  return
+                }
+
+                // Échanger le code contre un token via l'API Strava
+                const tokenResponse = await fetch('https://www.strava.com/oauth/token', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    client_id: clientId,
+                    client_secret: clientSecret,
+                    code: payload.code,
+                    grant_type: 'authorization_code',
+                  }),
+                })
+
+                if (!tokenResponse.ok) {
+                  const errorText = await tokenResponse.text()
+                  res.statusCode = tokenResponse.status
+                  res.setHeader('Content-Type', 'application/json')
+                  res.end(JSON.stringify({ error: errorText }))
+                  return
+                }
+
+                const tokenData = (await tokenResponse.json()) as {
+                  access_token: string
+                  refresh_token: string
+                  expires_at: number
+                  athlete: {
+                    id: number
+                    username: string
+                    firstname: string
+                    lastname: string
+                  }
+                }
+                res.setHeader('Content-Type', 'application/json')
+                res.end(
+                  JSON.stringify({
+                    access_token: tokenData.access_token,
+                    refresh_token: tokenData.refresh_token,
+                    expires_at: tokenData.expires_at,
+                    athlete: tokenData.athlete,
+                  })
+                )
+              } catch (error) {
+                res.statusCode = 500
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify({ error: 'Token exchange failed' }))
+              }
+            })
+          })
+        },
       },
-    },
   ],
   resolve: {
     alias: {
