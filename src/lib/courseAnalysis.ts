@@ -156,10 +156,10 @@ export function analyzeCourseReadiness(
   }
 
   // === ANALYSE SORTIES LONGUES ===
-  const longRunThreshold = course.distanceKm * 0.4 // 40% de la distance de course
-  if (metrics.longRunDistanceKm < longRunThreshold) {
-    issues.push(`Sortie longue max (${metrics.longRunDistanceKm} km) < 40% de la course (${Math.round(longRunThreshold)} km)`)
-    recommendations.push(`Planifier des sorties longues progressives : objectif ${Math.round(longRunThreshold)} km`)
+  const longRunThresholdMin = course.distanceKm * 0.4 // 40% de la distance de course
+  if (metrics.longRunDistanceKm < longRunThresholdMin) {
+    issues.push(`Sortie longue max (${metrics.longRunDistanceKm} km) < 40% de la course (${Math.round(longRunThresholdMin)} km)`)
+    recommendations.push(`Planifier des sorties longues progressives : objectif ${Math.round(longRunThresholdMin)} km`)
   } else {
     strengths.push(`Sorties longues adaptées (max ${metrics.longRunDistanceKm} km)`)
   }
@@ -294,11 +294,41 @@ export function analyzeCourseReadiness(
   }
 
   // === GÉNÉRATION DU RÉSUMÉ EN 1 PHRASE ===
-  // Calculer le ratio de couverture de manière plus précise
-  const distanceCoverage = Math.min(1, weeklyDistanceKm / courseWeeklyEquivalent)
-  const elevationCoverage = Math.min(1, weeklyElevationGain / courseWeeklyDPlus)
-  const regularityScore = regularity === 'bonne' ? 1 : regularity === 'moyenne' ? 0.6 : 0.3
-  const coverageRatio = Math.round((distanceCoverage * 0.4 + elevationCoverage * 0.4 + regularityScore * 0.2) * 100)
+  // Calculer le ratio de couverture de manière plus réaliste et progressive
+  // On considère qu'à 6 mois de la course, on n'a pas besoin de 100% des exigences
+  // Un entraînement sérieux couvre typiquement 50-70% des exigences à 6 mois
+  
+  // 1. Score de distance (progression : 30% à 6 mois = bon niveau)
+  // Pour le Grand Raid (175 km), un coureur sérieux fait ~20-30 km/semaine à 6 mois
+  const targetDistanceWeekly = courseWeeklyEquivalent * 0.5 // Objectif réaliste : 50% de l'exigence à 6 mois
+  const distanceCoverage = Math.min(1, (weeklyDistanceKm / targetDistanceWeekly) * 0.7) // Plafond à 70% même si excellent
+  
+  // 2. Score de D+ (progression : 30% à 6 mois = bon niveau)
+  // Pour le Grand Raid (10150 D+), un coureur sérieux fait ~1500-2000 m/semaine à 6 mois
+  const targetDPlusWeekly = courseWeeklyDPlus * 0.5 // Objectif réaliste : 50% de l'exigence à 6 mois
+  const elevationCoverage = Math.min(1, (weeklyElevationGain / targetDPlusWeekly) * 0.7) // Plafond à 70%
+  
+  // 3. Score de sortie longue (40% de la distance = seuil minimal réaliste)
+  const longRunThreshold = course.distanceKm * 0.4
+  const longRunCoverage = Math.min(1, metrics.longRunDistanceKm / longRunThreshold)
+  
+  // 4. Score de D+ max (avoir fait au moins 60% du D+ de course en une sortie)
+  const dPlusThreshold = course.elevationGain * 0.6
+  const dPlusMaxCoverage = Math.min(1, metrics.longRunDPlus / dPlusThreshold)
+  
+  // 5. Score de régularité
+  const regularityScore = regularity === 'bonne' ? 1 : regularity === 'moyenne' ? 0.8 : 0.6 // Moins pénalisant
+  
+  // Calcul du ratio global avec pondération plus équilibrée
+  // Distance: 25%, D+: 25%, Sortie longue: 20%, D+ max: 15%, Régularité: 15%
+  const coverageRatio = Math.round(
+    (distanceCoverage * 0.25 +
+      elevationCoverage * 0.25 +
+      longRunCoverage * 0.20 +
+      dPlusMaxCoverage * 0.15 +
+      regularityScore * 0.15) *
+      100
+  )
 
   let summary = ''
   // Affiner le résumé avec les stats du Grand Raid si disponibles
@@ -424,9 +454,10 @@ export function analyzeCourseReadiness(
   }
 
   // === VERDICT DU COACH (phrases dynamiques) ===
+  // Utiliser le coverageRatio déjà calculé plus haut (ligne 324)
   let coachVerdict: string | undefined
   if (metrics && timeEstimate) {
-    const coverageRatio = Math.round((distanceCoverage * 0.4 + elevationCoverage * 0.4 + regularityScore * 0.2) * 100)
+    // coverageRatio est déjà calculé ligne 324 avec la nouvelle logique
     
     if (readiness === 'ready') {
       // Phrases positives

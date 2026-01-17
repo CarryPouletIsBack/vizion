@@ -34,6 +34,8 @@ type CoursesPageProps = {
 /**
  * Calcule le taux de progression (niveau actuel vs exigences de la course)
  * Retourne un pourcentage entre 0 et 100
+ * 
+ * Logique révisée : à 6 mois, un entraînement sérieux couvre ~50% des exigences finales
  */
 function calculateReadinessPercentage(
   metrics: { kmPerWeek: number; dPlusPerWeek: number; longRunDistanceKm: number; longRunDPlus: number; regularity: 'bonne' | 'moyenne' | 'faible' } | null,
@@ -44,32 +46,35 @@ function calculateReadinessPercentage(
     return 0 // Pas de données = 0%
   }
 
-  // Calculer les exigences hebdomadaires pour être prêt en 6 semaines
+  // Objectif réaliste à 6 mois : 50% des exigences hebdomadaires finales
   const courseWeeklyEquivalent = courseDistanceKm / 6
   const courseWeeklyDPlus = courseElevationGain / 6
+  const targetDistanceWeekly = courseWeeklyEquivalent * 0.5 // Objectif réaliste à 6 mois
+  const targetDPlusWeekly = courseWeeklyDPlus * 0.5 // Objectif réaliste à 6 mois
 
-  // Calculer les ratios de couverture
-  const distanceCoverage = Math.min(1, metrics.kmPerWeek / courseWeeklyEquivalent)
-  const elevationCoverage = Math.min(1, metrics.dPlusPerWeek / courseWeeklyDPlus)
+  // Calculer les ratios de couverture (plafonnés à 100% pour éviter sur-évaluation)
+  const distanceCoverage = Math.min(1, (metrics.kmPerWeek / targetDistanceWeekly) * 0.7)
+  const elevationCoverage = Math.min(1, (metrics.dPlusPerWeek / targetDPlusWeekly) * 0.7)
   
-  // Score de régularité
-  const regularityScore = metrics.regularity === 'bonne' ? 1 : metrics.regularity === 'moyenne' ? 0.6 : 0.3
+  // Score de régularité (moins pénalisant)
+  const regularityScore = metrics.regularity === 'bonne' ? 1 : metrics.regularity === 'moyenne' ? 0.8 : 0.6
 
-  // Score de sortie longue (40% de la distance de course)
+  // Score de sortie longue (40% de la distance de course = seuil minimal)
   const longRunThreshold = courseDistanceKm * 0.4
   const longRunScore = metrics.longRunDistanceKm >= longRunThreshold ? 1 : Math.min(1, metrics.longRunDistanceKm / longRunThreshold)
 
-  // Score de D+ max
-  const dPlusMaxScore = metrics.longRunDPlus >= courseElevationGain ? 1 : Math.min(1, metrics.longRunDPlus / courseElevationGain)
+  // Score de D+ max (60% du D+ de course = objectif réaliste)
+  const dPlusThreshold = courseElevationGain * 0.6
+  const dPlusMaxScore = metrics.longRunDPlus >= dPlusThreshold ? 1 : Math.min(1, metrics.longRunDPlus / dPlusThreshold)
 
-  // Calculer le pourcentage global (pondération)
-  // Distance: 30%, D+: 30%, Régularité: 20%, Sortie longue: 10%, D+ max: 10%
+  // Calculer le pourcentage global (pondération équilibrée)
+  // Distance: 25%, D+: 25%, Sortie longue: 20%, D+ max: 15%, Régularité: 15%
   const coverageRatio = Math.round(
-    (distanceCoverage * 0.3 +
-      elevationCoverage * 0.3 +
-      regularityScore * 0.2 +
-      longRunScore * 0.1 +
-      dPlusMaxScore * 0.1) *
+    (distanceCoverage * 0.25 +
+      elevationCoverage * 0.25 +
+      longRunScore * 0.20 +
+      dPlusMaxScore * 0.15 +
+      regularityScore * 0.15) *
       100
   )
 
