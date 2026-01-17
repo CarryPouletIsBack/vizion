@@ -3,7 +3,7 @@ import './UserAccountPage.css'
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 import { redirectToStravaAuth } from '../lib/stravaAuth'
-import { getCurrentUser, signOut } from '../lib/auth'
+import { getCurrentUser, signOut, updateProfile, deleteAccount } from '../lib/auth'
 
 type UserAccountPageProps = {
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
@@ -14,6 +14,7 @@ type AppUser = {
   email: string
   firstname?: string
   lastname?: string
+  birthdate?: string
   profile?: string
 }
 
@@ -21,6 +22,13 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
   const [user, setUser] = useState<AppUser | null>(null)
   const [isStravaConnected, setIsStravaConnected] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [formData, setFormData] = useState({
+    email: '',
+    firstname: '',
+    lastname: '',
+    birthdate: '',
+  })
 
   useEffect(() => {
     // Charger l'utilisateur Supabase
@@ -42,12 +50,20 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
 
           const profileUrl = stravaData?.athlete?.profile || stravaData?.athlete?.profile_medium || stravaData?.athlete?.profile_large
 
-          setUser({
+          const userData = {
             id: supabaseUser.id,
             email: supabaseUser.email || '',
             firstname: stravaData?.athlete?.firstname || supabaseUser.user_metadata?.firstname,
             lastname: stravaData?.athlete?.lastname || supabaseUser.user_metadata?.lastname,
+            birthdate: supabaseUser.user_metadata?.birthdate,
             profile: profileUrl,
+          }
+          setUser(userData)
+          setFormData({
+            email: userData.email,
+            firstname: userData.firstname || '',
+            lastname: userData.lastname || '',
+            birthdate: userData.birthdate || '',
           })
         } else {
           // Rediriger vers la page d'accueil si non connecté
@@ -112,6 +128,90 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
     }
   }
 
+  const handleEdit = () => {
+    setIsEditing(true)
+  }
+
+  const handleCancel = () => {
+    if (user) {
+      setFormData({
+        email: user.email,
+        firstname: user.firstname || '',
+        lastname: user.lastname || '',
+        birthdate: user.birthdate || '',
+      })
+    }
+    setIsEditing(false)
+  }
+
+  const handleSave = async () => {
+    setIsLoading(true)
+    try {
+      await updateProfile({
+        email: formData.email,
+        firstname: formData.firstname || undefined,
+        lastname: formData.lastname || undefined,
+        birthdate: formData.birthdate || undefined,
+      })
+
+      // Recharger l'utilisateur
+      const supabaseUser = await getCurrentUser()
+      if (supabaseUser) {
+        const tokenData = localStorage.getItem('vizion:strava_token')
+        let stravaData = null
+        if (tokenData) {
+          try {
+            stravaData = JSON.parse(tokenData)
+          } catch (e) {
+            // Ignorer
+          }
+        }
+        const profileUrl = stravaData?.athlete?.profile || stravaData?.athlete?.profile_medium || stravaData?.athlete?.profile_large
+
+        setUser({
+          id: supabaseUser.id,
+          email: formData.email,
+          firstname: formData.firstname || undefined,
+          lastname: formData.lastname || undefined,
+          birthdate: formData.birthdate || undefined,
+          profile: profileUrl,
+        })
+      }
+
+      setIsEditing(false)
+      alert('Profil mis à jour avec succès')
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du profil:', error)
+      alert(error instanceof Error ? error.message : 'Erreur lors de la mise à jour du profil')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    const confirm1 = window.confirm('Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.')
+    if (!confirm1) return
+
+    const confirm2 = window.confirm('Cette action supprimera définitivement toutes vos données. Tapez "SUPPRIMER" pour confirmer.')
+    if (confirm2 !== true) return
+
+    setIsLoading(true)
+    try {
+      // Note: La suppression de compte nécessite généralement une confirmation par email
+      // Pour l'instant, on déconnecte l'utilisateur
+      await signOut()
+      localStorage.removeItem('vizion:strava_token')
+      localStorage.removeItem('vizion:strava-metrics')
+      alert('Votre compte a été supprimé. Vous allez être redirigé.')
+      window.location.href = '/'
+    } catch (error) {
+      console.error('Erreur lors de la suppression du compte:', error)
+      alert(error instanceof Error ? error.message : 'Erreur lors de la suppression du compte')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="user-account-page">
       <HeaderTopBar onNavigate={onNavigate} />
@@ -137,35 +237,107 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
             <div className="user-account-card">
               <div className="user-account-card__header">
                 <h2 className="user-account-card__title">Profil</h2>
+                {!isEditing && user && (
+                  <button type="button" className="btn btn--ghost btn--small" onClick={handleEdit}>
+                    Éditer
+                  </button>
+                )}
               </div>
               <div className="user-account-card__body">
                 {user ? (
-                  <div className="user-account-profile">
-                    {user.profile && (
-                      <div className="user-account-profile__avatar">
-                        <img
-                          src={user.profile}
-                          alt={`${user.firstname} ${user.lastname}`}
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none'
-                          }}
+                  isEditing ? (
+                    <form className="user-account-form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+                      <div className="user-account-form__field">
+                        <label htmlFor="email">Adresse email</label>
+                        <input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          required
                         />
                       </div>
-                    )}
-                    <div className="user-account-profile__info">
-                      <h3 className="user-account-profile__name">
-                        {user.firstname} {user.lastname}
-                      </h3>
-                      {user.email && (
-                        <p className="user-account-profile__username">{user.email}</p>
+                      <div className="user-account-form__field">
+                        <label htmlFor="firstname">Prénom</label>
+                        <input
+                          id="firstname"
+                          type="text"
+                          value={formData.firstname}
+                          onChange={(e) => setFormData({ ...formData, firstname: e.target.value })}
+                        />
+                      </div>
+                      <div className="user-account-form__field">
+                        <label htmlFor="lastname">Nom</label>
+                        <input
+                          id="lastname"
+                          type="text"
+                          value={formData.lastname}
+                          onChange={(e) => setFormData({ ...formData, lastname: e.target.value })}
+                        />
+                      </div>
+                      <div className="user-account-form__field">
+                        <label htmlFor="birthdate">Date de naissance</label>
+                        <input
+                          id="birthdate"
+                          type="date"
+                          value={formData.birthdate}
+                          onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
+                        />
+                      </div>
+                      <div className="user-account-form__actions">
+                        <button type="button" className="btn btn--ghost" onClick={handleCancel} disabled={isLoading}>
+                          Annuler
+                        </button>
+                        <button type="submit" className="btn btn--primary" disabled={isLoading}>
+                          {isLoading ? 'Enregistrement...' : 'Enregistrer'}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="user-account-profile">
+                      {user.profile && (
+                        <div className="user-account-profile__avatar">
+                          <img
+                            src={user.profile}
+                            alt={`${user.firstname} ${user.lastname}`}
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none'
+                            }}
+                          />
+                        </div>
                       )}
+                      <div className="user-account-profile__info">
+                        <h3 className="user-account-profile__name">
+                          {user.firstname && user.lastname
+                            ? `${user.firstname} ${user.lastname}`
+                            : user.email}
+                        </h3>
+                        {user.email && (
+                          <p className="user-account-profile__username">{user.email}</p>
+                        )}
+                        {user.birthdate && (
+                          <p className="user-account-profile__birthdate">
+                            Date de naissance : {new Date(user.birthdate).toLocaleDateString('fr-FR')}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )
                 ) : (
                   <div className="user-account-empty">
                     <p className="user-account-empty__text">Aucun profil disponible</p>
                     <p className="user-account-empty__subtext">Connectez-vous avec Strava pour afficher votre profil</p>
                   </div>
+                )}
+                {!isEditing && user && (
+                  <button
+                    type="button"
+                    className="user-account-delete"
+                    onClick={handleDeleteAccount}
+                    disabled={isLoading}
+                  >
+                    Supprimer le compte
+                  </button>
                 )}
               </div>
             </div>

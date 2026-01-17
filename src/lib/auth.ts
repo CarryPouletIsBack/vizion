@@ -61,3 +61,61 @@ export function onAuthStateChange(callback: (user: any) => void) {
     callback(session?.user ?? null)
   })
 }
+
+/**
+ * Mettre à jour le profil utilisateur
+ */
+export async function updateProfile(data: {
+  email?: string
+  firstname?: string
+  lastname?: string
+  birthdate?: string
+}) {
+  const updates: any = {}
+
+  // Mettre à jour l'email si fourni
+  if (data.email) {
+    const { error: emailError } = await supabase.auth.updateUser({ email: data.email })
+    if (emailError) {
+      throw new Error(emailError.message)
+    }
+  }
+
+  // Mettre à jour les métadonnées utilisateur
+  if (data.firstname || data.lastname || data.birthdate) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      throw new Error('Utilisateur non trouvé')
+    }
+
+    const currentMetadata = user.user_metadata || {}
+    updates.user_metadata = {
+      ...currentMetadata,
+      ...(data.firstname !== undefined && { firstname: data.firstname }),
+      ...(data.lastname !== undefined && { lastname: data.lastname }),
+      ...(data.birthdate !== undefined && { birthdate: data.birthdate }),
+    }
+  }
+
+  if (Object.keys(updates).length > 0) {
+    const { error } = await supabase.auth.updateUser(updates)
+    if (error) {
+      throw new Error(error.message)
+    }
+  }
+}
+
+/**
+ * Supprimer le compte utilisateur
+ */
+export async function deleteAccount() {
+  const { error } = await supabase.auth.admin.deleteUser(
+    (await supabase.auth.getUser()).data.user?.id || ''
+  )
+  
+  if (error) {
+    // Si l'admin API n'est pas disponible, utiliser l'API publique
+    // Note: Cela nécessite généralement une confirmation par email
+    throw new Error('La suppression de compte nécessite une confirmation. Contactez le support.')
+  }
+}
