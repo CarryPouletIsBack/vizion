@@ -45,6 +45,7 @@ export type CourseAnalysis = {
     }
   }
   timeEstimate?: TimeEstimate // Estimation du temps de course
+  coachVerdict?: string // Verdict du coach (phrase dynamique)
 }
 
 /**
@@ -422,6 +423,41 @@ export function analyzeCourseReadiness(
     timeEstimate = undefined
   }
 
+  // === VERDICT DU COACH (phrases dynamiques) ===
+  let coachVerdict: string | undefined
+  if (metrics && timeEstimate) {
+    const coverageRatio = Math.round((distanceCoverage * 0.4 + elevationCoverage * 0.4 + regularityScore * 0.2) * 100)
+    
+    if (readiness === 'ready') {
+      // Phrases positives
+      if (coverageRatio >= 90) {
+        coachVerdict = `Ta base d'endurance est solide pour finir dans le top 20%. Continue sur cette lancée.`
+      } else if (regularity === 'bonne') {
+        coachVerdict = `Ta régularité est excellente. Avec ${coverageRatio}% de couverture, tu as toutes les chances de finir.`
+      } else {
+        coachVerdict = `Tu es sur la bonne voie. Maintiens ta régularité et tu finiras cette course.`
+      }
+    } else if (readiness === 'needs_work') {
+      // Phrases d'alerte modérée
+      if (metrics.longRunDistanceKm < course.distanceKm * 0.4) {
+        coachVerdict = `Attention, tu manques de sorties longues. Ton simulateur prévoit une baisse de performance après ${Math.round(course.distanceKm * 0.6)} km.`
+      } else if (regularity === 'faible') {
+        coachVerdict = `Ta régularité est insuffisante. Augmente la fréquence à 3-4 sorties par semaine pour améliorer tes chances.`
+      } else {
+        coachVerdict = `À ${coverageRatio}% de couverture, tu peux finir mais avec effort. Augmente progressivement ton volume.`
+      }
+    } else {
+      // Phrases d'alerte forte
+      if (timeEstimate.totalHours > 20) {
+        coachVerdict = `⚠️ Temps estimé : ${timeEstimate.rangeFormatted}. Attention, tu manques de sorties longues de nuit. Ton simulateur prévoit une baisse de 15% de ta vitesse après 22h.`
+      } else if (coverageRatio < 50) {
+        coachVerdict = `🚨 Ton niveau actuel couvre seulement ${coverageRatio}% des exigences. Un plan d'action immédiat est nécessaire pour éviter l'abandon.`
+      } else {
+        coachVerdict = `⚠️ À ${coverageRatio}% de couverture, tu es en zone de risque. Augmente rapidement ton volume et tes sorties longues.`
+      }
+    }
+  }
+
   return {
     readiness,
     readinessLabel,
@@ -451,5 +487,6 @@ export function analyzeCourseReadiness(
       ifFollowsGoals: projectionIfFollows,
     },
     timeEstimate,
+    coachVerdict,
   }
 }

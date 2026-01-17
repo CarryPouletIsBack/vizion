@@ -13,6 +13,8 @@ export type TimeEstimateParams = {
   bagWeight?: number // Poids du sac en kg (optionnel)
   refuelStops?: number // Nombre de ravitaillements (optionnel)
   refuelTimePerStop?: number // Temps par ravitaillement en minutes (optionnel)
+  fitnessLevel?: number // État de forme (50-120%, 100% = normal) (optionnel)
+  technicalIndex?: 'good' | 'average' | 'cautious' // Index de technicité en descente (optionnel)
 }
 
 export type TimeEstimate = {
@@ -70,15 +72,28 @@ export function estimateTrailTime(
     bagWeight = 0, // Poids du sac par défaut : 0 kg
     refuelStops = 0,
     refuelTimePerStop = 2, // 2 minutes par ravitaillement par défaut
+    fitnessLevel = 100, // État de forme par défaut : 100% (normal)
+    technicalIndex = 'average', // Technicité par défaut : moyenne
   } = params
 
   // 1. Allure de base
-  const basePace = basePaceMinPerKm || calculateBasePaceFromMetrics(metrics)
+  let basePace = basePaceMinPerKm || calculateBasePaceFromMetrics(metrics)
+  
+  // Ajuster l'allure selon l'état de forme (50-120%)
+  // 100% = normal, <100% = moins en forme (plus lent), >100% = meilleure forme (plus rapide)
+  const fitnessMultiplier = fitnessLevel / 100
+  basePace = basePace / fitnessMultiplier // Diviser = aller plus vite (moins de min/km)
 
   // 2. Ajustement pour le dénivelé
   // +1,5% de temps par tranche de 1000m de dénivelé
   const elevationFactor = 1 + 0.015 * (elevationGain / 1000)
   let adjustedPace = basePace * elevationFactor
+  
+  // Ajustement pour la technicité en descente
+  // Les descentes représentent environ 40% du dénivelé total
+  const descentFactor = technicalIndex === 'good' ? 0.95 : technicalIndex === 'cautious' ? 1.1 : 1.0
+  // Ajuster seulement la partie descente (40% du dénivelé)
+  adjustedPace = adjustedPace * (1 - 0.4 + 0.4 * descentFactor)
 
   // 3. Ajustement pour la distance
   // Pour chaque tranche de 40 km, on retire 1 km/h à la vitesse

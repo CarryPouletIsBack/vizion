@@ -4,6 +4,7 @@ import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 import SingleCourseElevationChart from '../components/SingleCourseElevationChart'
+import SimulationEngine from '../components/SimulationEngine'
 import useGpxHoverMarker from '../hooks/useGpxHoverMarker'
 import useStravaMetrics from '../hooks/useStravaMetrics'
 import { analyzeCourseReadiness } from '../lib/courseAnalysis'
@@ -286,6 +287,16 @@ export default function SingleCoursePage({
                         Basé sur ton allure actuelle, le dénivelé et la distance (fourchette indicative)
                       </p>
                     </div>
+                  )}
+                  
+                  {/* Moteur de Simulation */}
+                  {analysis.timeEstimate && (
+                    <SimulationEngine
+                      distanceKm={courseData.distanceKm}
+                      elevationGain={courseData.elevationGain}
+                      metrics={metrics}
+                      baseTimeEstimate={analysis.timeEstimate}
+                    />
                   )}
                 </div>
 
