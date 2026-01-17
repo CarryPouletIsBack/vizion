@@ -38,6 +38,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (routeResponse.status === 404) {
         return res.status(404).json({ error: 'Route not found' })
       }
+      if (routeResponse.status === 429) {
+        // Rate limit atteint
+        const retryAfter = routeResponse.headers.get('Retry-After') || '60'
+        return res.status(429).json({
+          error: 'Rate limit exceeded',
+          retryAfter: parseInt(retryAfter, 10),
+          message: 'Limite de requêtes Strava atteinte. Veuillez réessayer plus tard.',
+        })
+      }
       const errorText = await routeResponse.text()
       return res.status(routeResponse.status).json({ error: errorText })
     }

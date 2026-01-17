@@ -3,6 +3,10 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 /**
  * Endpoint API pour récupérer les activités Strava de l'utilisateur
  * Utilise le token stocké dans la requête (via Authorization header)
+ * 
+ * Gestion des rate limits Strava :
+ * - 100 requêtes / 15 minutes
+ * - 1000 requêtes / jour
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -24,9 +28,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let page = 1
     const now = Date.now()
     const twelveWeeksAgo = now - 12 * 7 * 24 * 60 * 60 * 1000
+    const maxPages = 5 // Limiter à 5 pages max pour éviter trop d'appels (1000 activités max)
 
     // Récupérer toutes les activités des 12 dernières semaines
-    while (true) {
+    while (page <= maxPages) {
       const response = await fetch(
         `https://www.strava.com/api/v3/athlete/activities?page=${page}&per_page=${perPage}`,
         {
@@ -40,8 +45,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (response.status === 401) {
           return res.status(401).json({ error: 'Token expired or invalid' })
         }
+        if (response.status === 429) {
+          // Rate limit atteint
+          const retryAfter = response.headers.get('Retry-After') || '60'
+          return res.status(429).json({
+            error: 'Rate limit exceeded',
+            retryAfter: parseInt(retryAfter, 10),
+            message: 'Limite de requêtes Strava atteinte. Veuillez réessayer plus tard.',
+          })
+        }
         const errorText = await response.text()
         return res.status(response.status).json({ error: errorText })
+      }
+
+      // Vérifier les headers de rate limit
+      const rateLimitLimit = response.headers.get('X-RateLimit-Limit')
+      const rateLimitUsage = response.headers.get('X-RateLimit-Usage')
+      if (rateLimitLimit && rateLimitUsage) {
+        const usage = parseInt(rateLimitUsage.split(',')[0], 10) // Premier nombre = usage sur 15 min
+        const limit = parseInt(rateLimitLimit.split(',')[0], 10)
+        if (usage >= limit * 0.9) {
+          // On approche de la limite, on arrête ici
+          console.warn(`Rate limit Strava approché: ${usage}/${limit}`)
+          break
+        }
       }
 
       const pageActivities = await response.json()

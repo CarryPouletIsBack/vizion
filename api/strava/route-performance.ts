@@ -31,16 +31,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
     })
 
-    if (!routeResponse.ok) {
-      if (routeResponse.status === 401) {
-        return res.status(401).json({ error: 'Token expired or invalid' })
+      if (!routeResponse.ok) {
+        if (routeResponse.status === 401) {
+          return res.status(401).json({ error: 'Token expired or invalid' })
+        }
+        if (routeResponse.status === 404) {
+          return res.status(404).json({ error: 'Route not found' })
+        }
+        if (routeResponse.status === 429) {
+          // Rate limit atteint
+          const retryAfter = routeResponse.headers.get('Retry-After') || '60'
+          return res.status(429).json({
+            error: 'Rate limit exceeded',
+            retryAfter: parseInt(retryAfter, 10),
+            message: 'Limite de requêtes Strava atteinte. Veuillez réessayer plus tard.',
+          })
+        }
+        const errorText = await routeResponse.text()
+        return res.status(routeResponse.status).json({ error: errorText })
       }
-      if (routeResponse.status === 404) {
-        return res.status(404).json({ error: 'Route not found' })
-      }
-      const errorText = await routeResponse.text()
-      return res.status(routeResponse.status).json({ error: errorText })
-    }
 
     const route = await routeResponse.json()
 
@@ -97,8 +106,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const twelveMonthsAgo = Date.now() - 12 * 30 * 24 * 60 * 60 * 1000
     let page = 1
     const perPage = 200
+    const maxPages = 3 // Limiter à 3 pages (600 activités max) pour éviter trop de requêtes
+    const maxActivitiesToProcess = 10 // Limiter le nombre d'activités à traiter en détail
 
-    while (true) {
+    while (page <= maxPages) {
       const activitiesResponse = await fetch(
         `https://www.strava.com/api/v3/athlete/activities?page=${page}&per_page=${perPage}`,
         {
@@ -112,6 +123,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (activitiesResponse.status === 401) {
           return res.status(401).json({ error: 'Token expired or invalid' })
         }
+        if (activitiesResponse.status === 429) {
+          // Rate limit atteint
+          const retryAfter = activitiesResponse.headers.get('Retry-After') || '60'
+          return res.status(429).json({
+            error: 'Rate limit exceeded',
+            retryAfter: parseInt(retryAfter, 10),
+            message: 'Limite de requêtes Strava atteinte. Veuillez réessayer plus tard.',
+          })
+        }
         break
       }
 
@@ -124,8 +144,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return act.type === 'Run' && activityDate >= twelveMonthsAgo
       })
 
-      // Pour chaque activité, récupérer les segment efforts
-      for (const activity of filtered) {
+      // Pour chaque activité, récupérer les segment efforts (limité pour éviter trop d'appels)
+      for (const activity of filtered.slice(0, maxActivitiesToProcess)) {
+        // Si on a déjà assez d'activités, arrêter
+        if (activities.length >= maxActivitiesToProcess) break
+
         try {
           const activityDetailsResponse = await fetch(
             `https://www.strava.com/api/v3/activities/${activity.id}?include_all_efforts=true`,
@@ -136,48 +159,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
           )
 
-          if (activityDetailsResponse.ok) {
-            const activityDetails = await activityDetailsResponse.json()
-            const segmentEfforts = activityDetails.segment_efforts || []
-
-            // Filtrer les segments qui correspondent à la route
-            const matchingEfforts = segmentEfforts
-              .filter((effort: any) => routeSegments.some((seg) => seg.id === effort.segment.id))
-              .map((effort: any) => ({
-                segment: {
-                  id: effort.segment.id,
-                  name: effort.segment.name,
-                },
-                elapsed_time: effort.elapsed_time,
-                distance: effort.distance,
-                average_grade: effort.segment.average_grade || 0,
-              }))
-
-            if (matchingEfforts.length > 0) {
-              activities.push({
-                id: activity.id,
-                name: activity.name,
-                start_date: activity.start_date,
-                distance: activity.distance,
-                moving_time: activity.moving_time,
-                total_elevation_gain: activity.total_elevation_gain,
-                segment_efforts: matchingEfforts,
-              })
+          if (!activityDetailsResponse.ok) {
+            if (activityDetailsResponse.status === 429) {
+              // Rate limit atteint, arrêter le traitement
+              console.warn('Rate limit atteint lors de la récupération des détails d\'activité')
+              break
             }
+            continue
+          }
+
+          const activityDetails = await activityDetailsResponse.json()
+          const segmentEfforts = activityDetails.segment_efforts || []
+
+          // Filtrer les segments qui correspondent à la route
+          const matchingEfforts = segmentEfforts
+            .filter((effort: any) => routeSegments.some((seg) => seg.id === effort.segment.id))
+            .map((effort: any) => ({
+              segment: {
+                id: effort.segment.id,
+                name: effort.segment.name,
+              },
+              elapsed_time: effort.elapsed_time,
+              distance: effort.distance,
+              average_grade: effort.segment.average_grade || 0,
+            }))
+
+          if (matchingEfforts.length > 0) {
+            activities.push({
+              id: activity.id,
+              name: activity.name,
+              start_date: activity.start_date,
+              distance: activity.distance,
+              moving_time: activity.moving_time,
+              total_elevation_gain: activity.total_elevation_gain,
+              segment_efforts: matchingEfforts,
+            })
           }
         } catch (error) {
           console.error(`Erreur lors de la récupération de l'activité ${activity.id}:`, error)
         }
       }
 
+      // Si on a déjà assez d'activités, arrêter la pagination
+      if (activities.length >= maxActivitiesToProcess) break
+
       const lastActivityDate = new Date(pageActivities[pageActivities.length - 1].start_date).getTime()
       if (lastActivityDate < twelveMonthsAgo) break
 
       page += 1
-      if (page > 5) break // Limiter à 5 pages (1000 activités max) pour éviter trop de requêtes
-      
-      // Limiter aussi le nombre d'activités traitées pour éviter trop d'appels API
-      if (activities.length >= 20) break // Arrêter après 20 activités avec segments correspondants
     }
 
     // 4. Analyser les performances par segment
