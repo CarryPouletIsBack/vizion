@@ -180,6 +180,9 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
             profile,
             stravaRouteId: course.strava_route_id || undefined,
             stravaSegments,
+            startCoordinates: course.start_coordinates && Array.isArray(course.start_coordinates) && course.start_coordinates.length === 2
+              ? [course.start_coordinates[0], course.start_coordinates[1]] as [number, number]
+              : undefined,
           })
         }
       })
