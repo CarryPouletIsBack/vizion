@@ -75,10 +75,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (pageActivities.length === 0) break
 
-      // Filtrer uniquement les activités running et celles des 12 dernières semaines
+      // Filtrer uniquement les activités running/trail et celles des 12 dernières semaines
       const filtered = pageActivities.filter((act: any) => {
         const activityDate = new Date(act.start_date).getTime()
-        return act.type === 'Run' && activityDate >= twelveWeeksAgo
+        return (act.type === 'Run' || act.sport_type === 'Run' || act.sport_type === 'TrailRun') && activityDate >= twelveWeeksAgo
       })
 
       activities.push(...filtered)
@@ -122,6 +122,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         kudosCount: act.kudos_count || undefined,
         type: act.type || act.sport_type || 'Run',
         name: act.name || undefined,
+        // Nouvelles données enrichies
+        description: act.description || undefined,
+        timezone: act.timezone || undefined,
+        utcOffset: act.utc_offset || undefined,
+        startLatlng: act.start_latlng || undefined, // [lat, lng]
+        endLatlng: act.end_latlng || undefined,
+        startLocation: act.start_latlng ? `${act.start_latlng[0]},${act.start_latlng[1]}` : undefined,
+        achievementCountDetails: act.achievement_count || 0,
+        kudosCountDetails: act.kudos_count || 0,
+        commentCount: act.comment_count || 0,
+        athleteCount: act.athlete_count || undefined,
+        trainer: act.trainer || false,
+        commute: act.commute || false,
+        manual: act.manual || false,
+        private: act.private || false,
+        flagged: act.flagged || false,
+        workoutType: act.workout_type || undefined, // 0=default, 1=race, 2=long run, 3=workout
+        gearId: act.gear_id ? String(act.gear_id) : undefined,
+        averageWatts: act.average_watts || undefined,
+        weightedAverageWatts: act.weighted_average_watts || undefined,
+        kilojoules: act.kilojoules || undefined,
+        deviceWatts: act.device_watts || undefined,
+        hasHeartrate: act.has_heartrate || false,
+        hasKudoed: act.has_kudoed || false,
+        splitsMetric: act.splits_metric || undefined, // Tableau de splits
+        splitsStandard: act.splits_standard || undefined,
+        bestEfforts: act.best_efforts?.map((effort: any) => ({
+          id: String(effort.id),
+          name: effort.name,
+          distance: effort.distance || 0,
+          movingTime: effort.moving_time || 0,
+          elapsedTime: effort.elapsed_time || 0,
+          prRank: effort.pr_rank || undefined,
+        })) || [],
+        segmentEfforts: act.segment_efforts?.map((effort: any) => ({
+          id: String(effort.id),
+          name: effort.name || effort.segment?.name,
+          segmentId: String(effort.segment?.id || effort.segment_id || ''),
+          distance: effort.distance || 0,
+          movingTime: effort.moving_time || 0,
+          averageGrade: effort.segment?.average_grade || 0,
+          elevationDifference: effort.segment?.elevation_high - effort.segment?.elevation_low || 0,
+        })) || [],
       }
     })
 

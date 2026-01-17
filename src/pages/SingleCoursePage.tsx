@@ -1,5 +1,6 @@
 import './SingleCoursePage.css'
 
+import { FiAlertCircle, FiZap } from 'react-icons/fi'
 import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
@@ -322,8 +323,8 @@ export default function SingleCoursePage({
                   {/* Priorité immédiate */}
                   {analysis.immediateActions && analysis.immediateActions.length > 0 && (
                     <div style={{ marginTop: '12px', marginBottom: '16px' }}>
-                      <p style={{ fontSize: '13px', color: '#ef4444', marginBottom: '8px', fontWeight: 600 }}>
-                        🚨 Priorité immédiate
+                      <p style={{ fontSize: '13px', color: '#ef4444', marginBottom: '8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <FiAlertCircle /> Priorité immédiate
                       </p>
                       <ul className="single-course-panel__list single-course-panel__list--bullets">
                         {analysis.immediateActions.map((action, idx) => (
@@ -338,8 +339,8 @@ export default function SingleCoursePage({
                   {/* Important mais secondaire */}
                   {analysis.secondaryActions && analysis.secondaryActions.length > 0 && (
                     <div style={{ marginBottom: '16px' }}>
-                      <p style={{ fontSize: '13px', color: '#fbbf24', marginBottom: '8px', fontWeight: 600 }}>
-                        ⚠️ Important mais secondaire
+                      <p style={{ fontSize: '13px', color: '#fbbf24', marginBottom: '8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <FiAlertCircle /> Important mais secondaire
                       </p>
                       <ul className="single-course-panel__list single-course-panel__list--bullets">
                         {analysis.secondaryActions.map((action, idx) => (
@@ -354,8 +355,8 @@ export default function SingleCoursePage({
                   {/* À tester */}
                   {analysis.testActions && analysis.testActions.length > 0 && (
                     <div style={{ marginBottom: '16px' }}>
-                      <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '8px', fontWeight: 600 }}>
-                        🧪 À tester
+                      <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <FiZap /> À tester
                       </p>
                       <ul className="single-course-panel__list single-course-panel__list--bullets">
                         {analysis.testActions.map((action, idx) => (

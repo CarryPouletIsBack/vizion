@@ -409,7 +409,7 @@ export function analyzeCourseReadiness(
   // Prioriser les recommandations critiques basées sur les stats
   recommendations.forEach((rec) => {
     // Les actions immédiates basées sur les stats sont déjà ajoutées plus haut
-    if (rec.includes('🚨') || rec.includes('Point d\'abandon')) {
+    if (rec.includes('Point d\'abandon') || rec.includes('Attention :')) {
       // Déjà dans immediateActions
       return
     } else if (rec.includes('fréquence') || rec.includes('régularité') || rec.includes('sorties longues progressives') || rec.includes('Volume hebdo faible') || rec.includes('D+ hebdo faible')) {
@@ -515,11 +515,11 @@ export function analyzeCourseReadiness(
     } else {
       // Phrases d'alerte forte
       if (timeEstimate.totalHours > 20) {
-        coachVerdict = `⚠️ Temps estimé : ${timeEstimate.rangeFormatted}. Attention, tu manques de sorties longues de nuit. Ton simulateur prévoit une baisse de 15% de ta vitesse après 22h.`
+        coachVerdict = `Temps estimé : ${timeEstimate.rangeFormatted}. Attention, tu manques de sorties longues de nuit. Ton simulateur prévoit une baisse de 15% de ta vitesse après 22h.`
       } else if (coverageRatio < 50) {
-        coachVerdict = `🚨 Ton niveau actuel couvre seulement ${coverageRatio}% des exigences. Un plan d'action immédiat est nécessaire pour éviter l'abandon.`
+        coachVerdict = `Ton niveau actuel couvre seulement ${coverageRatio}% des exigences. Un plan d'action immédiat est nécessaire pour éviter l'abandon.`
       } else {
-        coachVerdict = `⚠️ À ${coverageRatio}% de couverture, tu es en zone de risque. Augmente rapidement ton volume et tes sorties longues.`
+        coachVerdict = `À ${coverageRatio}% de couverture, tu es en zone de risque. Augmente rapidement ton volume et tes sorties longues.`
       }
     }
   }

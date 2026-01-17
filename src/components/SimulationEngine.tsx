@@ -1,4 +1,8 @@
 import { useState, useMemo } from 'react'
+import { FiSettings, FiActivity, FiAlertCircle } from 'react-icons/fi'
+import { IoMdStar } from 'react-icons/io'
+import { FaTrophy, FaMedal, FaWalking, FaRunning } from 'react-icons/fa'
+import { GiTurtle } from 'react-icons/gi'
 import './SimulationEngine.css'
 import { estimateTrailTime, type TimeEstimate } from '../lib/trailTimeEstimator'
 import type { StravaMetrics } from '../types/strava'
@@ -96,7 +100,10 @@ export default function SimulationEngine({
   return (
     <div className="simulation-engine">
       <div className="simulation-engine__header">
-        <h3 className="simulation-engine__title">⚙️ Moteur de Simulation</h3>
+        <h3 className="simulation-engine__title">
+          <FiSettings style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />
+          Moteur de Simulation
+        </h3>
         <p className="simulation-engine__subtitle">Ajuste les paramètres pour affiner ton estimation</p>
       </div>
 
@@ -150,21 +157,21 @@ export default function SimulationEngine({
             className={`simulation-engine__radio ${technicalIndex === 'good' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setTechnicalIndex('good')}
           >
-            🏃 Bon descendeur
+            <FaRunning style={{ marginRight: '4px' }} /> Bon descendeur
           </button>
           <button
             type="button"
             className={`simulation-engine__radio ${technicalIndex === 'average' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setTechnicalIndex('average')}
           >
-            🚶 Moyen
+            <FaWalking style={{ marginRight: '4px' }} /> Moyen
           </button>
           <button
             type="button"
             className={`simulation-engine__radio ${technicalIndex === 'cautious' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setTechnicalIndex('cautious')}
           >
-            🐢 Prudent
+            <GiTurtle style={{ marginRight: '4px' }} /> Prudent
           </button>
         </div>
       </div>
@@ -178,28 +185,28 @@ export default function SimulationEngine({
             className={`simulation-engine__radio ${enduranceIndex === 'elite' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setEnduranceIndex('elite')}
           >
-            🏆 Elite
+            <FaTrophy style={{ marginRight: '4px' }} /> Elite
           </button>
           <button
             type="button"
             className={`simulation-engine__radio ${enduranceIndex === 'experienced' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setEnduranceIndex('experienced')}
           >
-            🥇 Expérimenté
+            <IoMdStar style={{ marginRight: '4px' }} /> Expérimenté
           </button>
           <button
             type="button"
             className={`simulation-engine__radio ${enduranceIndex === 'intermediate' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setEnduranceIndex('intermediate')}
           >
-            🥈 Intermédiaire
+            <IoMdStar style={{ marginRight: '4px' }} /> Intermédiaire
           </button>
           <button
             type="button"
             className={`simulation-engine__radio ${enduranceIndex === 'beginner' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setEnduranceIndex('beginner')}
           >
-            🥉 Débutant
+            <FaMedal style={{ marginRight: '4px' }} /> Débutant
           </button>
         </div>
         <div className="simulation-engine__hint">
@@ -219,28 +226,28 @@ export default function SimulationEngine({
             className={`simulation-engine__radio ${enduranceIndex === 'elite' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setEnduranceIndex('elite')}
           >
-            🏆 Elite
+            <FaTrophy style={{ marginRight: '4px' }} /> Elite
           </button>
           <button
             type="button"
             className={`simulation-engine__radio ${enduranceIndex === 'experienced' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setEnduranceIndex('experienced')}
           >
-            🥇 Expérimenté
+            <IoMdStar style={{ marginRight: '4px' }} /> Expérimenté
           </button>
           <button
             type="button"
             className={`simulation-engine__radio ${enduranceIndex === 'intermediate' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setEnduranceIndex('intermediate')}
           >
-            🥈 Intermédiaire
+            <IoMdStar style={{ marginRight: '4px' }} /> Intermédiaire
           </button>
           <button
             type="button"
             className={`simulation-engine__radio ${enduranceIndex === 'beginner' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setEnduranceIndex('beginner')}
           >
-            🥉 Débutant
+            <FaMedal style={{ marginRight: '4px' }} /> Débutant
           </button>
         </div>
         <div className="simulation-engine__hint">
@@ -270,7 +277,10 @@ export default function SimulationEngine({
       {/* Barrières horaires */}
       {barriers.length > 0 && (
         <div className="simulation-engine__barriers">
-          <p className="simulation-engine__barriers-title">🚨 Barrières horaires critiques</p>
+          <p className="simulation-engine__barriers-title">
+            <FiAlertCircle style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle', color: '#ef4444' }} />
+            Barrières horaires critiques
+          </p>
           {barriers.map((barrier) => (
             <div
               key={barrier.name}

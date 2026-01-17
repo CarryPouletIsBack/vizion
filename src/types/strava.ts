@@ -17,6 +17,104 @@ export type StravaActivity = {
   kudosCount?: number // Nombre de kudos (indicateur social)
   type?: string // Type d'activité (Run, TrailRun, etc.)
   name?: string // Nom de l'activité
+  // Nouvelles données enrichies
+  description?: string
+  timezone?: string
+  utcOffset?: number
+  startLatlng?: [number, number] // [lat, lng]
+  endLatlng?: [number, number]
+  startLocation?: string
+  achievementCountDetails?: number
+  kudosCountDetails?: number
+  commentCount?: number
+  athleteCount?: number
+  trainer?: boolean
+  commute?: boolean
+  manual?: boolean
+  private?: boolean
+  flagged?: boolean
+  workoutType?: number // 0=default, 1=race, 2=long run, 3=workout
+  gearId?: string
+  averageWatts?: number
+  weightedAverageWatts?: number
+  kilojoules?: number
+  deviceWatts?: boolean
+  hasHeartrate?: boolean
+  hasKudoed?: boolean
+  splitsMetric?: Array<{
+    distance: number
+    elapsedTime: number
+    elevationDifference: number
+    movingTime: number
+    split: number
+    averageSpeed: number
+    paceZone: number
+  }>
+  splitsStandard?: Array<{
+    distance: number
+    elapsedTime: number
+    elevationDifference: number
+    movingTime: number
+    split: number
+    averageSpeed: number
+    paceZone: number
+  }>
+  bestEfforts?: Array<{
+    id: string
+    name: string
+    distance: number
+    movingTime: number
+    elapsedTime: number
+    prRank?: number
+  }>
+  segmentEfforts?: Array<{
+    id: string
+    name?: string
+    segmentId: string
+    distance: number
+    movingTime: number
+    averageGrade: number
+    elevationDifference: number
+  }>
+}
+
+export type StravaAthlete = {
+  id: string
+  username?: string
+  firstname?: string
+  lastname?: string
+  city?: string
+  state?: string
+  country?: string
+  sex?: 'M' | 'F'
+  premium: boolean
+  summit: boolean
+  createdAt?: string
+  updatedAt?: string
+  followerCount?: number
+  friendCount?: number
+  measurementPreference: 'meters' | 'feet'
+  ftp?: number // Functional Threshold Power
+  weight?: number // kg
+  clubs?: Array<{
+    id: string
+    name: string
+    profile?: string
+    coverPhoto?: string
+    activityTypes?: string[]
+  }>
+  bikes?: Array<{
+    id: string
+    name: string
+    distance: number // mètres
+    primary: boolean
+  }>
+  shoes?: Array<{
+    id: string
+    name: string
+    distance: number // mètres
+    primary: boolean
+  }>
 }
 
 export type StravaMetrics = {
