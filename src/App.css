@@ -1,3 +1,22 @@
 .app-root {
   min-height: 100vh;
+  position: relative;
+}
+
+/* Image de background en fallback */
+.app-root::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('/app-background.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  opacity: 0.15;
+  z-index: -1;
+  pointer-events: none;
 }

@@ -37,6 +37,27 @@ export default function EventsColumnFilteringChart({
     return events.slice(start, start + pageSize)
   }, [events, pageIndex])
 
+  // Exposer la fonction de gestion des clics globalement pour qu'elle soit accessible depuis le HTML généré
+  useEffect(() => {
+    // @ts-ignore
+    window.handleEventOptionsClick = (event: MouseEvent, eventId: string) => {
+      event.preventDefault()
+      event.stopPropagation()
+      event.stopImmediatePropagation()
+      
+      const target = event.target as HTMLElement | null
+      if (target) {
+        const rect = target.getBoundingClientRect()
+        setMenuOpen({ eventId, x: rect.left + rect.width / 2 - 60, y: rect.bottom + 4 })
+      }
+    }
+    
+    return () => {
+      // @ts-ignore
+      delete window.handleEventOptionsClick
+    }
+  }, [])
+
   useEffect(() => {
     if (!containerRef.current) return
 
@@ -94,7 +115,8 @@ export default function EventsColumnFilteringChart({
             const value = String((this as unknown as { value?: string }).value ?? '')
             const index = Number(value.split('-').pop() || 0)
             const eventId = pagedEvents[index]?.id ?? ''
-            return `<div class="events-grid__options-wrapper" data-eventid="${eventId}"><button class="events-grid__options" type="button" aria-label="Options" data-eventid="${eventId}">⋯</button></div>`
+            // Utiliser onclick directement dans le HTML pour éviter les problèmes de délégation d'événements
+            return `<div class="events-grid__options-wrapper" data-eventid="${eventId}"><button class="events-grid__options" type="button" aria-label="Options" data-eventid="${eventId}" onclick="window.handleEventOptionsClick && window.handleEventOptionsClick(event, '${eventId}')">⋯</button></div>`
           },
         },
       },
