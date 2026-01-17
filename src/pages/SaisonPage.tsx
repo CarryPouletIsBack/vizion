@@ -2,9 +2,6 @@ import { useRef, useState } from 'react'
 
 import './SaisonPage.css'
 
-import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
-import reunionFlag from '../assets/5375c6ef182ea756eeb23fb723865d5c353eb10b.png'
-import grandRaidLogo from '../assets/da2a1ce5e69564e56a29b5912fd151a8f515e136.png'
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 import WorldMapLeaflet from '../components/WorldMapLeaflet'
