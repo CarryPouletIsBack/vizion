@@ -346,6 +346,11 @@
   color: #75e0a7;
 }
 
+.single-course-panel__pill--warning {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
 .single-course-panel__objective {
   margin: 4px 0 0;
   font-size: 12px;

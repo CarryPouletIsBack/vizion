@@ -6,6 +6,7 @@ import SideNav from '../components/SideNav'
 import SingleCourseElevationChart from '../components/SingleCourseElevationChart'
 import useGpxHoverMarker from '../hooks/useGpxHoverMarker'
 import useStravaMetrics from '../hooks/useStravaMetrics'
+import { analyzeCourseReadiness } from '../lib/courseAnalysis'
 
 type SingleCoursePageProps = {
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course') => void
@@ -53,6 +54,21 @@ export default function SingleCoursePage({
   const maxDistance = profileData?.length ? profileData[profileData.length - 1][0] : undefined
   useGpxHoverMarker('gpx-inline-svg', maxDistance)
   const { metrics } = useStravaMetrics()
+
+  // Analyser la préparation pour cette course
+  const courseData = selectedCourse?.distanceKm && selectedCourse?.elevationGain
+    ? {
+        distanceKm: selectedCourse.distanceKm,
+        elevationGain: selectedCourse.elevationGain,
+        name: selectedCourse.name,
+      }
+    : {
+        distanceKm: 175,
+        elevationGain: 10150,
+        name: 'Grand Raid',
+      }
+
+  const analysis = analyzeCourseReadiness(metrics, courseData)
   return (
     <div className="single-course-page">
       <HeaderTopBar onNavigate={onNavigate} />
@@ -113,6 +129,58 @@ export default function SingleCoursePage({
               </div>
               <div className="single-course-panel__cards">
                 <div className="single-course-panel__card">
+                  <p className="single-course-panel__title">ÉTAT DE PRÉPARATION</p>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      marginTop: '12px',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      background:
+                        analysis.readiness === 'ready'
+                          ? 'rgba(34, 197, 94, 0.1)'
+                          : analysis.readiness === 'needs_work'
+                            ? 'rgba(251, 191, 36, 0.1)'
+                            : 'rgba(239, 68, 68, 0.1)',
+                      border: `1px solid ${
+                        analysis.readiness === 'ready'
+                          ? 'rgba(34, 197, 94, 0.3)'
+                          : analysis.readiness === 'needs_work'
+                            ? 'rgba(251, 191, 36, 0.3)'
+                            : 'rgba(239, 68, 68, 0.3)'
+                      }`,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: '32px',
+                        fontWeight: 'bold',
+                        color:
+                          analysis.readiness === 'ready'
+                            ? '#22c55e'
+                            : analysis.readiness === 'needs_work'
+                              ? '#fbbf24'
+                              : '#ef4444',
+                      }}
+                    >
+                      {analysis.readiness === 'ready' ? '🟢' : analysis.readiness === 'needs_work' ? '🟠' : '🔴'}
+                    </span>
+                    <div>
+                      <p style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>{analysis.readinessLabel}</p>
+                      <p style={{ margin: '4px 0 0', fontSize: '12px', opacity: 0.8 }}>
+                        {analysis.readiness === 'ready'
+                          ? 'Vous êtes prêt pour cette course'
+                          : analysis.readiness === 'needs_work'
+                            ? 'Quelques ajustements nécessaires'
+                            : 'Attention : préparation insuffisante'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="single-course-panel__card">
                   <p className="single-course-panel__title">CHARGE &amp; RÉGULARITÉ (6 semaines)</p>
                   <ul className="single-course-panel__list">
                     <li>
@@ -135,10 +203,11 @@ export default function SingleCoursePage({
                       <span>régularité</span>
                       <span
                         className={`single-course-panel__pill${
-                          metrics?.regularity === 'bonne' ? ' single-course-panel__pill--ok' : ''
-                        }`}
+                          analysis.regularity === 'bonne' ? ' single-course-panel__pill--ok' : ''
+                        }${analysis.regularity === 'faible' ? ' single-course-panel__pill--warning' : ''}`}
+                        title={analysis.regularityDetails}
                       >
-                        {metrics ? metrics.regularity : '...'}
+                        {analysis.regularity}
                       </span>
                     </li>
                     <li>
@@ -154,10 +223,36 @@ export default function SingleCoursePage({
 
                 <div className="single-course-panel__card">
                   <p className="single-course-panel__title">AJUSTEMENTS RECOMMANDÉS</p>
+                  {analysis.issues.length > 0 && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <p style={{ fontSize: '12px', color: '#ef4444', marginBottom: '8px', fontWeight: 500 }}>
+                        Points d'attention :
+                      </p>
+                      <ul className="single-course-panel__list single-course-panel__list--bullets" style={{ marginBottom: '12px' }}>
+                        {analysis.issues.map((issue) => (
+                          <li key={issue} style={{ color: '#ef4444', fontSize: '12px' }}>
+                            {issue}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {analysis.strengths.length > 0 && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <p style={{ fontSize: '12px', color: '#22c55e', marginBottom: '8px', fontWeight: 500 }}>
+                        Points forts :
+                      </p>
+                      <ul className="single-course-panel__list single-course-panel__list--bullets" style={{ marginBottom: '12px' }}>
+                        {analysis.strengths.map((strength) => (
+                          <li key={strength} style={{ color: '#22c55e', fontSize: '12px' }}>
+                            {strength}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <ul className="single-course-panel__list single-course-panel__list--bullets">
-                    {(metrics?.recommendations ??
-                      ['ajouter 2 sorties > 4h', 'augmenter le travail en descente', 'tester nutrition sur effort long']
-                    ).map((rec) => (
+                    {analysis.recommendations.map((rec) => (
                       <li key={rec}>{rec}</li>
                     ))}
                   </ul>
