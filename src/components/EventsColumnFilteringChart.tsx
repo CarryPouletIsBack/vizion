@@ -105,22 +105,28 @@ export default function EventsColumnFilteringChart({
     // Gestionnaire pour les clics sur les boutons d'options
     const handleOptionsClick = (event: Event) => {
       const mouseEvent = event as MouseEvent
-      event.preventDefault()
-      event.stopPropagation()
-      event.stopImmediatePropagation()
-      
       const target = mouseEvent.target as HTMLElement | null
+      
+      // Vérifier si on clique sur le bouton ou son wrapper
       const optionsButton = target?.closest<HTMLElement>('.events-grid__options')
       const optionsWrapper = target?.closest<HTMLElement>('.events-grid__options-wrapper')
       
-      const element = optionsButton || optionsWrapper
-      if (element) {
-        const eventId = element.getAttribute('data-eventid')
-        if (eventId) {
-          const rect = element.getBoundingClientRect()
-          setMenuOpen({ eventId, x: rect.right, y: rect.bottom })
+      if (optionsButton || optionsWrapper) {
+        event.preventDefault()
+        event.stopPropagation()
+        event.stopImmediatePropagation()
+        
+        const element = optionsButton || optionsWrapper
+        if (element) {
+          const eventId = element.getAttribute('data-eventid')
+          if (eventId) {
+            const rect = element.getBoundingClientRect()
+            setMenuOpen({ eventId, x: rect.left + rect.width / 2, y: rect.bottom + 4 })
+          }
         }
+        return true
       }
+      return false
     }
 
     // Gestionnaire pour les clics sur les lignes (sauf colonne Options)
@@ -162,16 +168,22 @@ export default function EventsColumnFilteringChart({
       }
     }
 
-    // Ajouter les gestionnaires avec capture phase
+    // Ajouter les gestionnaires avec capture phase - options en premier pour avoir la priorité
     containerRef.current.addEventListener('click', handleOptionsClick, { capture: true, passive: false })
     containerRef.current.addEventListener('click', handleRowClick, { capture: true, passive: false })
     
     // Ajouter aussi un gestionnaire directement sur les boutons après le rendu
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       if (containerRef.current) {
         const optionsElements = containerRef.current.querySelectorAll('.events-grid__options, .events-grid__options-wrapper')
         optionsElements.forEach((element) => {
-          element.addEventListener('click', handleOptionsClick, { capture: true, passive: false })
+          const clickHandler = (e: Event) => {
+            e.preventDefault()
+            e.stopPropagation()
+            e.stopImmediatePropagation()
+            handleOptionsClick(e)
+          }
+          element.addEventListener('click', clickHandler, { capture: true, passive: false })
           element.addEventListener('mousedown', (e) => {
             e.preventDefault()
             e.stopPropagation()
@@ -179,7 +191,7 @@ export default function EventsColumnFilteringChart({
           }, { capture: true, passive: false })
         })
       }
-    }, 200)
+    }, 300)
     
     // Fermer le menu si on clique ailleurs
     const handleOutsideClick = (event: Event) => {
@@ -192,6 +204,7 @@ export default function EventsColumnFilteringChart({
     document.addEventListener('click', handleOutsideClick)
 
     return () => {
+      clearTimeout(timeoutId)
       const gridInstance = gridRef.current as { destroy?: () => void } | null
       if (gridInstance?.destroy) {
         gridInstance.destroy()
@@ -202,7 +215,9 @@ export default function EventsColumnFilteringChart({
       if (containerRef.current) {
         const optionsElements = containerRef.current.querySelectorAll('.events-grid__options, .events-grid__options-wrapper')
         optionsElements.forEach((element) => {
-          element.removeEventListener('click', handleOptionsClick, { capture: true } as any)
+          // Supprimer tous les listeners
+          const newElement = element.cloneNode(true)
+          element.parentNode?.replaceChild(newElement, element)
         })
       }
       document.removeEventListener('click', handleOutsideClick)
