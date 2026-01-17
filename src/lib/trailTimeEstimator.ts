@@ -15,6 +15,7 @@ export type TimeEstimateParams = {
   refuelTimePerStop?: number // Temps par ravitaillement en minutes (optionnel)
   fitnessLevel?: number // État de forme (50-120%, 100% = normal) (optionnel)
   technicalIndex?: 'good' | 'average' | 'cautious' // Index de technicité en descente (optionnel)
+  enduranceIndex?: 'elite' | 'experienced' | 'intermediate' | 'beginner' // Indice d'endurance (dégradation de performance)
 }
 
 export type TimeEstimate = {
@@ -74,6 +75,7 @@ export function estimateTrailTime(
     refuelTimePerStop = 2, // 2 minutes par ravitaillement par défaut
     fitnessLevel = 100, // État de forme par défaut : 100% (normal)
     technicalIndex = 'average', // Technicité par défaut : moyenne
+    enduranceIndex = 'intermediate', // Endurance par défaut : intermédiaire
   } = params
 
   // 1. Allure de base
@@ -114,8 +116,34 @@ export function estimateTrailTime(
   const bagAdjustment = bagWeight * 5 // secondes
   adjustedPace += bagAdjustment / 60 // Convertir en minutes
 
-  // 6. Temps de course (sans ravitaillements)
-  const courseTimeMinutes = adjustedPace * distanceKm
+  // 6. Simulation de dégradation selon l'indice d'endurance
+  // Plus on avance dans la course, plus la vitesse baisse pour les niveaux débutants
+  const enduranceDegradationMap: Record<'elite' | 'experienced' | 'intermediate' | 'beginner', number> = {
+    elite: 0, // Pas de dégradation
+    experienced: 0.05, // 5% de baisse en fin de course
+    intermediate: 0.10, // 10% de baisse en fin de course
+    beginner: 0.20, // 20% de baisse à partir de la mi-course
+  }
+  const degradationFactor = enduranceDegradationMap[enduranceIndex]
+  
+  // Calculer le temps avec dégradation progressive
+  let courseTimeMinutes = 0
+  if (enduranceIndex === 'beginner' && degradationFactor > 0) {
+    // Dégradation à partir de la mi-course (50%)
+    const halfDistance = distanceKm / 2
+    const firstHalfTime = adjustedPace * halfDistance
+    const secondHalfPace = adjustedPace * (1 + degradationFactor)
+    const secondHalfTime = secondHalfPace * halfDistance
+    courseTimeMinutes = firstHalfTime + secondHalfTime
+  } else if (degradationFactor > 0) {
+    // Dégradation progressive sur toute la course
+    // Utiliser une intégration progressive (pente linéaire de dégradation)
+    const avgDegradation = degradationFactor / 2 // Dégradation moyenne sur toute la course
+    courseTimeMinutes = adjustedPace * distanceKm * (1 + avgDegradation)
+  } else {
+    // Pas de dégradation (elite)
+    courseTimeMinutes = adjustedPace * distanceKm
+  }
 
   // 7. Ajouter les temps de ravitaillement
   const refuelTimeMinutes = refuelStops * refuelTimePerStop

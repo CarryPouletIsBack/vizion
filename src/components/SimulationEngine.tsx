@@ -29,6 +29,7 @@ export default function SimulationEngine({
   const [fitnessLevel, setFitnessLevel] = useState(100) // 50-120%
   const [refuelTimePerStop, setRefuelTimePerStop] = useState(10) // minutes
   const [technicalIndex, setTechnicalIndex] = useState<'good' | 'average' | 'cautious'>('average')
+  const [enduranceIndex, setEnduranceIndex] = useState<'elite' | 'experienced' | 'intermediate' | 'beginner'>('intermediate')
 
   // Calculer le nombre de ravitaillements (1 tous les 20 km environ)
   const refuelStops = Math.ceil(distanceKm / 20)
@@ -47,12 +48,13 @@ export default function SimulationEngine({
         refuelTimePerStop,
         fitnessLevel,
         technicalIndex,
+        enduranceIndex,
       },
       metrics
     )
 
     return newEstimate
-  }, [distanceKm, elevationGain, baseTimeEstimate, refuelStops, refuelTimePerStop, fitnessLevel, technicalIndex, metrics])
+  }, [distanceKm, elevationGain, baseTimeEstimate, refuelStops, refuelTimePerStop, fitnessLevel, technicalIndex, enduranceIndex, metrics])
 
   // Calculer les barrières horaires (basées sur les points d'abandon du Grand Raid)
   const barriers: BarrierInfo[] = useMemo(() => {
@@ -139,9 +141,9 @@ export default function SimulationEngine({
         </div>
       </div>
 
-      {/* Index de technicité */}
+      {/* Score d'Engagement (Technicité) */}
       <div className="simulation-engine__control">
-        <label className="simulation-engine__label">Technicité en descente</label>
+        <label className="simulation-engine__label">Score d'Engagement (Technicité)</label>
         <div className="simulation-engine__radio-group">
           <button
             type="button"
@@ -164,6 +166,88 @@ export default function SimulationEngine({
           >
             🐢 Prudent
           </button>
+        </div>
+      </div>
+
+      {/* Indice d'Endurance */}
+      <div className="simulation-engine__control">
+        <label className="simulation-engine__label">Indice d'Endurance</label>
+        <div className="simulation-engine__radio-group">
+          <button
+            type="button"
+            className={`simulation-engine__radio ${enduranceIndex === 'elite' ? 'simulation-engine__radio--active' : ''}`}
+            onClick={() => setEnduranceIndex('elite')}
+          >
+            🏆 Elite
+          </button>
+          <button
+            type="button"
+            className={`simulation-engine__radio ${enduranceIndex === 'experienced' ? 'simulation-engine__radio--active' : ''}`}
+            onClick={() => setEnduranceIndex('experienced')}
+          >
+            🥇 Expérimenté
+          </button>
+          <button
+            type="button"
+            className={`simulation-engine__radio ${enduranceIndex === 'intermediate' ? 'simulation-engine__radio--active' : ''}`}
+            onClick={() => setEnduranceIndex('intermediate')}
+          >
+            🥈 Intermédiaire
+          </button>
+          <button
+            type="button"
+            className={`simulation-engine__radio ${enduranceIndex === 'beginner' ? 'simulation-engine__radio--active' : ''}`}
+            onClick={() => setEnduranceIndex('beginner')}
+          >
+            🥉 Débutant
+          </button>
+        </div>
+        <div className="simulation-engine__hint">
+          {enduranceIndex === 'elite' && 'Vitesse stable du début à la fin'}
+          {enduranceIndex === 'experienced' && 'Légère baisse de performance en fin de course (-5%)'}
+          {enduranceIndex === 'intermediate' && 'Baisse progressive de performance (-10%)'}
+          {enduranceIndex === 'beginner' && 'Baisse significative de 20% à partir de la mi-course'}
+        </div>
+      </div>
+
+      {/* Indice d'Endurance */}
+      <div className="simulation-engine__control">
+        <label className="simulation-engine__label">Indice d'Endurance</label>
+        <div className="simulation-engine__radio-group">
+          <button
+            type="button"
+            className={`simulation-engine__radio ${enduranceIndex === 'elite' ? 'simulation-engine__radio--active' : ''}`}
+            onClick={() => setEnduranceIndex('elite')}
+          >
+            🏆 Elite
+          </button>
+          <button
+            type="button"
+            className={`simulation-engine__radio ${enduranceIndex === 'experienced' ? 'simulation-engine__radio--active' : ''}`}
+            onClick={() => setEnduranceIndex('experienced')}
+          >
+            🥇 Expérimenté
+          </button>
+          <button
+            type="button"
+            className={`simulation-engine__radio ${enduranceIndex === 'intermediate' ? 'simulation-engine__radio--active' : ''}`}
+            onClick={() => setEnduranceIndex('intermediate')}
+          >
+            🥈 Intermédiaire
+          </button>
+          <button
+            type="button"
+            className={`simulation-engine__radio ${enduranceIndex === 'beginner' ? 'simulation-engine__radio--active' : ''}`}
+            onClick={() => setEnduranceIndex('beginner')}
+          >
+            🥉 Débutant
+          </button>
+        </div>
+        <div className="simulation-engine__hint">
+          {enduranceIndex === 'elite' && 'Vitesse stable du début à la fin'}
+          {enduranceIndex === 'experienced' && 'Légère baisse de performance en fin de course (-5%)'}
+          {enduranceIndex === 'intermediate' && 'Baisse progressive de performance (-10%)'}
+          {enduranceIndex === 'beginner' && 'Baisse significative de 20% à partir de la mi-course'}
         </div>
       </div>
 

@@ -4,7 +4,6 @@ import Highcharts from 'highcharts'
 import './SingleCourseElevationChart.css'
 import { estimateRunnerElevationLine } from '../lib/runnerEstimate'
 import type { StravaMetrics } from '../types/strava'
-
 const SERIES_COLOR = '#ffe500'
 const RUNNER_ESTIMATE_COLOR = '#bfc900'
 
