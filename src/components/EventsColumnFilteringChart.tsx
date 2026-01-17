@@ -121,7 +121,8 @@ export default function EventsColumnFilteringChart({
           const eventId = element.getAttribute('data-eventid')
           if (eventId) {
             const rect = element.getBoundingClientRect()
-            setMenuOpen({ eventId, x: rect.left + rect.width / 2, y: rect.bottom + 4 })
+            // Positionner le menu sous le bouton, centré
+            setMenuOpen({ eventId, x: rect.left + rect.width / 2 - 60, y: rect.bottom + 4 })
           }
         }
         return true

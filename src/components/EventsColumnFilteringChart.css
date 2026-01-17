@@ -146,6 +146,12 @@
   cursor: pointer;
   transition: color 0.2s, background-color 0.2s;
   pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  user-select: none;
 }
 
 .events-grid__options:hover {
