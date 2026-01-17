@@ -5,21 +5,6 @@
 type Point = [number, number] // [lat, lon]
 type PointWithElevation = [number, number, number] // [lat, lon, ele]
 
-export type GpxMetadata = {
-  name?: string
-  description?: string
-  author?: string
-  copyright?: string
-  link?: string
-  keywords?: string
-  bounds?: {
-    minLat: number
-    maxLat: number
-    minLon: number
-    maxLon: number
-  }
-}
-
 export type GpxWaypoint = {
   lat: number
   lon: number
@@ -52,64 +37,6 @@ export function parseGpxPoints(gpxText: string): PointWithElevation[] {
   })
 
   return points
-}
-
-/**
- * Extrait les métadonnées d'un fichier GPX
- */
-export function extractGpxMetadata(gpxText: string): GpxMetadata {
-  if (!gpxText || typeof gpxText !== 'string') return {}
-  try {
-    const parser = new DOMParser()
-    const doc = parser.parseFromString(gpxText, 'application/xml')
-    const metadata: GpxMetadata = {}
-
-    const metadataEl = doc.querySelector('metadata')
-    if (metadataEl) {
-      const nameEl = metadataEl.querySelector('name')
-      if (nameEl) metadata.name = nameEl.textContent || undefined
-
-      const descEl = metadataEl.querySelector('desc')
-      if (descEl) metadata.description = descEl.textContent || undefined
-
-      const authorEl = metadataEl.querySelector('author')
-      if (authorEl) metadata.author = authorEl.textContent || undefined
-
-      const copyrightEl = metadataEl.querySelector('copyright')
-      if (copyrightEl) metadata.copyright = copyrightEl.getAttribute('author') || undefined
-
-      const linkEl = metadataEl.querySelector('link')
-      if (linkEl) metadata.link = linkEl.getAttribute('href') || undefined
-
-      const keywordsEl = metadataEl.querySelector('keywords')
-      if (keywordsEl) metadata.keywords = keywordsEl.textContent || undefined
-
-      const boundsEl = metadataEl.querySelector('bounds')
-      if (boundsEl) {
-        metadata.bounds = {
-          minLat: Number(boundsEl.getAttribute('minlat')) || 0,
-          maxLat: Number(boundsEl.getAttribute('maxlat')) || 0,
-          minLon: Number(boundsEl.getAttribute('minlon')) || 0,
-          maxLon: Number(boundsEl.getAttribute('maxlon')) || 0,
-        }
-      }
-    }
-
-    // Aussi chercher dans la racine <gpx>
-    const gpxEl = doc.querySelector('gpx')
-    if (gpxEl) {
-      const nameEl = gpxEl.querySelector('> name')
-      if (nameEl && !metadata.name) metadata.name = nameEl.textContent || undefined
-
-      const descEl = gpxEl.querySelector('> desc')
-      if (descEl && !metadata.description) metadata.description = descEl.textContent || undefined
-    }
-
-    return metadata
-  } catch (error) {
-    console.warn('Erreur lors de l\'extraction des métadonnées GPX:', error)
-    return {}
-  }
 }
 
 /**
