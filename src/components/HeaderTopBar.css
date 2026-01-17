@@ -93,9 +93,79 @@
   margin-left: auto;
 }
 
+.saison-topbar__user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto; /* Pousser à droite */
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.saison-topbar__user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-accent, #bfc900);
+  flex-shrink: 0;
+}
+
+.saison-topbar__user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.saison-topbar__user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary, #e5e7eb);
+  white-space: nowrap;
+}
+
+.saison-topbar__user-logout {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary, #9ca3af);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.saison-topbar__user-logout:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-primary, #e5e7eb);
+}
+
 @media (max-width: 768px) {
   .saison-topbar__actions {
     margin-left: auto;
+  }
+
+  .saison-topbar__user {
+    gap: 8px;
+    padding: 4px 8px;
+  }
+
+  .saison-topbar__user-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .saison-topbar__user-name {
+    font-size: 12px;
+  }
+
+  .saison-topbar__user-logout {
+    font-size: 18px;
+    padding: 2px 6px;
   }
 }
 
