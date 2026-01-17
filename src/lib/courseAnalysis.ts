@@ -332,14 +332,19 @@ export function analyzeCourseReadiness(
   const targetLongRunHours = Math.max(2, Math.round((longRunThreshold / 8) * 10) / 10) // Estimation : 8 km/h en moyenne, minimum 2h
 
   // === CATÉGORISATION DES RECOMMANDATIONS ===
-  const immediateActions: string[] = []
+  const immediateActions: string[] = [...tempImmediateActions] // Ajouter les actions critiques basées sur les stats
   const secondaryActions: string[] = []
   const testActions: string[] = []
 
+  // Prioriser les recommandations critiques basées sur les stats
   recommendations.forEach((rec) => {
-    if (rec.includes('fréquence') || rec.includes('régularité') || rec.includes('sorties longues progressives')) {
+    // Les actions immédiates basées sur les stats sont déjà ajoutées plus haut
+    if (rec.includes('🚨') || rec.includes('Point d\'abandon')) {
+      // Déjà dans immediateActions
+      return
+    } else if (rec.includes('fréquence') || rec.includes('régularité') || rec.includes('sorties longues progressives') || rec.includes('Volume hebdo faible') || rec.includes('D+ hebdo faible')) {
       immediateActions.push(rec)
-    } else if (rec.includes('nutrition') || rec.includes('tester')) {
+    } else if (rec.includes('nutrition') || rec.includes('tester') || rec.includes('Tester')) {
       testActions.push(rec)
     } else {
       secondaryActions.push(rec)

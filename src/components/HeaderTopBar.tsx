@@ -102,14 +102,14 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
     // Écouter les changements dans localStorage pour Strava
     const handleStorageChange = (e: StorageEvent) => {
       if (!mounted) return
-      if (e.key === 'vizion:strava_token' && user) {
+      if (e.key === 'vizion:strava_token' && user && user !== 'loading') {
         try {
           const tokenData = e.newValue
           if (tokenData) {
             const parsed = JSON.parse(tokenData)
             if (parsed.athlete) {
               setUser((prevUser) => {
-                if (!prevUser) return null
+                if (!prevUser || prevUser === 'loading') return prevUser
                 return {
                   ...prevUser,
                   firstname: parsed.athlete.firstname || prevUser.firstname,
