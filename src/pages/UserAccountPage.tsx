@@ -30,7 +30,12 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
     lastname: '',
     birthdate: '',
   })
-  const { metrics } = useStravaMetrics()
+  const { metrics, loading: metricsLoading } = useStravaMetrics()
+  const [stravaStats, setStravaStats] = useState({
+    activityCount: 0,
+    totalDistance: 0,
+    totalElevationGain: 0,
+  })
 
   useEffect(() => {
     let mounted = true
@@ -409,19 +414,19 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
                     <div className="user-account-stats__item">
                       <span className="user-account-stats__label">Activités synchronisées</span>
                       <span className="user-account-stats__value">
-                        {metrics ? metrics.activityCount : '-'}
+                        {metricsLoading ? '...' : stravaStats.activityCount || '-'}
                       </span>
                     </div>
                     <div className="user-account-stats__item">
                       <span className="user-account-stats__label">Distance totale</span>
                       <span className="user-account-stats__value">
-                        {metrics ? `${(metrics.totalDistance / 1000).toFixed(0)} km` : '-'}
+                        {metricsLoading ? '...' : stravaStats.totalDistance > 0 ? `${(stravaStats.totalDistance / 1000).toFixed(0)} km` : '-'}
                       </span>
                     </div>
                     <div className="user-account-stats__item">
                       <span className="user-account-stats__label">Dénivelé total</span>
                       <span className="user-account-stats__value">
-                        {metrics ? `${Math.round(metrics.totalElevationGain)} m` : '-'}
+                        {metricsLoading ? '...' : stravaStats.totalElevationGain > 0 ? `${Math.round(stravaStats.totalElevationGain)} m` : '-'}
                       </span>
                     </div>
                   </div>

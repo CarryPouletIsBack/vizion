@@ -89,10 +89,24 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
       // Gérer silencieusement les erreurs de permission (RLS) pour les utilisateurs non connectés
       if (coursesError.code === 'PGRST116' || coursesError.code === '42501' || coursesError.code === 'PGRST301') {
         console.warn('⚠️ Erreur de permission lors du chargement des courses (utilisateur non connecté ou RLS):', coursesError.message)
-        return eventsData.map((event: EventRow) => ({ ...event, courses: [] })) // Retourner les événements sans courses
+        return eventsData.map((event: EventRow) => ({
+          id: event.id,
+          name: event.name,
+          country: event.country,
+          startLabel: event.start_label,
+          imageUrl: event.image_url || undefined,
+          courses: [],
+        }))
       }
       console.error('Erreur lors du chargement des courses:', coursesError)
-      return eventsData.map((event: EventRow) => ({ ...event, courses: [] })) // Retourner les événements sans courses
+      return eventsData.map((event: EventRow) => ({
+        id: event.id,
+        name: event.name,
+        country: event.country,
+        startLabel: event.start_label,
+        imageUrl: event.image_url || undefined,
+        courses: [],
+      }))
     }
 
     // Transformer les données Supabase en EventItem[]
