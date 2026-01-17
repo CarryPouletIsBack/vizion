@@ -217,7 +217,55 @@ function App() {
     // Le SVG est déjà une string, pas besoin de conversion
     const gpxSvg = payload.gpxSvg
 
-    // Insérer dans Supabase
+    // Vérifier que l'event_id existe dans la base (ne doit pas être un ID par défaut comme 'event-1')
+    const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fallbackEventId)
+    if (!isValidUuid) {
+      console.error('L\'event_id n\'est pas un UUID valide:', fallbackEventId)
+      // Si c'est un ID par défaut, créer l'event d'abord
+      const { data: newEvent, error: eventError } = await supabase
+        .from('events')
+        .insert({
+          name: 'Grand Raid',
+          country: 'Ile de la Réunion',
+          start_label: '6 mois',
+        })
+        .select()
+        .single()
+
+      if (eventError || !newEvent) {
+        console.error('Erreur lors de la création de l\'event par défaut:', eventError)
+        return
+      }
+
+      // Utiliser le nouvel event_id
+      const newEventId = newEvent.id
+
+      // Insérer la course avec le nouvel event_id
+      const { error } = await supabase.from('courses').insert({
+        event_id: newEventId,
+        name: cleanName,
+        image_url: imageUrl || null,
+        gpx_name: payload.gpxName || null,
+        gpx_svg: gpxSvg || null,
+        distance_km: payload.distanceKm || null,
+        elevation_gain: payload.elevationGain || null,
+        profile: payload.profile ? JSON.stringify(payload.profile) : null,
+      })
+
+      if (error) {
+        console.error('Erreur lors de la création de la course:', error)
+        console.error('Détails:', JSON.stringify(error, null, 2))
+        return
+      }
+
+      // Recharger les events depuis Supabase
+      const loadedEvents = await loadEventsFromSupabase()
+      setEvents(loadedEvents)
+      setSelectedEventId(newEventId)
+      return
+    }
+
+    // Insérer dans Supabase avec un event_id valide
     const { error } = await supabase.from('courses').insert({
       event_id: fallbackEventId,
       name: cleanName,
@@ -226,11 +274,12 @@ function App() {
       gpx_svg: gpxSvg || null,
       distance_km: payload.distanceKm || null,
       elevation_gain: payload.elevationGain || null,
-      profile: payload.profile || null,
+      profile: payload.profile ? JSON.stringify(payload.profile) : null,
     })
 
     if (error) {
       console.error('Erreur lors de la création de la course:', error)
+      console.error('Détails:', JSON.stringify(error, null, 2))
       return
     }
 
