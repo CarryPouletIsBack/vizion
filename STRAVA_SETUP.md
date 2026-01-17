@@ -27,14 +27,24 @@ Ajouter les deux variables suivantes (qui sont déjà configurées pour `portfol
 2. Si vous avez déjà une application (celle de `portfolio-react-anthony`), vous pouvez réutiliser les mêmes valeurs
 3. Sinon, créer une nouvelle application et noter le `Client ID` et `Client Secret`
 
-### 4. Configurer la Redirect URI dans Strava
+### 4. Configurer le domaine de rappel dans Strava
 
-Dans les paramètres de votre application Strava, ajouter la Redirect URI :
+Dans les paramètres de votre application Strava (voir l'image ci-dessus) :
 
-- **Production** : `https://vizion-blush.vercel.app/auth/strava/callback`
-- **Développement local** : `http://localhost:5173/auth/strava/callback`
+1. Ouvrir la modal "Modifier l'application"
+2. Dans le champ **"Domaine du rappel pour l'autorisation (Callback domain for authorization)"**, entrer :
+   - **Production** : `vizion-blush.vercel.app` (sans `https://` et sans le chemin `/auth/strava/callback`)
+   - **Développement local** : `localhost` (pour tester en local)
 
-⚠️ **Important** : La Redirect URI doit correspondre **exactement** à celle configurée dans Strava.
+⚠️ **Important** : 
+- Strava n'accepte qu'**un seul domaine** par application
+- Si vous avez déjà une application pour `portfolio-react-anthony`, créez une **nouvelle application** pour Vizion
+- Le domaine doit correspondre exactement au domaine de votre application (sans le protocole `https://`)
+
+**Exemple** :
+- ✅ Correct : `vizion-blush.vercel.app`
+- ❌ Incorrect : `https://vizion-blush.vercel.app`
+- ❌ Incorrect : `vizion-blush.vercel.app/auth/strava/callback`
 
 ### 5. Redéployer sur Vercel
 
