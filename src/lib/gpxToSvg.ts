@@ -31,6 +31,17 @@ export function parseGpxPoints(gpxText: string): PointWithElevation[] {
 }
 
 /**
+ * Extrait les coordonnées de départ (premier point) d'un fichier GPX
+ */
+export function extractGpxStartCoordinates(gpxText: string): [number, number] | null {
+  if (!gpxText || typeof gpxText !== 'string') return null
+  const points = parseGpxPoints(gpxText)
+  if (points.length === 0) return null
+  // Retourner [lat, lon] du premier point
+  return [points[0][0], points[0][1]]
+}
+
+/**
  * Normalise les coordonnées GPS en coordonnées SVG
  */
 function normalizeCoordinates(points: PointWithElevation[]): {

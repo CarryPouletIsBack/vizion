@@ -248,6 +248,7 @@ function App() {
     distanceKm?: number
     elevationGain?: number
     profile?: Array<[number, number]>
+    startCoordinates?: [number, number] // [lat, lon]
     stravaRouteId?: string
     stravaSegments?: Array<{
       id: number
@@ -359,6 +360,7 @@ function App() {
         distance_km: payload.distanceKm || null,
         elevation_gain: elevationGainRounded,
         profile: payload.profile ? JSON.stringify(payload.profile) : null,
+        start_coordinates: payload.startCoordinates || null,
         strava_route_id: payload.stravaRouteId || null,
         strava_segments: payload.stravaSegments ? JSON.stringify(payload.stravaSegments) : null,
       }).select()
@@ -395,6 +397,7 @@ function App() {
       distance_km: payload.distanceKm || null,
       elevation_gain: elevationGainRounded,
       profile: payload.profile ? JSON.stringify(payload.profile) : null,
+      start_coordinates: payload.startCoordinates || null,
       strava_route_id: payload.stravaRouteId || null,
       strava_segments: payload.stravaSegments ? JSON.stringify(payload.stravaSegments) : null,
     }).select()

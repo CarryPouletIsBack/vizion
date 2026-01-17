@@ -8,7 +8,7 @@ import grandRaidLogo from '../assets/da2a1ce5e69564e56a29b5912fd151a8f515e136.pn
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 import WorldMapLeaflet from '../components/WorldMapLeaflet'
-import { gpxToSvg } from '../lib/gpxToSvg'
+import { gpxToSvg, extractGpxStartCoordinates } from '../lib/gpxToSvg'
 import { extractRouteIdFromUrl } from '../lib/stravaRouteParser'
 
 // Jeux de données temporaires pour la maquette MVP.
@@ -206,6 +206,7 @@ export default function SaisonPage({
     }> | undefined
 
     // Traiter le GPX d'abord
+    let startCoordinates: [number, number] | undefined
     if (gpxFile) {
       try {
         console.log('📊 Traitement GPX...')
@@ -214,7 +215,10 @@ export default function SaisonPage({
         distanceKm = stats.distanceKm
         elevationGain = stats.elevationGain
         profile = stats.profile
-        console.log('📊 Stats GPX:', { distanceKm, elevationGain, profilePoints: profile?.length })
+        
+        // Extraire les coordonnées de départ
+        startCoordinates = extractGpxStartCoordinates(gpxText) || undefined
+        console.log('📊 Stats GPX:', { distanceKm, elevationGain, profilePoints: profile?.length, startCoordinates })
         
         // Conversion GPX → SVG côté client (fonctionne en production)
         const rawSvg = gpxToSvg(gpxText)
@@ -311,6 +315,7 @@ export default function SaisonPage({
       distanceKm,
       elevationGain,
       profile,
+      ...(startCoordinates && { startCoordinates }),
       ...(stravaRouteId && { stravaRouteId }),
       ...(stravaSegments && stravaSegments.length > 0 && { stravaSegments }),
     }

@@ -9,6 +9,7 @@ import madagascarFlag from '../assets/368baee8720e10132672b44dafc4f6648780c5e9.p
 import reunionFlag from '../assets/5375c6ef182ea756eeb23fb723865d5c353eb10b.png'
 import grandRaidLogo from '../assets/da2a1ce5e69564e56a29b5912fd151a8f515e136.png'
 import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
+import { supabase, type CourseRow } from '../lib/supabase'
 import './WorldMapLeaflet.css'
 
 // Fix pour les icônes Leaflet par défaut
@@ -28,6 +29,7 @@ type MapTag = {
   label: string
   flag: string
   coordinates: [number, number] // [lat, lng] pour Leaflet
+  course?: CourseRow
 }
 
 // Composant pour gérer le zoom au clic sur la carte
@@ -69,15 +71,49 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect }: WorldM
   const [activeTagId, setActiveTagId] = useState<string | null>(null)
   const [mapCenter, setMapCenter] = useState<[number, number]>([20, 0]) // [lat, lng]
   const [mapZoom, setMapZoom] = useState(2)
+  const [courses, setCourses] = useState<CourseRow[]>([])
 
-  const mapTags = useMemo<MapTag[]>(
-    () => [
-      { id: 'france', label: '2', flag: franceFlag, coordinates: [46.2276, 2.2137] }, // [lat, lng]
-      { id: 'madagascar', label: '3', flag: madagascarFlag, coordinates: [-18.7669, 46.8691] },
-      { id: 'reunion', label: '+10', flag: reunionFlag, coordinates: [-21.1151, 55.5364] },
-    ],
-    []
-  )
+  // Charger les courses depuis Supabase
+  useEffect(() => {
+    const loadCourses = async () => {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*')
+        .not('start_coordinates', 'is', null)
+
+      if (error) {
+        console.error('Erreur lors du chargement des courses:', error)
+        return
+      }
+
+      if (data) {
+        setCourses(data as CourseRow[])
+      }
+    }
+
+    loadCourses()
+  }, [])
+
+  // Créer les map tags depuis les courses avec coordonnées GPX
+  const mapTags = useMemo<MapTag[]>(() => {
+    const tags: MapTag[] = []
+    
+    courses.forEach((course, index) => {
+      if (course.start_coordinates && course.start_coordinates.length === 2) {
+        const [lat, lon] = course.start_coordinates
+        // Utiliser le drapeau de La Réunion par défaut (à améliorer avec le pays de l'event)
+        tags.push({
+          id: course.id,
+          label: String(index + 1),
+          flag: reunionFlag,
+          coordinates: [lat, lon] as [number, number],
+          course: course,
+        })
+      }
+    })
+
+    return tags
+  }, [courses])
 
   const handleTagClick = (tag: MapTag) => {
     setActiveTagId(tag.id)
@@ -125,7 +161,6 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect }: WorldM
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={19}
-          className="custom-tile-layer"
         />
         
         <MapClickHandler onMapClick={handleMapClick} />
@@ -142,7 +177,7 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect }: WorldM
               },
             }}
           >
-            {activeTag?.id === tag.id && (
+            {activeTag?.id === tag.id && tag.course && (
               <Popup
                 position={tag.coordinates}
                 className="map-card-popup"
@@ -154,21 +189,24 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect }: WorldM
                 <div className="map-card">
                   <button type="button" className="map-card-button" onClick={onCourseSelect}>
                     <div className="map-card__media">
-                      <img src={grandRaidLogo} alt="Grand raid" />
+                      <img src={tag.course.image_url || grandRaidLogo} alt={tag.course.name} />
                     </div>
                     <div className="map-card__heading">
-                      <span>Grand raid</span>
-                      <span>2026</span>
+                      <span>{tag.course.name}</span>
                       <span className="map-card__flag">
-                        <img src={reunionFlag} alt="Drapeau de La Reunion" />
+                        <img src={reunionFlag} alt="" />
                       </span>
                     </div>
                     <div className="map-card__info">
                       <div className="map-card__details">
-                        <p>Diagonale des fous</p>
-                        <p>165 km – 9 800 D+</p>
+                        <p>{tag.course.name}</p>
+                        {tag.course.distance_km && tag.course.elevation_gain && (
+                          <p>{Math.round(tag.course.distance_km)} km – {Math.round(tag.course.elevation_gain)} D+</p>
+                        )}
                       </div>
-                      <img className="map-card__gpx" src={gpxIcon} alt="GPX" />
+                      {tag.course.gpx_svg && (
+                        <img className="map-card__gpx" src={gpxIcon} alt="GPX" />
+                      )}
                     </div>
                     <div className="map-card__footer">
                       <div className="map-card__footer-col">
