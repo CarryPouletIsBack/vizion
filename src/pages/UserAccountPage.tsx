@@ -23,35 +23,44 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    // Charger les données utilisateur depuis localStorage
-    const loadUser = () => {
+    // Charger l'utilisateur Supabase
+    const loadUser = async () => {
       try {
-        const tokenData = localStorage.getItem('vizion:strava_token')
-        if (tokenData) {
-          const parsed = JSON.parse(tokenData)
-          if (parsed.athlete) {
-            const profileUrl = parsed.athlete.profile || parsed.athlete.profile_medium || parsed.athlete.profile_large
-            setUser({
-              id: parsed.athlete.id,
-              username: parsed.athlete.username || '',
-              firstname: parsed.athlete.firstname || '',
-              lastname: parsed.athlete.lastname || '',
-              profile: profileUrl,
-              city: parsed.athlete.city,
-              country: parsed.athlete.country,
-              created_at: parsed.athlete.created_at,
-            })
-            setIsStravaConnected(true)
+        const supabaseUser = await getCurrentUser()
+        if (supabaseUser) {
+          // Charger les données Strava si disponibles
+          const tokenData = localStorage.getItem('vizion:strava_token')
+          let stravaData = null
+          if (tokenData) {
+            try {
+              stravaData = JSON.parse(tokenData)
+              setIsStravaConnected(true)
+            } catch (e) {
+              // Ignorer les erreurs de parsing
+            }
           }
+
+          const profileUrl = stravaData?.athlete?.profile || stravaData?.athlete?.profile_medium || stravaData?.athlete?.profile_large
+
+          setUser({
+            id: supabaseUser.id,
+            email: supabaseUser.email || '',
+            firstname: stravaData?.athlete?.firstname || supabaseUser.user_metadata?.firstname,
+            lastname: stravaData?.athlete?.lastname || supabaseUser.user_metadata?.lastname,
+            profile: profileUrl,
+          })
+        } else {
+          // Rediriger vers la page d'accueil si non connecté
+          onNavigate?.('saison')
         }
       } catch (error) {
-        console.warn('Impossible de charger les données utilisateur:', error)
+        console.warn('Impossible de charger l\'utilisateur:', error)
+        onNavigate?.('saison')
       }
     }
 
     loadUser()
 
-    // Écouter les changements dans localStorage
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'vizion:strava_token') {
         loadUser()
@@ -60,7 +69,7 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
 
     window.addEventListener('storage', handleStorageChange)
     return () => window.removeEventListener('storage', handleStorageChange)
-  }, [])
+  }, [onNavigate])
 
   const handleStravaConnect = async () => {
     setIsLoading(true)
