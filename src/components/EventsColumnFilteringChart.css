@@ -117,6 +117,13 @@
   object-fit: cover;
 }
 
+.events-grid__options-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
 .events-grid__options {
   background: rgba(11, 14, 17, 0.4);
   border: 1px solid rgba(0, 0, 0, 0.06);
@@ -126,6 +133,7 @@
   color: var(--color-text-primary, #e5e7eb);
   cursor: pointer;
   transition: color 0.2s, background-color 0.2s;
+  pointer-events: auto;
 }
 
 .events-grid__options:hover {
