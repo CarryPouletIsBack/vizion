@@ -177,10 +177,104 @@ export default defineConfig({
                 res.setHeader('Content-Type', 'application/json')
                 res.end(JSON.stringify({ error: 'Token exchange failed' }))
               }
-            })
           })
-        },
+        })
+
+        // Endpoint pour récupérer les activités Strava
+        server.middlewares.use('/api/strava/activities', async (req, res) => {
+          if (req.method !== 'GET') {
+            res.statusCode = 405
+            res.end('Method Not Allowed')
+            return
+          }
+
+          const authHeader = req.headers.authorization
+          const accessToken = authHeader?.replace('Bearer ', '')
+
+          if (!accessToken) {
+            res.statusCode = 401
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: 'Missing access token' }))
+            return
+          }
+
+          try {
+            // Récupérer les activités Strava (8-12 semaines glissantes)
+            const perPage = 200
+            const activities: any[] = []
+            let page = 1
+            const now = Date.now()
+            const twelveWeeksAgo = now - 12 * 7 * 24 * 60 * 60 * 1000
+
+            while (true) {
+              const response = await fetch(
+                `https://www.strava.com/api/v3/athlete/activities?page=${page}&per_page=${perPage}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                  },
+                }
+              )
+
+              if (!response.ok) {
+                if (response.status === 401) {
+                  res.statusCode = 401
+                  res.setHeader('Content-Type', 'application/json')
+                  res.end(JSON.stringify({ error: 'Token expired or invalid' }))
+                  return
+                }
+                const errorText = await response.text()
+                res.statusCode = response.status
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify({ error: errorText }))
+                return
+              }
+
+              const pageActivities = (await response.json()) as Array<{
+                id: number
+                start_date: string
+                type: string
+                distance: number
+                total_elevation_gain: number
+                moving_time: number
+              }>
+
+              if (pageActivities.length === 0) break
+
+              const filtered = pageActivities.filter((act) => {
+                const activityDate = new Date(act.start_date).getTime()
+                return act.type === 'Run' && activityDate >= twelveWeeksAgo
+              })
+
+              activities.push(...filtered)
+
+              if (pageActivities.length < perPage) break
+
+              const lastActivityDate = new Date(pageActivities[pageActivities.length - 1].start_date).getTime()
+              if (lastActivityDate < twelveWeeksAgo) break
+
+              page += 1
+            }
+
+            const formattedActivities = activities.map((act: any) => ({
+              id: String(act.id),
+              date: act.start_date,
+              distanceKm: act.distance / 1000,
+              elevationGain: act.total_elevation_gain || 0,
+              movingTimeSec: act.moving_time || 0,
+            }))
+
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ activities: formattedActivities }))
+          } catch (error) {
+            console.error('Erreur lors de la récupération des activités Strava:', error)
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: 'Failed to fetch activities' }))
+          }
+        })
       },
+    },
   ],
   resolve: {
     alias: {
