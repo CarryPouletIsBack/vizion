@@ -225,7 +225,7 @@ export default function SaisonPage({
 
     // Extraire l'ID de route depuis l'URL Strava (optionnel, ne bloque pas la création)
     if (stravaRouteUrl) {
-      console.log('🔗 Récupération segments Strava...')
+      console.log('🔗 Récupération segments Strava et performances...')
       stravaRouteId = extractRouteIdFromUrl(stravaRouteUrl) || undefined
       if (stravaRouteId) {
         console.log('🔗 Route ID extrait:', stravaRouteId)
@@ -235,18 +235,56 @@ export default function SaisonPage({
           const tokenData = localStorage.getItem('vizion:strava_token')
           if (tokenData) {
             const token = JSON.parse(tokenData)
-            const response = await fetch(`/api/strava/route-segments?route_id=${stravaRouteId}`, {
+            
+            // 1. Récupérer les segments de la route
+            const segmentsResponse = await fetch(`/api/strava/route-segments?route_id=${stravaRouteId}`, {
               headers: {
                 Authorization: `Bearer ${token.access_token}`,
               },
             })
 
-            if (response.ok) {
-              const data = await response.json()
-              stravaSegments = data.segments || undefined
+            if (segmentsResponse.ok) {
+              const segmentsData = await segmentsResponse.json()
+              stravaSegments = segmentsData.segments || undefined
               console.log(`✅ Segments récupérés : ${stravaSegments?.length || 0}`)
+              
+              // 2. Récupérer les performances du coureur sur cette route (pour améliorer l'analyse)
+              try {
+                const performanceResponse = await fetch(`/api/strava/route-performance?route_id=${stravaRouteId}`, {
+                  headers: {
+                    Authorization: `Bearer ${token.access_token}`,
+                  },
+                })
+                
+                if (performanceResponse.ok) {
+                  const performanceData = await performanceResponse.json()
+                  console.log(`📊 Performances récupérées : ${performanceData.activities_count} activités, ${performanceData.segment_performance?.length || 0} segments avec données`)
+                  
+                  // Enrichir les segments avec les performances
+                  if (stravaSegments && performanceData.segment_performance) {
+                    stravaSegments = stravaSegments.map((seg: any) => {
+                      const perf = performanceData.segment_performance.find((p: any) => p.segment_id === seg.id)
+                      if (perf) {
+                        return {
+                          ...seg,
+                          best_time: perf.best_time,
+                          average_time: perf.average_time,
+                          attempts: perf.attempts,
+                          last_attempt_date: perf.last_attempt_date,
+                        }
+                      }
+                      return seg
+                    })
+                    console.log(`✅ Segments enrichis avec performances`)
+                  }
+                } else {
+                  console.warn('⚠️ Impossible de récupérer les performances (non bloquant)')
+                }
+              } catch (perfError) {
+                console.warn('⚠️ Erreur lors de la récupération des performances (non bloquant):', perfError)
+              }
             } else {
-              const errorText = await response.text()
+              const errorText = await segmentsResponse.text()
               console.warn('⚠️ Impossible de récupérer les segments Strava:', errorText)
               // Ne pas bloquer la création si les segments échouent
             }

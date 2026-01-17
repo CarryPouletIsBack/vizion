@@ -141,6 +141,28 @@ export function analyzeCourseReadiness(
         (Math.abs(seg.average_grade) > 30 || (Math.abs(seg.elevation_gain) > 500 && seg.distance / 1000 < 3))
     )
 
+    // Analyser les performances sur les segments critiques (si disponibles)
+    const segmentsWithPerformance = segments.filter((seg) => seg.best_time || seg.average_time)
+    if (segmentsWithPerformance.length > 0) {
+      const slowSegments = segmentsWithPerformance.filter((seg) => {
+        // Un segment est "lent" si le temps moyen est > 120% du temps théorique basé sur la distance
+        if (!seg.average_time || !seg.distance) return false
+        const theoreticalTime = (seg.distance / 1000) * 360 // Estimation : 10 km/h = 360s/km
+        return seg.average_time > theoreticalTime * 1.2
+      })
+
+      if (slowSegments.length > 0) {
+        issues.push(`${slowSegments.length} segment(s) avec performance faible détecté(s)`)
+        recommendations.push(`Travailler spécifiquement les segments lents : ${slowSegments.slice(0, 3).map((s) => s.name).join(', ')}`)
+      }
+
+      // Analyser la progression (si plusieurs tentatives)
+      const improvingSegments = segmentsWithPerformance.filter((seg) => seg.attempts && seg.attempts > 1 && seg.best_time && seg.average_time && seg.best_time < seg.average_time * 0.9)
+      if (improvingSegments.length > 0) {
+        strengths.push(`Progression détectée sur ${improvingSegments.length} segment(s)`)
+      }
+    }
+
     if (criticalClimbs.length > 0) {
       const longestClimb = criticalClimbs.reduce((max, seg) => (seg.distance > max.distance ? seg : max), criticalClimbs[0])
       issues.push(
