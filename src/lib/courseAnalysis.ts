@@ -170,13 +170,27 @@ export function analyzeCourseReadiness(
   }
 
   // === ANALYSE POINTS D'ABANDON CRITIQUES (basée sur stats Grand Raid) ===
-  if (stats && metrics && metrics.longRunDistanceKm > 0) {
-    // Analyser les points critiques avant la distance actuelle du coureur
-    const criticalBeforeDistance = getCriticalPointBeforeDistance(stats, metrics.longRunDistanceKm)
-    if (criticalBeforeDistance && criticalBeforeDistance.abandons > 50) {
-      recommendations.push(
-        `Attention : "${criticalBeforeDistance.name}" (${criticalBeforeDistance.distanceKm} km) est un point d'abandon majeur avant votre distance max actuelle`
+  if (stats) {
+    // Identifier les points d'abandon critiques
+    const criticalAbandonPoints = getCriticalAbandonPoints(stats, 3)
+    if (criticalAbandonPoints.length > 0) {
+      const topAbandonPoint = criticalAbandonPoints[0]
+      issues.push(
+        `Point d'abandon critique identifié : "${topAbandonPoint.name}" (${topAbandonPoint.distanceKm} km) - ${topAbandonPoint.abandons} abandons en 2025`
       )
+      recommendations.push(
+        `Préparer spécifiquement le passage de "${topAbandonPoint.name}" (${topAbandonPoint.distanceKm} km) - zone à fort taux d'abandon`
+      )
+    }
+
+    // Analyser les points critiques avant la distance actuelle du coureur
+    if (metrics && metrics.longRunDistanceKm > 0) {
+      const criticalBeforeDistance = getCriticalPointBeforeDistance(stats, metrics.longRunDistanceKm)
+      if (criticalBeforeDistance && criticalBeforeDistance.abandons > 50) {
+        recommendations.push(
+          `Attention : "${criticalBeforeDistance.name}" (${criticalBeforeDistance.distanceKm} km) est un point d'abandon majeur avant votre distance max actuelle`
+        )
+      }
     }
   }
 
