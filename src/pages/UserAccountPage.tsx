@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import './UserAccountPage.css'
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
@@ -35,6 +35,10 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
     totalElevationGain: 0,
   })
   const [statsLoading, setStatsLoading] = useState(false)
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [uploadFileName, setUploadFileName] = useState<string>('')
+  const [uploadLoading, setUploadLoading] = useState(false)
+  const uploadFileRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -281,6 +285,64 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
     }
   }
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const extension = file.name.split('.').pop()?.toLowerCase()
+      if (extension === 'gpx' || extension === 'fit' || extension === 'tcx') {
+        setUploadFile(file)
+        setUploadFileName(file.name)
+      } else {
+        alert('Format de fichier non supporté. Veuillez sélectionner un fichier GPX, FIT ou TCX.')
+        if (uploadFileRef.current) {
+          uploadFileRef.current.value = ''
+        }
+      }
+    }
+  }
+
+  const handleFileUpload = async () => {
+    if (!uploadFile) return
+
+    setUploadLoading(true)
+    try {
+      const extension = uploadFile.name.split('.').pop()?.toLowerCase()
+      
+      // Pour l'instant, on affiche juste un message de succès
+      // TODO: Parser le fichier (GPX/FIT/TCX) et l'intégrer avec les données Strava ou les stocker
+      console.log('Fichier importé:', {
+        name: uploadFile.name,
+        type: extension,
+        size: uploadFile.size,
+      })
+
+      // Simuler un traitement
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      alert(`Fichier ${uploadFile.name} importé avec succès !\n\nNote: L'intégration avec les données d'entraînement sera disponible prochainement.`)
+      
+      // Réinitialiser
+      setUploadFile(null)
+      setUploadFileName('')
+      if (uploadFileRef.current) {
+        uploadFileRef.current.value = ''
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'import du fichier:', error)
+      alert(error instanceof Error ? error.message : 'Erreur lors de l\'import du fichier')
+    } finally {
+      setUploadLoading(false)
+    }
+  }
+
+  const handleFileCancel = () => {
+    setUploadFile(null)
+    setUploadFileName('')
+    if (uploadFileRef.current) {
+      uploadFileRef.current.value = ''
+    }
+  }
+
   return (
     <div className="user-account-page">
       <HeaderTopBar onNavigate={onNavigate} />
@@ -452,6 +514,62 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
                     >
                       {isLoading ? 'Connexion...' : 'Se connecter'}
                     </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Import de sortie */}
+            <div className="user-account-card">
+              <div className="user-account-card__header">
+                <h2 className="user-account-card__title">Importer une sortie</h2>
+              </div>
+              <div className="user-account-card__body">
+                <div className="user-account-upload">
+                  <div className="user-account-upload__zone">
+                    <input
+                      type="file"
+                      id="activity-upload"
+                      ref={uploadFileRef}
+                      onChange={handleFileSelect}
+                      accept=".gpx,.fit,.tcx,application/gpx+xml,application/xml,text/xml"
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="activity-upload" className="user-account-upload__label">
+                      <div className="user-account-upload__icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="17 8 12 3 7 8" />
+                          <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                      </div>
+                      <span className="user-account-upload__text">
+                        {uploadFileName || 'Cliquez pour sélectionner un fichier'}
+                      </span>
+                      <span className="user-account-upload__formats">
+                        Formats supportés : GPX, FIT, TCX
+                      </span>
+                    </label>
+                  </div>
+                  {uploadFile && (
+                    <div className="user-account-upload__actions">
+                      <button
+                        type="button"
+                        className="btn btn--ghost"
+                        onClick={handleFileCancel}
+                        disabled={uploadLoading}
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn--primary"
+                        onClick={handleFileUpload}
+                        disabled={uploadLoading}
+                      >
+                        {uploadLoading ? 'Import en cours...' : 'Importer'}
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
