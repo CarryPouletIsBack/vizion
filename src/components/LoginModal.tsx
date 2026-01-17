@@ -36,16 +36,6 @@ export default function LoginModal({ isOpen, initialMode = 'login', onClose, onL
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Mettre à jour le mode quand initialMode change ou quand la modal s'ouvre
-  useEffect(() => {
-    if (isOpen) {
-      setMode(initialMode)
-      // Réinitialiser les formulaires quand la modal s'ouvre
-      resetLogin()
-      resetSignup()
-    }
-  }, [isOpen, initialMode, resetLogin, resetSignup])
-
   const {
     register: registerLogin,
     handleSubmit: handleSubmitLogin,
@@ -63,6 +53,16 @@ export default function LoginModal({ isOpen, initialMode = 'login', onClose, onL
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
   })
+
+  // Mettre à jour le mode quand initialMode change ou quand la modal s'ouvre
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode)
+      // Réinitialiser les formulaires quand la modal s'ouvre
+      resetLogin()
+      resetSignup()
+    }
+  }, [isOpen, initialMode, resetLogin, resetSignup])
 
   if (!isOpen) return null
 
