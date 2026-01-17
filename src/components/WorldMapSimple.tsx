@@ -1,7 +1,7 @@
 // @ts-nocheck
-import { memo, useMemo, useRef, useState, useEffect } from 'react'
-import { geoMercator } from 'd3-geo'
-import { Annotation, ComposableMap, Geographies, Geography } from 'react-simple-maps'
+import { memo, useMemo, useState } from 'react'
+import { geoCentroid } from 'd3-geo'
+import { Annotation, ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps'
 
 import features from '../data/world-map-features.json'
 import franceFlag from '../assets/0d2a1183d2a0d185452acf52145cc62ece475c35.png'
@@ -24,9 +24,8 @@ type MapTag = {
 }
 
 const WorldMapSimple = memo(function WorldMapSimple({ onCourseSelect }: WorldMapSimpleProps) {
+  const [position, setPosition] = useState({ coordinates: [0, 0] as [number, number], zoom: 1.35 })
   const [activeTagId, setActiveTagId] = useState<string | null>(null)
-  const [tagPositions, setTagPositions] = useState<Map<string, { x: number; y: number }>>(new Map())
-  const containerRef = useRef<HTMLDivElement | null>(null)
 
   const mapTags = useMemo<MapTag[]>(
     () => [
@@ -37,145 +36,200 @@ const WorldMapSimple = memo(function WorldMapSimple({ onCourseSelect }: WorldMap
     []
   )
 
-  // Projection identique à celle utilisée par ComposableMap
-  const projection = useMemo(() => {
-    return geoMercator()
-      .scale(145)
-      .center([0, 18])
-  }, [])
-
-  // Calculer les positions des tags en pixels
-  useEffect(() => {
-    const updatePositions = () => {
-      if (!containerRef.current) return
-
-      const container = containerRef.current
-      const rect = container.getBoundingClientRect()
-      const width = rect.width
-      const height = rect.height
-
-      // Ajuster la projection à la taille du container
-      projection.translate([width / 2, height / 2])
-
-      const positions = new Map<string, { x: number; y: number }>()
-
-      mapTags.forEach((tag) => {
-        const projected = projection(tag.coordinates)
-        if (projected && projected[0] !== null && projected[1] !== null) {
-          positions.set(tag.id, {
-            x: projected[0],
-            y: projected[1],
-          })
-        }
-      })
-
-      setTagPositions(positions)
-    }
-
-    // Mettre à jour les positions au montage et au redimensionnement
-    const timeoutId = setTimeout(updatePositions, 100) // Petit délai pour laisser le SVG se rendre
-    window.addEventListener('resize', updatePositions)
-
-    return () => {
-      clearTimeout(timeoutId)
-      window.removeEventListener('resize', updatePositions)
-    }
-  }, [mapTags, projection])
-
   const handleTagClick = (tag: MapTag) => {
     setActiveTagId(tag.id)
+    // Zoomer sur la zone du tag
+    setPosition({
+      coordinates: tag.coordinates,
+      zoom: Math.min(6, Math.max(2.5, position.zoom + 1.5)),
+    })
+  }
+
+  const handleGeographyClick = (geo: GeoJSON.Feature) => {
+    // Zoomer sur le pays cliqué
+    const [longitude, latitude] = geoCentroid(geo)
+    setPosition({
+      coordinates: [longitude, latitude],
+      zoom: Math.min(6, Math.max(2.5, position.zoom + 1)),
+    })
   }
 
   const activeTag = mapTags.find((tag) => tag.id === activeTagId) ?? null
 
   return (
-    <div className="world-map-simple" ref={containerRef}>
+    <div className="world-map-simple">
       <ComposableMap
         projection="geoMercator"
         projectionConfig={{ scale: 145, center: [0, 18] }}
       >
-        <Geographies geography={features}>
-          {({ geographies }) =>
-            geographies.map((geo) => (
-              <Geography
-                key={geo.rsmKey}
-                geography={geo}
-                fill="var(--color-text-primary, #e5e7eb)"
-                stroke="var(--color-border-default, #2a3038)"
-                strokeWidth={0.6}
-                style={{
-                  default: { outline: 'none', cursor: 'default' },
-                  hover: { outline: 'none', cursor: 'default' },
-                  pressed: { outline: 'none', cursor: 'default' },
-                }}
-              />
-            ))
-          }
-        </Geographies>
+        <ZoomableGroup
+          zoom={position.zoom}
+          center={position.coordinates}
+          minZoom={0.9}
+          maxZoom={6}
+          onMoveEnd={(nextPosition) => setPosition(nextPosition)}
+        >
+          <Geographies geography={features}>
+            {({ geographies }) =>
+              geographies.map((geo) => {
+                const [longitude, latitude] = geoCentroid(geo)
+                const name = geo.properties?.NAME || geo.properties?.name || geo.properties?.NAME_LONG || ''
+                
+                return (
+                  <g key={geo.rsmKey}>
+                    <Geography
+                      geography={geo}
+                      fill="var(--color-text-primary, #e5e7eb)"
+                      stroke="var(--color-border-default, #2a3038)"
+                      strokeWidth={0.6}
+                      onClick={() => handleGeographyClick(geo)}
+                      style={{
+                        default: { outline: 'none', cursor: 'pointer' },
+                        hover: { 
+                          outline: 'none', 
+                          cursor: 'pointer',
+                          fill: 'var(--color-accent, #bfc900)',
+                          opacity: 0.7,
+                        },
+                        pressed: { outline: 'none', cursor: 'pointer' },
+                      }}
+                    />
+                    {/* Afficher le nom du pays */}
+                    {name && position.zoom > 1.5 && (
+                      <text
+                        x={longitude}
+                        y={latitude}
+                        textAnchor="middle"
+                        fontSize={Math.max(8, Math.min(14, position.zoom * 2))}
+                        fill="var(--color-text-secondary, #9ca3af)"
+                        style={{
+                          pointerEvents: 'none',
+                          userSelect: 'none',
+                        }}
+                      >
+                        {name}
+                      </text>
+                    )}
+                  </g>
+                )
+              })
+            }
+          </Geographies>
 
-        {activeTag && (
-          <Annotation subject={activeTag.coordinates} dx={32} dy={-20} connectorProps={{ stroke: 'none' }}>
-            <foreignObject x={0} y={-140} width={292} height={180} style={{ overflow: 'visible' }}>
-              <div xmlns="http://www.w3.org/1999/xhtml">
-                <button type="button" className="map-card" onClick={onCourseSelect}>
-                  <div className="map-card__media">
-                    <img src={grandRaidLogo} alt="Grand raid" />
+          {mapTags.map((tag) => (
+            <Marker key={tag.id} coordinates={tag.coordinates}>
+              <g>
+                <circle
+                  r={4}
+                  fill="var(--color-accent, #bfc900)"
+                  stroke="var(--color-bg-primary, #0b0e11)"
+                  strokeWidth={1}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => handleTagClick(tag)}
+                />
+                <foreignObject 
+                  x={-30} 
+                  y={-14} 
+                  width={60} 
+                  height={28}
+                  requiredExtensions="http://www.w3.org/1999/xhtml"
+                  style={{ 
+                    overflow: 'visible',
+                    pointerEvents: 'auto',
+                  }}
+                >
+                  <div 
+                    xmlns="http://www.w3.org/1999/xhtml" 
+                    style={{ 
+                      width: '100%', 
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      pointerEvents: 'auto',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="map-tag"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleTagClick(tag)
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '2px 4px',
+                        borderRadius: '8px',
+                        background: 'var(--color-bg-surface, #161b21)',
+                        backdropFilter: 'blur(25px)',
+                        WebkitBackdropFilter: 'blur(25px)',
+                        border: '0.5px solid rgba(42, 46, 26, 0.2)',
+                        fontSize: '11px',
+                        letterSpacing: '1.43px',
+                        color: 'var(--color-text-primary, #e5e7eb)',
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        margin: 0,
+                        outline: 'none',
+                        visibility: 'visible',
+                        opacity: 1,
+                        position: 'relative',
+                        transform: 'none',
+                        whiteSpace: 'nowrap',
+                        boxSizing: 'border-box',
+                      }}
+                    >
+                      <span className="map-tag__flag" style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
+                        <img src={tag.flag} alt="" aria-hidden="true" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      </span>
+                      <span>{tag.label}</span>
+                    </button>
                   </div>
-                  <div className="map-card__heading">
-                    <span>Grand raid</span>
-                    <span>2026</span>
-                    <span className="map-card__flag">
-                      <img src={reunionFlag} alt="Drapeau de La Reunion" />
-                    </span>
-                  </div>
-                  <div className="map-card__info">
-                    <div className="map-card__details">
-                      <p>Diagonale des fous</p>
-                      <p>165 km – 9 800 D+</p>
+                </foreignObject>
+              </g>
+            </Marker>
+          ))}
+
+          {activeTag && (
+            <Annotation subject={activeTag.coordinates} dx={32} dy={-20} connectorProps={{ stroke: 'none' }}>
+              <foreignObject x={0} y={-140} width={292} height={180} style={{ overflow: 'visible' }}>
+                <div xmlns="http://www.w3.org/1999/xhtml">
+                  <button type="button" className="map-card" onClick={onCourseSelect}>
+                    <div className="map-card__media">
+                      <img src={grandRaidLogo} alt="Grand raid" />
                     </div>
-                    <img className="map-card__gpx" src={gpxIcon} alt="GPX" />
-                  </div>
-                  <div className="map-card__footer">
-                    <div className="map-card__footer-col">
-                      <p>État de préparation : 62%</p>
+                    <div className="map-card__heading">
+                      <span>Grand raid</span>
+                      <span>2026</span>
+                      <span className="map-card__flag">
+                        <img src={reunionFlag} alt="Drapeau de La Reunion" />
+                      </span>
                     </div>
-                    <div className="map-card__footer-col">
-                      <p>Début de la course</p>
-                      <p className="map-card__countdown">6 mois</p>
+                    <div className="map-card__info">
+                      <div className="map-card__details">
+                        <p>Diagonale des fous</p>
+                        <p>165 km – 9 800 D+</p>
+                      </div>
+                      <img className="map-card__gpx" src={gpxIcon} alt="GPX" />
                     </div>
-                  </div>
-                </button>
-              </div>
-            </foreignObject>
-          </Annotation>
-        )}
+                    <div className="map-card__footer">
+                      <div className="map-card__footer-col">
+                        <p>État de préparation : 62%</p>
+                      </div>
+                      <div className="map-card__footer-col">
+                        <p>Début de la course</p>
+                        <p className="map-card__countdown">6 mois</p>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </foreignObject>
+            </Annotation>
+          )}
+        </ZoomableGroup>
       </ComposableMap>
-
-      {/* Tags positionnés en HTML absolu au-dessus du SVG */}
-      {mapTags.map((tag) => {
-        const position = tagPositions.get(tag.id)
-        if (!position) return null
-
-        return (
-          <button
-            key={tag.id}
-            type="button"
-            className="map-tag map-tag--absolute"
-            onClick={() => handleTagClick(tag)}
-            style={{
-              position: 'absolute',
-              left: `${position.x}px`,
-              top: `${position.y}px`,
-              transform: 'translate(-50%, -50%)',
-            }}
-          >
-            <span className="map-tag__flag">
-              <img src={tag.flag} alt="" aria-hidden="true" />
-            </span>
-            <span>{tag.label}</span>
-          </button>
-        )
-      })}
     </div>
   )
 })
