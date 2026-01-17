@@ -354,14 +354,36 @@ function App() {
         .select()
         .single()
 
-      if (eventError || !newEvent || !newEvent.id) {
+      if (eventError) {
         console.error('❌ Erreur lors de la création de l\'événement:', eventError)
-        alert(`Erreur lors de la création de l'événement: ${eventError?.message || 'Erreur inconnue'}`)
+        console.error('Détails complets:', JSON.stringify(eventError, null, 2))
+        alert(`Erreur lors de la création de l'événement: ${eventError.message}\n\nCode: ${eventError.code}\n\nVérifiez la console pour plus de détails.`)
+        return
+      }
+
+      if (!newEvent || !newEvent.id) {
+        console.error('❌ L\'événement a été créé mais n\'a pas d\'ID:', newEvent)
+        alert('Erreur: l\'événement a été créé mais n\'a pas d\'ID. Veuillez réessayer.')
         return
       }
 
       eventIdToUse = newEvent.id
-      console.log('✅ Nouvel événement créé avec ID:', eventIdToUse)
+      console.log('✅ Nouvel événement créé avec ID:', eventIdToUse, 'Données complètes:', newEvent)
+
+      // Vérifier immédiatement que l'event existe en base
+      const { data: verifyEvent, error: verifyError } = await supabase
+        .from('events')
+        .select('id')
+        .eq('id', eventIdToUse)
+        .single()
+
+      if (verifyError || !verifyEvent) {
+        console.error('❌ ERREUR: L\'événement créé n\'existe pas en base:', verifyError)
+        alert('Erreur: l\'événement a été créé mais n\'est pas accessible. Problème de permissions possible.')
+        return
+      }
+
+      console.log('✅ Vérification immédiate OK, event existe:', verifyEvent.id)
 
       // Recharger les events pour avoir le nouvel event dans la liste
       const loadedEvents = await loadEventsFromSupabase()
