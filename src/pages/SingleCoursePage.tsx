@@ -7,6 +7,7 @@ import SingleCourseElevationChart from '../components/SingleCourseElevationChart
 import useGpxHoverMarker from '../hooks/useGpxHoverMarker'
 import useStravaMetrics from '../hooks/useStravaMetrics'
 import { analyzeCourseReadiness } from '../lib/courseAnalysis'
+import { grandRaidStats } from '../data/grandRaidStats'
 
 type SingleCoursePageProps = {
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
