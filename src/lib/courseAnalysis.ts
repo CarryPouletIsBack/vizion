@@ -1,6 +1,7 @@
 import type { StravaMetrics } from '../types/strava'
 import type { StravaSegment } from './stravaSegments'
 import { estimateTrailTime, type TimeEstimate } from './trailTimeEstimator'
+import { grandRaidStats, getCriticalAbandonPoints, getCriticalPointBeforeDistance, type GrandRaidStats } from '../data/grandRaidStats'
 
 /**
  * Données d'une course pour l'analyse
@@ -49,12 +50,16 @@ export type CourseAnalysis = {
 /**
  * Analyse la préparation du coureur pour une course donnée
  * Compare les métriques Strava avec les exigences de la course
+ * Utilise les statistiques du Grand Raid Réunion 2025 pour affiner l'analyse
  */
 export function analyzeCourseReadiness(
   metrics: StravaMetrics | null,
   course: CourseData,
-  segments?: StravaSegment[]
+  segments?: StravaSegment[],
+  raceStats?: GrandRaidStats
 ): CourseAnalysis {
+  // Utiliser les stats du Grand Raid par défaut si disponibles
+  const stats = raceStats || (course.name?.toLowerCase().includes('grand raid') || course.name?.toLowerCase().includes('diagonale') ? grandRaidStats : undefined)
   // Si pas de métriques, retourner un état par défaut
   if (!metrics) {
     return {

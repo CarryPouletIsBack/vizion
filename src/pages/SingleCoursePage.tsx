@@ -78,7 +78,17 @@ export default function SingleCoursePage({
     type: 'climb' | 'descent' | 'flat'
   }> } | undefined)?.stravaSegments
 
-  const analysis = analyzeCourseReadiness(metrics, courseData, stravaSegments)
+  // Utiliser les stats du Grand Raid si c'est une course similaire
+  const useGrandRaidStats = courseData.name?.toLowerCase().includes('grand raid') || 
+                            courseData.name?.toLowerCase().includes('diagonale') ||
+                            (courseData.distanceKm > 150 && courseData.elevationGain > 8000)
+  
+  const analysis = analyzeCourseReadiness(
+    metrics, 
+    courseData, 
+    stravaSegments,
+    useGrandRaidStats ? grandRaidStats : undefined
+  )
   return (
     <div className="single-course-page">
       <HeaderTopBar onNavigate={onNavigate} />
