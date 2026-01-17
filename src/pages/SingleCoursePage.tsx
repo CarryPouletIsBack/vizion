@@ -2,6 +2,7 @@ import './SingleCoursePage.css'
 
 import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import HeaderTopBar from '../components/HeaderTopBar'
+import SideNav from '../components/SideNav'
 import SingleCourseElevationChart from '../components/SingleCourseElevationChart'
 import useGpxHoverMarker from '../hooks/useGpxHoverMarker'
 import useStravaMetrics from '../hooks/useStravaMetrics'
@@ -54,24 +55,11 @@ export default function SingleCoursePage({
   const { metrics } = useStravaMetrics()
   return (
     <div className="single-course-page">
-      <HeaderTopBar />
+      <HeaderTopBar onNavigate={onNavigate} />
 
       <div className="single-course-body">
         <aside className="single-course-side">
-          <nav className="single-course-nav">
-            <button className="single-course-nav__item single-course-nav__item--active" type="button">
-              Saison
-            </button>
-            <button className="single-course-nav__item" type="button" onClick={() => onNavigate?.('events')}>
-              Événements
-            </button>
-            <button className="single-course-nav__item" type="button" onClick={() => onNavigate?.('courses')}>
-              Courses
-            </button>
-            <button className="single-course-nav__item" type="button">
-              Infos
-            </button>
-          </nav>
+          <SideNav activeItem="saison" onNavigate={onNavigate} />
         </aside>
 
         <main className="single-course-main">

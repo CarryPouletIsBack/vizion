@@ -12,6 +12,11 @@
   background: var(--color-bg-primary, #0b0e11);
 }
 
+.saison-topbar__logo {
+  cursor: pointer;
+  display: inline-block;
+}
+
 .saison-topbar__logo img {
   width: 64px;
   height: 18px;

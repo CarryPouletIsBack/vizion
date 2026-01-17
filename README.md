@@ -32,12 +32,15 @@ Le tracé SVG est généré via un script Python local, appelé par un middlewar
 - Endpoint: `POST /api/gpx-to-svg`
 - Fichiers temporaires: `/tmp/vizion-gpx`
 
-## Données en mémoire
+## Persistance des données (Supabase)
 
-Les événements/courses et les stats GPX sont stockés en mémoire (state React) pour être réutilisés entre:
+Les événements et courses sont persistés dans Supabase :
 
-- `CoursesPage`
-- `SingleCoursePage`
+- Tables : `events` et `courses`
+- Chargement automatique au démarrage
+- Création automatique d'events si nécessaire
+- Conversion des images/SVG en base64 pour le stockage
+- Parsing correct du profile JSONB depuis Supabase
 
 ## Notes
 

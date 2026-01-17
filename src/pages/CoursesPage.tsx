@@ -4,6 +4,7 @@ import reunionFlag from '../assets/5375c6ef182ea756eeb23fb723865d5c353eb10b.png'
 import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import grandRaidLogo from '../assets/da2a1ce5e69564e56a29b5912fd151a8f515e136.png'
 import HeaderTopBar from '../components/HeaderTopBar'
+import SideNav from '../components/SideNav'
 
 type CoursesPageProps = {
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course') => void
@@ -56,24 +57,11 @@ export default function CoursesPage({
       })) ?? []
   return (
     <div className="courses-page">
-      <HeaderTopBar />
+      <HeaderTopBar onNavigate={onNavigate} />
 
       <div className="courses-body">
         <aside className="courses-side">
-          <nav className="courses-nav">
-            <button className="courses-nav__item" type="button" onClick={() => onNavigate?.('saison')}>
-              Saison
-            </button>
-            <button className="courses-nav__item" type="button" onClick={() => onNavigate?.('events')}>
-              Événements
-            </button>
-            <button className="courses-nav__item courses-nav__item--active" type="button">
-              Courses
-            </button>
-            <button className="courses-nav__item" type="button">
-              Infos
-            </button>
-          </nav>
+          <SideNav activeItem="courses" onNavigate={onNavigate} />
         </aside>
 
         <main className="courses-main">

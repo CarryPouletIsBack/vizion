@@ -3,6 +3,7 @@ import './EventsPage.css'
 import { useMemo, useState } from 'react'
 
 import HeaderTopBar from '../components/HeaderTopBar'
+import SideNav from '../components/SideNav'
 import EventsColumnFilteringChart from '../components/EventsColumnFilteringChart'
 
 type EventsPageProps = {
@@ -41,29 +42,11 @@ export default function EventsPage({ onNavigate, events, onEventSelect }: Events
   }, [events, countryFilter, dateFilter])
   return (
     <div className="events-page">
-      <HeaderTopBar />
+      <HeaderTopBar onNavigate={onNavigate} />
 
       <div className="events-body">
         <aside className="events-side">
-          <nav className="events-nav">
-            <button className="events-nav__item" type="button" onClick={() => onNavigate?.('saison')}>
-              Saison
-            </button>
-            <button className="events-nav__item events-nav__item--active" type="button">
-              Événements
-            </button>
-            <div className="events-nav__favorites">
-              <p>Grand Raid</p>
-              <p>UTOI</p>
-              <p>UTMB</p>
-            </div>
-            <button className="events-nav__item" type="button" onClick={() => onNavigate?.('courses')}>
-              Courses
-            </button>
-            <button className="events-nav__item" type="button">
-              Infos
-            </button>
-          </nav>
+          <SideNav activeItem="events" onNavigate={onNavigate} />
         </aside>
 
         <main className="events-main">
