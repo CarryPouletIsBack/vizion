@@ -18,3 +18,12 @@ export type StravaMetrics = {
   recommendations: string[]
   targetDPlusPerWeek?: number
 }
+
+export type StravaSegment = {
+  id: number
+  name: string
+  distance: number // en mètres
+  elevation_gain: number // en mètres (positif pour montée, négatif pour descente)
+  average_grade: number // en pourcentage
+  type: 'climb' | 'descent' | 'flat'
+}

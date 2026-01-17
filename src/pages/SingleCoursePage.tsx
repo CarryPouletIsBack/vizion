@@ -68,7 +68,9 @@ export default function SingleCoursePage({
         name: 'Grand Raid',
       }
 
-  const analysis = analyzeCourseReadiness(metrics, courseData)
+  // TODO: Récupérer les segments Strava si on a un route_id
+  // Pour l'instant, on passe undefined
+  const analysis = analyzeCourseReadiness(metrics, courseData, undefined)
   return (
     <div className="single-course-page">
       <HeaderTopBar onNavigate={onNavigate} />

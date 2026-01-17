@@ -1,4 +1,5 @@
 import type { StravaMetrics } from '../types/strava'
+import type { StravaSegment } from './stravaSegments'
 
 /**
  * Données d'une course pour l'analyse
@@ -26,7 +27,11 @@ export type CourseAnalysis = {
  * Analyse la préparation du coureur pour une course donnée
  * Compare les métriques Strava avec les exigences de la course
  */
-export function analyzeCourseReadiness(metrics: StravaMetrics | null, course: CourseData): CourseAnalysis {
+export function analyzeCourseReadiness(
+  metrics: StravaMetrics | null,
+  course: CourseData,
+  segments?: StravaSegment[]
+): CourseAnalysis {
   // Si pas de métriques, retourner un état par défaut
   if (!metrics) {
     return {
@@ -118,6 +123,47 @@ export function analyzeCourseReadiness(metrics: StravaMetrics | null, course: Co
     recommendations.push('Reprendre progressivement l\'entraînement après la baisse de charge')
   } else if (metrics.variation > 30) {
     recommendations.push('Attention à l\'augmentation trop rapide de charge (risque de blessure)')
+  }
+
+  // === ANALYSE DES SEGMENTS CRITIQUES ===
+  if (segments && segments.length > 0) {
+    // Analyser les segments critiques
+    const criticalClimbs = segments.filter(
+      (seg) =>
+        seg.type === 'climb' &&
+        seg.elevation_gain > 0 &&
+        (seg.elevation_gain > metrics.longRunDPlus || seg.average_grade > 20 || (seg.distance / 1000 > 5 && seg.elevation_gain > 500))
+    )
+
+    const criticalDescents = segments.filter(
+      (seg) =>
+        seg.type === 'descent' &&
+        seg.elevation_gain < 0 &&
+        (Math.abs(seg.average_grade) > 30 || (Math.abs(seg.elevation_gain) > 500 && seg.distance / 1000 < 3))
+    )
+
+    if (criticalClimbs.length > 0) {
+      const longestClimb = criticalClimbs.reduce((max, seg) => (seg.distance > max.distance ? seg : max), criticalClimbs[0])
+      issues.push(
+        `Montée critique : "${longestClimb.name}" (${(longestClimb.distance / 1000).toFixed(1)} km, +${Math.round(longestClimb.elevation_gain)} m, ${longestClimb.average_grade.toFixed(1)}%)`
+      )
+      recommendations.push(`Travailler spécifiquement la montée "${longestClimb.name}" (pente ${longestClimb.average_grade.toFixed(1)}%)`)
+    }
+
+    if (criticalDescents.length > 0) {
+      const steepestDescent = criticalDescents.reduce(
+        (max, seg) => (Math.abs(seg.average_grade) > Math.abs(max.average_grade) ? seg : max),
+        criticalDescents[0]
+      )
+      issues.push(
+        `Descente technique : "${steepestDescent.name}" (${(steepestDescent.distance / 1000).toFixed(1)} km, ${Math.round(Math.abs(steepestDescent.elevation_gain))} m, ${Math.abs(steepestDescent.average_grade).toFixed(1)}%)`
+      )
+      recommendations.push(`Travailler la technique de descente sur "${steepestDescent.name}" (pente ${Math.abs(steepestDescent.average_grade).toFixed(1)}%)`)
+    }
+
+    if (criticalClimbs.length > 3) {
+      recommendations.push(`Attention : ${criticalClimbs.length} montées critiques identifiées sur le parcours`)
+    }
   }
 
   // === RECOMMANDATIONS GÉNÉRALES ===
