@@ -5,7 +5,7 @@ import './SaisonPage.css'
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 import WorldMapLeaflet from '../components/WorldMapLeaflet'
-import { gpxToSvg, extractGpxStartCoordinates } from '../lib/gpxToSvg'
+import { gpxToSvg, extractGpxStartCoordinates, extractGpxMetadata, extractGpxWaypoints, type GpxMetadata, type GpxWaypoint } from '../lib/gpxToSvg'
 import { extractRouteIdFromUrl } from '../lib/stravaRouteParser'
 
 
