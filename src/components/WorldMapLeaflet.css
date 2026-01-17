@@ -199,14 +199,30 @@
     saturate(0);
 }
 
-/* Rendre les océans (zones bleues) transparents en utilisant mix-blend-mode */
+/* Rendre les océans complètement transparents */
 .world-map-leaflet .leaflet-tile-pane img {
-  mix-blend-mode: screen;
-  opacity: 0.95;
+  mix-blend-mode: multiply;
+  opacity: 1;
 }
 
-/* S'assurer que les tuiles respectent le filtre */
+/* Masquer les océans en les rendant transparents */
 .world-map-leaflet .leaflet-tile-container img {
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
+}
+
+/* Forcer les océans à être transparents via le conteneur de la carte */
+.world-map-leaflet .leaflet-container {
+  background: transparent !important;
+}
+
+/* Masquer complètement les océans dans la section map */
+.map-section .world-map-leaflet .leaflet-tile-pane,
+.map-section .world-map-leaflet .leaflet-tile-container {
+  background: transparent !important;
+}
+
+.map-section .world-map-leaflet .leaflet-tile-pane img {
+  opacity: 0.3;
+  mix-blend-mode: multiply;
 }
