@@ -190,12 +190,14 @@
 
 /* Masquer complètement les tuiles OpenStreetMap (océans) */
 .world-map-leaflet .leaflet-tile-pane {
-  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Alternative : rendre les tuiles complètement transparentes */
 .world-map-leaflet .leaflet-tile-container {
   opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* S'assurer que le conteneur de la carte a un background transparent */
@@ -206,5 +208,12 @@
 /* Masquer les océans dans la section map */
 .map-section .world-map-leaflet .leaflet-tile-pane,
 .map-section .world-map-leaflet .leaflet-tile-container {
-  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Style pour les continents GeoJSON */
+.world-map-leaflet .leaflet-interactive {
+  fill: #E5E7EB !important;
+  stroke: transparent !important;
 }

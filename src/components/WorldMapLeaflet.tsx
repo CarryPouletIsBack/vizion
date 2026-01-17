@@ -177,15 +177,20 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect }: WorldM
         />
         
         {/* Afficher les continents avec GeoJSON en couleur #E5E7EB */}
-        <GeoJSON
-          data={worldGeoJson as any}
-          style={() => ({
-            color: 'transparent',
-            weight: 0,
-            fillColor: '#E5E7EB',
-            fillOpacity: 1,
-          })}
-        />
+        {/* Convertir TopoJSON en GeoJSON si nécessaire */}
+        {worldGeoJson && (
+          <GeoJSON
+            data={worldGeoJson.type === 'Topology' 
+              ? (worldGeoJson as any).objects?.world 
+              : worldGeoJson}
+            style={() => ({
+              color: 'transparent',
+              weight: 0,
+              fillColor: '#E5E7EB',
+              fillOpacity: 1,
+            })}
+          />
+        )}
         
         <MapClickHandler onMapClick={handleMapClick} />
         <MapZoomHandler center={mapCenter} zoom={mapZoom} />
