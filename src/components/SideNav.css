@@ -2,8 +2,7 @@
   width: 100%;
   padding: 12px 14px;
   border-radius: 8px;
-  background: rgba(11, 14, 17, 0.6);
-  backdrop-filter: blur(25px);
+  background: var(--color-bg-primary, #0b0e11);
   border: none;
   display: flex;
   flex-direction: column;
