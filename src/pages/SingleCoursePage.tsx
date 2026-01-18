@@ -104,8 +104,7 @@ export default function SingleCoursePage({
         <main className="single-course-main">
           <section className="single-course-heading">
             <div>
-              <p className="single-course-title">{courseTitle.toUpperCase()}</p>
-              <p className="single-course-subtitle">{courseEventName}</p>
+              <p className="single-course-title">COURSE</p>
             </div>
           </section>
 
@@ -324,7 +323,7 @@ export default function SingleCoursePage({
                   {analysis.immediateActions && analysis.immediateActions.length > 0 && (
                     <div style={{ marginTop: '12px', marginBottom: '16px' }}>
                       <p style={{ fontSize: '13px', color: '#ef4444', marginBottom: '8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <FiAlertCircle /> Priorité immédiate
+                        <FiAlertCircle style={{ width: '24px', height: '24px', flexShrink: 0 }} /> Priorité immédiate
                       </p>
                       <ul className="single-course-panel__list single-course-panel__list--bullets">
                         {analysis.immediateActions.map((action, idx) => (
@@ -340,7 +339,7 @@ export default function SingleCoursePage({
                   {analysis.secondaryActions && analysis.secondaryActions.length > 0 && (
                     <div style={{ marginBottom: '16px' }}>
                       <p style={{ fontSize: '13px', color: '#fbbf24', marginBottom: '8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <FiAlertCircle /> Important mais secondaire
+                        <FiAlertCircle style={{ width: '24px', height: '24px', flexShrink: 0 }} /> Important mais secondaire
                       </p>
                       <ul className="single-course-panel__list single-course-panel__list--bullets">
                         {analysis.secondaryActions.map((action, idx) => (
@@ -356,7 +355,7 @@ export default function SingleCoursePage({
                   {analysis.testActions && analysis.testActions.length > 0 && (
                     <div style={{ marginBottom: '16px' }}>
                       <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <FiZap /> À tester
+                        <FiZap style={{ width: '24px', height: '24px', flexShrink: 0 }} /> À tester
                       </p>
                       <ul className="single-course-panel__list single-course-panel__list--bullets">
                         {analysis.testActions.map((action, idx) => (

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { HiX } from 'react-icons/hi'
 
 import './SaisonPage.css'
 
@@ -411,7 +412,7 @@ export default function SaisonPage({
                   onClick={() => setIsCreateModalOpen(false)}
                   aria-label="Fermer"
                 >
-                  ×
+                  <HiX />
                 </button>
               </header>
               <p className="modal__subtitle">Description</p>
@@ -461,7 +462,7 @@ export default function SaisonPage({
                   onClick={() => setIsCreateModalOpen(false)}
                   aria-label="Fermer"
                 >
-                  ×
+                  <HiX />
                 </button>
               </header>
               <p className="modal__subtitle modal__subtitle--left">
@@ -518,7 +519,7 @@ export default function SaisonPage({
                   onClick={() => setIsCreateModalOpen(false)}
                   aria-label="Fermer"
                 >
-                  ×
+                  <HiX />
                 </button>
               </header>
               <p className="modal__subtitle">Un événement vous permet de regrouper plusieurs course.</p>

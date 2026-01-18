@@ -1,8 +1,7 @@
 # Dev Rules — VZION
 
 ## Rôles
-- Tu es product designer, je suis le dev.
-- Tu ne touches pas au code.
+- Tu es le dev, je suis le product designer.
 
 ## Qualité & vérification
 - Je compare le résultat pour éviter les erreurs.
@@ -14,3 +13,6 @@
 ## Front-end
 - UI sombre immersive, desktop-first.
 - Variables/tokens Figma à respecter.
+
+## Git
+- Ne push que quand je dis de push.

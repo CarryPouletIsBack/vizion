@@ -247,39 +247,49 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect }: WorldM
                 closeOnClick={false}
                 onClose={() => setActiveTagId(null)}
               >
-                <div className="map-card">
-                  <button type="button" className="map-card-button" onClick={onCourseSelect}>
-                    <div className="map-card__media">
-                      <img src={tag.course.image_url || grandRaidLogo} alt={tag.course.name} />
-                    </div>
-                    <div className="map-card__heading">
-                      <span>{tag.course.name}</span>
-                      <span className="map-card__flag">
-                        <img src={reunionFlag} alt="" />
-                      </span>
-                    </div>
-                    <div className="map-card__info">
-                      <div className="map-card__details">
-                        <p>{tag.course.name}</p>
-                        {tag.course.distance_km && tag.course.elevation_gain && (
-                          <p>{Math.round(tag.course.distance_km)} km – {Math.round(tag.course.elevation_gain)} D+</p>
-                        )}
-                      </div>
-                      {tag.course.gpx_svg && (
-                        <img className="map-card__gpx" src={gpxIcon} alt="GPX" />
+                <article
+                  className="course-card map-course-card"
+                  role="button"
+                  tabIndex={0}
+                  onClick={onCourseSelect}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      onCourseSelect?.()
+                    }
+                  }}
+                >
+                  <div className="course-card__top">
+                    <div className="course-card__gpx">
+                      {tag.course.gpx_svg ? (
+                        <div
+                          className="course-card__gpx-svg"
+                          dangerouslySetInnerHTML={{ __html: tag.course.gpx_svg }}
+                        />
+                      ) : (
+                        <img src={gpxIcon} alt="GPX" />
                       )}
                     </div>
-                    <div className="map-card__footer">
-                      <div className="map-card__footer-col">
-                        <p>État de préparation : 62%</p>
-                      </div>
-                      <div className="map-card__footer-col">
-                        <p>Début de la course</p>
-                        <p className="map-card__countdown">6 mois</p>
-                      </div>
+                    <div className="course-card__content">
+                      <h3 className="course-card__title">{tag.course.name}</h3>
+                      <p className="course-card__stats">
+                        {tag.course.distance_km && tag.course.elevation_gain
+                          ? `${Math.round(tag.course.distance_km)} km – ${Math.round(tag.course.elevation_gain)} D+`
+                          : 'Course'}
+                      </p>
                     </div>
-                  </button>
-                </div>
+                  </div>
+                  <footer className="course-card__footer">
+                    <div className="course-card__footer-left">
+                      <p>
+                        État de préparation : <strong>—</strong>
+                      </p>
+                    </div>
+                    <div className="course-card__footer-right">
+                      <p>Début de la course</p>
+                      <p className="course-card__countdown">À venir</p>
+                    </div>
+                  </footer>
+                </article>
               </Popup>
             )}
           </Marker>

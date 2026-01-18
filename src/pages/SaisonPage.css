@@ -2,12 +2,12 @@
 .saison-page {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  padding: calc(18px + var(--topbar-height, 56px)) 24px 32px;
+  gap: var(--spacing-12, 24px);
+  padding: calc(var(--spacing-8, 16px) + var(--topbar-height, 56px)) var(--spacing-12, 24px) var(--spacing-16, 32px);
   min-height: 100vh;
   color: var(--color-text-primary, #e5e7eb);
+  transition: var(--transition-smooth);
 }
-
 
 .saison-body {
   position: relative;
@@ -17,103 +17,117 @@
   display: flex;
   align-items: flex-start;
   position: fixed;
-  top: calc(var(--topbar-height, 56px) + 16px);
-  left: 12px;
+  top: calc(var(--topbar-height, 56px) + var(--spacing-8, 16px));
+  left: var(--spacing-6, 12px);
   width: 200px;
   z-index: 90;
+  transition: var(--transition-smooth);
 }
 
 .side-nav {
   width: 100%;
-  padding: 12px 14px;
-  border-radius: 8px;
+  padding: var(--spacing-6, 12px) var(--spacing-8, 16px);
+  border-radius: var(--spacing-4, 8px);
   background: rgba(11, 14, 17, 0.6);
   backdrop-filter: blur(25px);
   border: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--spacing-4, 8px);
 }
 
 .side-nav__item {
   background: transparent;
   border: none;
   color: var(--color-text-primary, #e5e7eb);
-  font-size: 18px;
-  letter-spacing: 2.34px;
-  text-transform: capitalize;
+  font-size: var(--font-size-lg, 18px);
+  letter-spacing: var(--spacing-1, 2px);
+  text-transform: none;
   text-align: left;
   cursor: pointer;
-  padding: 2px 0;
+  padding: var(--spacing-1, 2px) 0;
   font-weight: 500;
 }
 
 .side-nav__item--active {
   color: var(--color-accent, #bfc900);
-  font-size: 24px;
+  font-size: var(--font-size-2xl, 24px);
+  line-height: var(--line-height-tight, 1.2);
   letter-spacing: 0;
 }
 
 .saison-main {
   display: flex;
   flex-direction: column;
-  gap: 40px;
-  row-gap: 40px;
+  gap: var(--spacing-20, 40px);
+  row-gap: var(--spacing-20, 40px);
   margin-left: 224px;
   width: calc(100% - 224px);
+  transition: var(--transition-smooth);
 }
 
 .saison-heading {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 24px;
-  margin-top: 24px;
+  gap: var(--spacing-12, 24px);
+  margin-top: var(--spacing-12, 24px);
 }
 
 .saison-title {
   font-family: 'Cabin', sans-serif;
-  font-size: 40px;
+  font-size: var(--font-h2-size, 40px);
+  line-height: var(--font-h2-line-height, 1.2);
   color: var(--color-accent, #bfc900);
   letter-spacing: 0.12em;
-  margin: 0 0 8px;
+  margin: 0 0 var(--spacing-4, 8px);
 }
 
 .saison-subtitle {
-  font-size: 16px;
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
   margin: 0;
   color: var(--color-text-primary);
 }
 
 .info-card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 8px;
-  padding: 12px 14px;
+  gap: var(--spacing-4, 8px);
+  padding: var(--spacing-6, 12px) var(--spacing-8, 16px);
   width: min(473px, 100%);
-  border-radius: 8px;
-  border: 1.5px solid var(--color-border-default, #2a3038);
+  border-radius: var(--spacing-4, 8px);
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
   background: var(--color-bg-primary, #0b0e11);
   color: var(--color-text-primary, #e5e7eb);
   cursor: pointer;
+  transition: var(--transition-base);
 }
 
 .info-card__title {
-  font-size: 24px;
+  font-size: var(--font-size-2xl, 24px);
+  line-height: var(--font-h4-line-height, 1.3);
   font-weight: 300;
-  margin: 0 0 6px;
+  margin: 0 0 var(--spacing-2, 4px);
 }
 
 .info-card__subtitle {
-  font-size: 14px;
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
   margin: 0;
   text-align: left;
 }
 
 .info-card__chevron {
-  font-size: 20px;
-  line-height: 1;
+  font-size: var(--font-size-2xl, 24px);
+  line-height: var(--line-height-tight, 1.2);
+}
+
+.info-card__chevron svg {
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
+  flex-shrink: 0;
 }
 
 .modal-overlay {
@@ -127,24 +141,25 @@
 }
 
 .modal {
-  width: min(537px, calc(100% - 32px));
-  border-radius: 28px;
+  width: min(537px, calc(100% - var(--spacing-16, 32px)));
+  border-radius: var(--spacing-14, 28px);
   background: var(--color-bg-primary, #0b0e11);
-  border: 0.5px solid #ffffff;
+  border: var(--spacing-1, 2px) solid #ffffff;
   color: var(--color-text-primary, #e5e7eb);
-  padding: 24px 16px;
+  padding: var(--spacing-12, 24px) var(--spacing-8, 16px);
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  gap: var(--spacing-8, 16px);
+  box-shadow: 0 var(--spacing-6, 12px) var(--spacing-20, 40px) rgba(0, 0, 0, 0.35);
+  transition: var(--transition-smooth);
 }
 
 .modal__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 16px 12px;
+  gap: var(--spacing-8, 16px);
+  padding: var(--spacing-8, 16px) var(--spacing-6, 12px);
 }
 
 .modal__header--center h2 {
@@ -154,24 +169,39 @@
 
 .modal__header h2 {
   margin: 0;
-  font-size: 24px;
+  font-size: var(--font-size-2xl, 24px);
+  line-height: var(--font-h4-line-height, 1.3);
   font-weight: 500;
 }
 
 .modal__close {
-  width: 24px;
-  height: 24px;
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
   border: none;
   background: transparent;
   color: var(--color-text-primary, #e5e7eb);
-  font-size: 20px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-base);
+}
+
+.modal__close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.modal__close svg {
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
+  flex-shrink: 0;
 }
 
 .modal__subtitle {
   margin: 0;
   text-align: center;
-  font-size: 16px;
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
   color: var(--color-text-primary, #e5e7eb);
 }
 
@@ -183,25 +213,28 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 12px 24px;
-  border-radius: 8px;
-  border: 0.5px solid #464646;
+  gap: var(--spacing-8, 16px);
+  padding: var(--spacing-6, 12px) var(--spacing-12, 24px);
+  border-radius: var(--spacing-4, 8px);
+  border: var(--spacing-1, 2px) solid #464646;
   background: var(--color-bg-primary, #0b0e11);
   color: var(--color-text-primary, #e5e7eb);
   text-align: left;
   cursor: pointer;
+  transition: var(--transition-base);
 }
 
 .modal-card__title {
-  margin: 0 0 4px;
-  font-size: 20px;
+  margin: 0 0 var(--spacing-2, 4px);
+  font-size: var(--font-size-xl, 20px);
+  line-height: var(--line-height-normal, 1.5);
   font-weight: 300;
 }
 
 .modal-card__text {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--font-size-sm, 12px);
+  line-height: var(--line-height-normal, 1.5);
   color: var(--color-text-secondary, #9ca3af);
 }
 
@@ -210,19 +243,21 @@
   border: none;
   background: transparent;
   color: var(--color-text-primary, #e5e7eb);
-  font-size: 16px;
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
   cursor: pointer;
+  transition: var(--transition-base);
 }
 
 .modal--form {
-  gap: 16px;
+  gap: var(--spacing-8, 16px);
 }
 
 .modal-upload {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: var(--spacing-8, 16px);
   width: 100%;
 }
 
@@ -230,37 +265,48 @@
   width: 118px;
   height: 118px;
   border-radius: 999px;
-  border: 2px dashed #949494;
+  border: var(--spacing-1, 2px) dashed #949494;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: var(--spacing-5, 10px);
   color: #333333;
   cursor: pointer;
+  transition: var(--transition-base);
 }
 
 .modal-upload__icon {
-  font-size: 16px;
+  font-size: var(--font-size-2xl, 24px);
+  line-height: var(--line-height-tight, 1.2);
   color: #333333;
+}
+
+.modal-upload__icon svg {
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
+  flex-shrink: 0;
 }
 
 .modal-upload__label {
   font-family: 'Akatab', sans-serif;
-  font-size: 11px;
+  font-size: var(--font-size-xs, 11px);
+  line-height: var(--line-height-normal, 1.5);
   color: var(--color-text-secondary, #9ca3af);
 }
 
 .modal-upload__plus {
-  width: 24px;
-  height: 24px;
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
   border-radius: 999px;
   border: none;
   background: #2b00ff;
   color: #e5e7eb;
-  font-size: 16px;
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--line-height-tight, 1.2);
   cursor: pointer;
-  margin-left: -13px;
+  margin-left: calc(-1 * var(--spacing-6, 12px));
+  transition: var(--transition-base);
 }
 
 .modal-upload__input {
@@ -281,31 +327,34 @@
 .modal-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--spacing-2, 4px);
   width: 100%;
 }
 
 .modal-field label {
   font-family: 'DM Sans', sans-serif;
-  font-size: 18px;
+  font-size: var(--font-size-lg, 18px);
+  line-height: var(--line-height-normal, 1.5);
   color: var(--color-text-primary, #e5e7eb);
 }
 
 .modal-field__required {
   color: #ff3838;
-  margin-left: 4px;
+  margin-left: var(--spacing-2, 4px);
 }
 
 .modal-input {
   width: 100%;
   background: #444444;
-  border: 0.5px solid #949494;
-  border-radius: 8px;
-  padding: 12px;
+  border: var(--spacing-1, 2px) solid #949494;
+  border-radius: var(--spacing-4, 8px);
+  padding: var(--spacing-6, 12px);
   color: #666666;
   font-family: 'Roboto', sans-serif;
-  font-size: 16px;
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
   outline: none;
+  transition: var(--transition-base);
 }
 
 .modal-input::placeholder {
@@ -314,7 +363,8 @@
 
 .modal-footnote {
   text-align: center;
-  font-size: 16px;
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
   color: var(--color-text-primary, #e5e7eb);
 }
 
@@ -331,27 +381,29 @@
 
 .modal-primary {
   height: 44px;
-  padding: 0 16px;
+  padding: 0 var(--spacing-8, 16px);
   border-radius: 999px;
   border: none;
   background: #f2ff00;
   color: #6b7280;
-  font-size: 16px;
-  letter-spacing: 2.08px;
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
+  letter-spacing: var(--spacing-1, 2px);
   cursor: pointer;
+  transition: var(--transition-base);
 }
 
 .saison-map-block {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--spacing-8, 16px);
 }
 
 .map-section {
   width: 100%;
   position: relative;
   z-index: 0;
-  background: rgba(255, 255, 255, 0.06);
+  background: transparent;
 }
 
 .map-wrapper {
@@ -362,7 +414,14 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: var(--spacing-4, 8px);
+}
+
+@media (max-width: 768px) {
+  /* Augmente la hauteur du conteneur sur mobile sans modifier la taille interne de la carte */
+  .map-wrapper {
+    min-height: 360px;
+  }
 }
 
 .map-wrapper > .world-map-leaflet,
@@ -371,11 +430,10 @@
   height: 100%;
 }
 
-
 .courses-section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--spacing-8, 16px);
 }
 
 .courses-heading {
@@ -384,14 +442,16 @@
 
 .courses-title {
   font-family: 'Cabin', sans-serif;
-  font-size: 32px;
-  letter-spacing: 4.16px;
-  margin: 0 0 6px;
+  font-size: var(--font-h3-size, 32px);
+  line-height: var(--font-h3-line-height, 1.25);
+  letter-spacing: var(--spacing-2, 4px);
+  margin: 0 0 var(--spacing-2, 4px);
 }
 
 .courses-subtitle {
   font-style: italic;
-  font-size: 14px;
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
   margin: 0;
   color: var(--color-text-primary);
 }
@@ -400,41 +460,43 @@
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(260px, 340px);
-  gap: 16px;
+  gap: var(--spacing-8, 16px);
   overflow-x: auto;
-  padding-bottom: 6px;
+  padding-bottom: var(--spacing-2, 4px);
 }
 
 .race-card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--spacing-6, 12px);
   padding: 0;
-  border-radius: 8px;
-  border: 1.5px solid var(--color-border-default, #2a3038);
+  border-radius: var(--spacing-4, 8px);
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
   background: var(--color-bg-surface, #161b21);
   overflow: hidden;
   cursor: pointer;
+  transition: var(--transition-base);
 }
 
 .race-card:focus-visible {
-  outline: 2px solid var(--color-brand-primary, #d4df00);
-  outline-offset: 2px;
+  outline: var(--spacing-1, 2px) solid var(--color-brand-primary, #d4df00);
+  outline-offset: var(--spacing-1, 2px);
 }
 
 .race-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 12px 14px 0;
-  font-size: 20px;
+  gap: var(--spacing-4, 8px);
+  padding: var(--spacing-6, 12px) var(--spacing-8, 16px) 0;
+  font-size: var(--font-size-xl, 20px);
+  line-height: var(--line-height-normal, 1.5);
   letter-spacing: 0.12em;
 }
 
 .race-card__flag {
-  width: 24px;
-  height: 24px;
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
   border-radius: 50%;
   overflow: hidden;
 }
@@ -463,34 +525,36 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 0 14px;
-  font-size: 16px;
+  gap: var(--spacing-6, 12px);
+  padding: 0 var(--spacing-8, 16px);
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
   letter-spacing: 0.1em;
 }
 
 .race-card__content p {
-  margin: 0 0 8px;
+  margin: 0 0 var(--spacing-4, 8px);
 }
 
 .race-card__content img {
   width: 30px;
-  height: 48px;
+  height: var(--spacing-24, 48px);
 }
 
 .race-card__footer {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  font-size: 12px;
+  border-top: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.2);
+  font-size: var(--font-size-sm, 12px);
+  line-height: var(--line-height-normal, 1.5);
 }
 
 .race-card__footer div {
-  padding: 8px 14px;
+  padding: var(--spacing-4, 8px) var(--spacing-8, 16px);
 }
 
 .race-card__footer div + div {
-  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  border-left: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.2);
 }
 
 .race-card__footer p {
@@ -499,9 +563,10 @@
 
 .race-card__countdown {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 16px;
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
   font-weight: 600;
-  margin-top: 4px;
+  margin-top: var(--spacing-2, 4px);
 }
 
 @media (max-width: 1024px) {
@@ -527,6 +592,11 @@
 
 /* Mobile : sidebar en bas de l'écran */
 @media (max-width: 768px) {
+  .saison-page {
+    padding-bottom: var(--spacing-40, 80px);
+    transition: var(--transition-smooth);
+  }
+
   .saison-side {
     position: fixed;
     top: auto;
@@ -541,28 +611,26 @@
     flex-direction: row;
     justify-content: space-around;
     border-radius: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 12px 8px;
+    border-top: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
+    padding: var(--spacing-6, 12px) var(--spacing-4, 8px);
   }
 
   .side-nav__item {
     text-align: center;
-    font-size: 14px;
-    letter-spacing: 1px;
-    padding: 8px 4px;
+    font-size: var(--font-body-sm-size, 14px);
+    line-height: var(--font-body-sm-line-height, 1.5);
+    letter-spacing: var(--spacing-1, 2px);
+    padding: var(--spacing-4, 8px) var(--spacing-2, 4px);
   }
 
   .side-nav__item--active {
-    font-size: 16px;
+    font-size: var(--font-body-size, 16px);
+    line-height: var(--font-body-line-height, 1.5);
   }
 
   .saison-main {
     margin-left: 0;
     width: 100%;
-    padding-bottom: 80px; /* Espace pour la sidebar en bas */
-  }
-
-  .saison-page {
-    padding-bottom: 100px; /* Espace supplémentaire pour la sidebar */
+    padding-bottom: var(--spacing-40, 80px);
   }
 }

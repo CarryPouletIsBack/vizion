@@ -6,63 +6,72 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(var(--spacing-4, 8px));
+  -webkit-backdrop-filter: blur(var(--spacing-4, 8px));
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 16px;
+  padding: var(--spacing-8, 16px);
+  transition: var(--transition-smooth);
 }
 
 .login-modal {
   width: 100%;
   max-width: 440px;
   background: var(--color-bg-primary, #0b0e11);
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 32px 24px;
+  border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--spacing-8, 16px);
+  padding: var(--spacing-16, 32px) var(--spacing-12, 24px);
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--spacing-12, 24px);
   position: relative;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 var(--spacing-6, 12px) var(--spacing-20, 40px) rgba(0, 0, 0, 0.5);
+  transition: var(--transition-smooth);
 }
 
 .login-modal__close {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 32px;
-  height: 32px;
+  top: var(--spacing-8, 16px);
+  right: var(--spacing-8, 16px);
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
   border: none;
   background: transparent;
   color: var(--color-text-primary, #e5e7eb);
-  font-size: 24px;
-  line-height: 1;
+  font-size: var(--font-size-2xl, 24px);
+  line-height: var(--line-height-tight, 1.2);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  transition: background-color 0.2s;
+  border-radius: var(--spacing-4, 8px);
+  transition: var(--transition-base);
 }
 
 .login-modal__close:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 
+.login-modal__close svg {
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
+  flex-shrink: 0;
+}
+
 .login-modal__header {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--spacing-4, 8px);
   text-align: center;
 }
 
 .login-modal__title {
   margin: 0;
   font-family: 'Cabin', sans-serif;
-  font-size: 32px;
+  font-size: var(--font-h3-size, 32px);
+  line-height: var(--font-h3-line-height, 1.25);
   font-weight: 600;
   color: var(--color-accent, #bfc900);
   letter-spacing: 0.02em;
@@ -70,24 +79,26 @@
 
 .login-modal__subtitle {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
   color: var(--color-text-secondary, #9ca3af);
 }
 
 .login-modal__form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--spacing-10, 20px);
 }
 
 .login-modal__field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--spacing-4, 8px);
 }
 
 .login-modal__field label {
-  font-size: 14px;
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
   font-weight: 500;
   color: var(--color-text-primary, #e5e7eb);
   letter-spacing: 0.02em;
@@ -95,15 +106,16 @@
 
 .login-modal__field input {
   width: 100%;
-  padding: 12px 16px;
+  padding: var(--spacing-6, 12px) var(--spacing-8, 16px);
   background: var(--color-bg-surface, #161b21);
-  border: 1px solid var(--color-border-default, #2a3038);
-  border-radius: 8px;
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border-radius: var(--spacing-4, 8px);
   color: var(--color-text-primary, #e5e7eb);
-  font-size: 16px;
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
   font-family: inherit;
   outline: none;
-  transition: border-color 0.2s, background-color 0.2s;
+  transition: var(--transition-base);
 }
 
 .login-modal__field input::placeholder {
@@ -121,24 +133,26 @@
 }
 
 .login-modal__error {
-  font-size: 12px;
+  font-size: var(--font-size-sm, 12px);
+  line-height: var(--line-height-normal, 1.5);
   color: #ef4444;
-  margin-top: -4px;
+  margin-top: calc(-1 * var(--spacing-2, 4px));
 }
 
 .login-modal__submit {
   width: 100%;
-  padding: 14px 24px;
+  padding: var(--spacing-8, 16px) var(--spacing-12, 24px);
   background: var(--color-brand-primary, #d4df00);
   color: var(--color-bg-primary, #0b0e11);
   border: none;
   border-radius: 26px;
-  font-size: 16px;
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
   font-weight: 600;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
+  text-transform: none;
   cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
+  transition: var(--transition-base);
   font-family: inherit;
 }
 
@@ -159,43 +173,45 @@
 .login-modal__divider {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin: 8px 0;
+  gap: var(--spacing-8, 16px);
+  margin: var(--spacing-4, 8px) 0;
 }
 
 .login-modal__divider::before,
 .login-modal__divider::after {
   content: '';
   flex: 1;
-  height: 1px;
+  height: var(--spacing-1, 2px);
   background: var(--color-border-default, #2a3038);
 }
 
 .login-modal__divider span {
-  font-size: 14px;
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
   color: var(--color-text-secondary, #9ca3af);
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.1em;
 }
 
 .login-modal__strava {
   width: 100%;
-  padding: 14px 24px;
+  padding: var(--spacing-8, 16px) var(--spacing-12, 24px);
   background: var(--color-bg-surface, #161b21);
-  border: 1px solid var(--color-border-default, #2a3038);
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
   border-radius: 26px;
   color: var(--color-text-primary, #e5e7eb);
-  font-size: 16px;
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
   font-weight: 600;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
+  text-transform: none;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition-base);
   font-family: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: var(--spacing-6, 12px);
 }
 
 .login-modal__strava:hover:not(:disabled) {
@@ -210,25 +226,26 @@
 }
 
 .login-modal__strava svg {
-  width: 20px;
-  height: 20px;
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
   flex-shrink: 0;
 }
 
 .login-modal__footer {
   text-align: center;
-  padding-top: 8px;
+  padding-top: var(--spacing-4, 8px);
 }
 
 .login-modal__switch {
   background: none;
   border: none;
   color: var(--color-text-secondary, #9ca3af);
-  font-size: 14px;
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
   cursor: pointer;
   text-decoration: underline;
-  text-underline-offset: 4px;
-  transition: color 0.2s;
+  text-underline-offset: var(--spacing-2, 4px);
+  transition: var(--transition-base);
   font-family: inherit;
 }
 
@@ -238,11 +255,12 @@
 
 @media (max-width: 768px) {
   .login-modal {
-    padding: 24px 20px;
+    padding: var(--spacing-12, 24px) var(--spacing-10, 20px);
     max-width: 100%;
   }
 
   .login-modal__title {
-    font-size: 28px;
+    font-size: var(--spacing-14, 28px);
+    line-height: var(--line-height-tight, 1.2);
   }
 }

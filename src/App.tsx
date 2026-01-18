@@ -557,6 +557,10 @@ function App() {
           onEventSelect={handleSelectEvent}
           onEventEdit={handleEditEvent}
           onEventDelete={handleDeleteEvent}
+          onCreateEvent={() => {
+            handleNavigate('saison')
+            // Le modal sera ouvert automatiquement dans SaisonPage
+          }}
         />
       )}
       {view === 'courses' && (
@@ -565,6 +569,10 @@ function App() {
           events={events}
           selectedEventId={selectedEventId}
           onSelectCourse={handleSelectCourse}
+          onCreateCourse={() => {
+            handleNavigate('saison')
+            // Le modal sera ouvert automatiquement dans SaisonPage
+          }}
         />
       )}
       {view === 'strava-callback' && (

@@ -74,8 +74,8 @@ export default defineConfig({
         })
       },
     },
-      {
-        name: 'strava-api',
+    {
+      name: 'strava-api',
         configureServer(server) {
           // Endpoint pour récupérer la config Strava (client_id uniquement)
           server.middlewares.use('/api/strava/config', async (req, res) => {
@@ -275,6 +275,33 @@ export default defineConfig({
         })
       },
     },
+    {
+      name: 'versor-dragging-files',
+        configureServer(server) {
+          // Serve JSON files from @d3/versor-dragging package
+          server.middlewares.use('/node_modules/@d3/versor-dragging/files', async (req, res) => {
+            const url = new URL(req.url || '/', `http://${req.headers.host}`)
+            const filename = url.pathname.split('/').pop()
+            
+            if (!filename || !filename.endsWith('.json')) {
+              res.statusCode = 404
+              res.end('Not found')
+              return
+            }
+
+            try {
+              const filePath = path.join(__dirname, 'node_modules/@d3/versor-dragging/files', filename)
+              const fileContent = await fs.readFile(filePath, 'utf-8')
+              res.setHeader('Content-Type', 'application/json')
+              res.setHeader('Access-Control-Allow-Origin', '*')
+              res.end(fileContent)
+            } catch (error) {
+              res.statusCode = 404
+              res.end('File not found')
+            }
+          })
+        },
+      },
   ],
   resolve: {
     alias: {

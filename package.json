@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@d3/versor-dragging": "https://api.observablehq.com/d/d422dd0a1d5ee8b8@231.tgz?v=3",
     "@d3/zoom-to-bounding-box": "https://api.observablehq.com/@d3/zoom-to-bounding-box.tgz?v=3",
     "@highcharts/dashboards": "^2.3.0",
     "@hookform/resolvers": "^5.2.2",

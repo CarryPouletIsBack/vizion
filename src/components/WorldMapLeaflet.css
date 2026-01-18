@@ -71,115 +71,18 @@
 .map-card-popup .leaflet-popup-content {
   margin: 0;
   padding: 0;
-  width: 292px !important;
+  width: 340px !important;
 }
 
-.map-card-button {
-  width: 100%;
-  border-radius: 8px;
-  border: 0.5px solid rgba(42, 46, 26, 0.2);
-  background: var(--color-bg-surface, #161b21);
-  backdrop-filter: blur(25px);
-  padding: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  text-align: left;
+.map-card-popup .course-card {
+  width: 340px;
   cursor: pointer;
-  font-family: inherit;
 }
 
-.map-card__media {
-  width: 100%;
-  aspect-ratio: 325 / 265;
-  background: var(--color-bg-primary, #0b0e11);
-}
-
-.map-card__media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.map-card__heading {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 4px 0;
-  font-size: 18px;
-  letter-spacing: 2.34px;
-  color: var(--color-text-primary, #e5e7eb);
-}
-
-.map-card__flag {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  overflow: hidden;
-}
-
-.map-card__flag img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.map-card__info {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 4px;
-}
-
-.map-card__details {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 16px;
-  letter-spacing: 2.08px;
-  color: var(--color-text-primary, #e5e7eb);
-}
-
-.map-card__details p {
-  margin: 0;
-}
-
-.map-card__gpx {
-  width: 36px;
-  height: auto;
-  opacity: 0.8;
-}
-
-.map-card__footer {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border-top: 0.5px solid rgba(255, 255, 255, 0.6);
-}
-
-.map-card__footer-col {
-  padding: 2px 12px;
-  border-left: 0.5px solid rgba(255, 255, 255, 0.6);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  color: var(--color-texte-titre-var, #fff8f5);
-}
-
-.map-card__footer-col:first-child {
-  border-left: none;
-}
-
-.map-card__footer-col p {
-  margin: 0;
-  font-size: 12px;
-}
-
-.map-card__countdown {
-  font-size: 16px;
-  font-weight: 700;
-  font-family: 'Space Grotesk', sans-serif;
+.map-card-popup .course-card__footer {
+  width: calc(100% + var(--spacing-8, 16px));
+  margin-left: calc(var(--spacing-4, 8px) * -1);
+  margin-right: calc(var(--spacing-4, 8px) * -1);
 }
 
 /* Personnaliser le style de la carte Leaflet pour correspondre au design */

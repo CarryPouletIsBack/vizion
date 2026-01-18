@@ -19,9 +19,10 @@ type EventsPageProps = {
   onEventSelect?: (eventId: string) => void
   onEventEdit?: (eventId: string) => void
   onEventDelete?: (eventId: string) => void
+  onCreateEvent?: () => void
 }
 
-export default function EventsPage({ onNavigate, events, onEventSelect, onEventEdit, onEventDelete }: EventsPageProps) {
+export default function EventsPage({ onNavigate, events, onEventSelect, onEventEdit, onEventDelete, onCreateEvent }: EventsPageProps) {
   const [countryFilter, setCountryFilter] = useState('Tous')
   const [dateFilter, setDateFilter] = useState('Toutes')
 
@@ -57,13 +58,29 @@ export default function EventsPage({ onNavigate, events, onEventSelect, onEventE
               <p className="events-title">Événements</p>
               <p className="events-subtitle">13 événements</p>
             </div>
-            <label className="events-search" htmlFor="events-search">
-              <span className="events-search__icon" aria-hidden="true">
-                🔍
-              </span>
-              <input id="events-search" type="text" placeholder="Rechercher un événement" />
-            </label>
+            {onCreateEvent && (
+              <button
+                className="info-card"
+                type="button"
+                onClick={onCreateEvent}
+              >
+                <div>
+                  <p className="info-card__title">Ajouter un événement</p>
+                  <p className="info-card__subtitle">Créer un nouvel événement pour regrouper vos courses</p>
+                </div>
+                <span className="info-card__chevron" aria-hidden="true">
+                  ›
+                </span>
+              </button>
+            )}
           </section>
+          
+          <label className="events-search" htmlFor="events-search">
+            <span className="events-search__icon" aria-hidden="true">
+              🔍
+            </span>
+            <input id="events-search" type="text" placeholder="Rechercher un événement" />
+          </label>
 
           <section className="events-actions">
             <label className="events-filter">

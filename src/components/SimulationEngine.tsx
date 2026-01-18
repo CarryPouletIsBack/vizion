@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { FiSettings, FiActivity, FiAlertCircle } from 'react-icons/fi'
+import { FiSettings, FiAlertCircle } from 'react-icons/fi'
 import { IoMdStar } from 'react-icons/io'
 import { FaTrophy, FaMedal, FaWalking, FaRunning } from 'react-icons/fa'
 import { GiTurtle } from 'react-icons/gi'
@@ -101,7 +101,7 @@ export default function SimulationEngine({
     <div className="simulation-engine">
       <div className="simulation-engine__header">
         <h3 className="simulation-engine__title">
-          <FiSettings style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />
+          <FiSettings style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle', width: '24px', height: '24px' }} />
           Moteur de Simulation
         </h3>
         <p className="simulation-engine__subtitle">Ajuste les paramètres pour affiner ton estimation</p>
@@ -157,21 +157,21 @@ export default function SimulationEngine({
             className={`simulation-engine__radio ${technicalIndex === 'good' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setTechnicalIndex('good')}
           >
-            <FaRunning style={{ marginRight: '4px' }} /> Bon descendeur
+            <FaRunning style={{ marginRight: '4px', width: '24px', height: '24px' }} /> Bon descendeur
           </button>
           <button
             type="button"
             className={`simulation-engine__radio ${technicalIndex === 'average' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setTechnicalIndex('average')}
           >
-            <FaWalking style={{ marginRight: '4px' }} /> Moyen
+            <FaWalking style={{ marginRight: '4px', width: '24px', height: '24px' }} /> Moyen
           </button>
           <button
             type="button"
             className={`simulation-engine__radio ${technicalIndex === 'cautious' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setTechnicalIndex('cautious')}
           >
-            <GiTurtle style={{ marginRight: '4px' }} /> Prudent
+            <GiTurtle style={{ marginRight: '4px', width: '24px', height: '24px' }} /> Prudent
           </button>
         </div>
       </div>
@@ -185,28 +185,28 @@ export default function SimulationEngine({
             className={`simulation-engine__radio ${enduranceIndex === 'elite' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setEnduranceIndex('elite')}
           >
-            <FaTrophy style={{ marginRight: '4px' }} /> Elite
+            <FaTrophy style={{ marginRight: '4px', width: '24px', height: '24px' }} /> Elite
           </button>
           <button
             type="button"
             className={`simulation-engine__radio ${enduranceIndex === 'experienced' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setEnduranceIndex('experienced')}
           >
-            <IoMdStar style={{ marginRight: '4px' }} /> Expérimenté
+            <IoMdStar style={{ marginRight: '4px', width: '24px', height: '24px' }} /> Expérimenté
           </button>
           <button
             type="button"
             className={`simulation-engine__radio ${enduranceIndex === 'intermediate' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setEnduranceIndex('intermediate')}
           >
-            <IoMdStar style={{ marginRight: '4px' }} /> Intermédiaire
+            <IoMdStar style={{ marginRight: '4px', width: '24px', height: '24px' }} /> Intermédiaire
           </button>
           <button
             type="button"
             className={`simulation-engine__radio ${enduranceIndex === 'beginner' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setEnduranceIndex('beginner')}
           >
-            <FaMedal style={{ marginRight: '4px' }} /> Débutant
+            <FaMedal style={{ marginRight: '4px', width: '24px', height: '24px' }} /> Débutant
           </button>
         </div>
         <div className="simulation-engine__hint">
@@ -226,28 +226,28 @@ export default function SimulationEngine({
             className={`simulation-engine__radio ${enduranceIndex === 'elite' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setEnduranceIndex('elite')}
           >
-            <FaTrophy style={{ marginRight: '4px' }} /> Elite
+            <FaTrophy style={{ marginRight: '4px', width: '24px', height: '24px' }} /> Elite
           </button>
           <button
             type="button"
             className={`simulation-engine__radio ${enduranceIndex === 'experienced' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setEnduranceIndex('experienced')}
           >
-            <IoMdStar style={{ marginRight: '4px' }} /> Expérimenté
+            <IoMdStar style={{ marginRight: '4px', width: '24px', height: '24px' }} /> Expérimenté
           </button>
           <button
             type="button"
             className={`simulation-engine__radio ${enduranceIndex === 'intermediate' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setEnduranceIndex('intermediate')}
           >
-            <IoMdStar style={{ marginRight: '4px' }} /> Intermédiaire
+            <IoMdStar style={{ marginRight: '4px', width: '24px', height: '24px' }} /> Intermédiaire
           </button>
           <button
             type="button"
             className={`simulation-engine__radio ${enduranceIndex === 'beginner' ? 'simulation-engine__radio--active' : ''}`}
             onClick={() => setEnduranceIndex('beginner')}
           >
-            <FaMedal style={{ marginRight: '4px' }} /> Débutant
+            <FaMedal style={{ marginRight: '4px', width: '24px', height: '24px' }} /> Débutant
           </button>
         </div>
         <div className="simulation-engine__hint">
@@ -278,7 +278,7 @@ export default function SimulationEngine({
       {barriers.length > 0 && (
         <div className="simulation-engine__barriers">
           <p className="simulation-engine__barriers-title">
-            <FiAlertCircle style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle', color: '#ef4444' }} />
+            <FiAlertCircle style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle', color: '#ef4444', width: '24px', height: '24px' }} />
             Barrières horaires critiques
           </p>
           {barriers.map((barrier) => (

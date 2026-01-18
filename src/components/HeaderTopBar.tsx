@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { HiX } from 'react-icons/hi'
 
 import './HeaderTopBar.css'
 
@@ -191,7 +192,7 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
             title="Se déconnecter"
             aria-label="Se déconnecter"
           >
-            ×
+            <HiX />
           </button>
         </div>
       ) : (

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { HiX } from 'react-icons/hi'
 import './LoginModal.css'
 
 // Schéma de validation pour le login
@@ -120,7 +121,7 @@ export default function LoginModal({ isOpen, initialMode = 'login', onClose, onL
     <div className="login-modal-overlay" onClick={onClose}>
       <div className="login-modal" onClick={(e) => e.stopPropagation()}>
         <button className="login-modal__close" type="button" onClick={onClose} aria-label="Fermer">
-          ×
+          <HiX />
         </button>
 
         <div className="login-modal__header">
@@ -234,7 +235,7 @@ export default function LoginModal({ isOpen, initialMode = 'login', onClose, onL
           onClick={onStravaConnect}
           disabled={isLoading}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
             <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7.01 13.828h4.169" />
           </svg>
           {mode === 'login' ? 'Se connecter avec Strava' : 'S\'inscrire avec Strava'} (optionnel)
