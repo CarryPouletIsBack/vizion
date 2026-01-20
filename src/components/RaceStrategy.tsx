@@ -71,10 +71,10 @@ export default function RaceStrategy({
       value: barrier.distance,
       color: '#ef4444',
       width: 2,
-      dashStyle: 'Dash',
+      dashStyle: 'Dash' as const,
       label: {
         text: `${barrier.name}<br/>${barrier.timeLimit}`,
-        align: 'right',
+        align: 'right' as const,
         style: {
           color: '#ef4444',
           fontWeight: 'bold',

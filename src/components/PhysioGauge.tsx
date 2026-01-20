@@ -84,7 +84,7 @@ export default function PhysioGauge({ tsb = MOCK_DATA.tsb }: PhysioGaugeProps) {
         ],
         lineWidth: 0,
         tickWidth: 0,
-        minorTickInterval: null,
+        minorTickInterval: undefined,
         tickAmount: 2,
         title: {
           y: -70,

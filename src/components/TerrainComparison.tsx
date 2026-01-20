@@ -84,7 +84,7 @@ export default function TerrainComparison({
           color: '#e5e7eb',
         },
         formatter: function() {
-          const category = this.x as string
+          const category = String(this.x)
           const percent = Math.round(this.y as number)
           if (category === 'D+') {
             return `<b>D+</b><br/>Actuel: ${elevationGain.current.toLocaleString('fr-FR')} m<br/>Objectif: ${elevationGain.target.toLocaleString('fr-FR')} m<br/>Avancement: <b>${percent}%</b>`
@@ -101,7 +101,7 @@ export default function TerrainComparison({
               color: '#e5e7eb',
             },
             formatter: function() {
-              const category = this.x as string
+              const category = String(this.x)
               const percent = Math.round(this.y as number)
               if (category === 'D+') {
                 return `${elevationGain.current.toLocaleString('fr-FR')} m (${percent}%)`
