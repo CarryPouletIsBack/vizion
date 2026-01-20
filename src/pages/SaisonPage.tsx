@@ -5,7 +5,7 @@ import './SaisonPage.css'
 
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
-import WorldMapLeaflet from '../components/WorldMapLeaflet'
+import WorldMapGoogle from '../components/WorldMapGoogle'
 import { gpxToSvg, extractGpxStartCoordinates, extractGpxWaypoints } from '../lib/gpxToSvg'
 import { extractRouteIdFromUrl } from '../lib/stravaRouteParser'
 
@@ -383,7 +383,7 @@ export default function SaisonPage({
           <div className="saison-map-block">
             <section className="map-section">
               <div className="map-wrapper">
-                <WorldMapLeaflet onCourseSelect={onCourseSelect} />
+                <WorldMapGoogle onCourseSelect={onCourseSelect} />
               </div>
             </section>
 
@@ -468,16 +468,14 @@ export default function SaisonPage({
               <p className="modal__subtitle modal__subtitle--left">
                 Un événement vous permet de regrouper plusieurs course.
               </p>
-              <div className="modal-upload">
-                <label className="modal-upload__circle" htmlFor="event-image">
-                  <span className="modal-upload__icon">image-polaroid</span>
-                </label>
-                <label className="modal-upload__plus" htmlFor="event-image">
-                  +
+              <div className="modal-upload-simple">
+                <label className="modal-upload-simple__button" htmlFor="event-image">
+                  <span className="modal-upload-simple__icon">+</span>
+                  <span className="modal-upload-simple__text">Télécharger une image pour l'événement</span>
                 </label>
                 <input
                   id="event-image"
-                  className="modal-upload__input"
+                  className="modal-upload-simple__input"
                   type="file"
                   accept="image/*"
                   ref={eventImageRef}
@@ -523,39 +521,31 @@ export default function SaisonPage({
                 </button>
               </header>
               <p className="modal__subtitle">Un événement vous permet de regrouper plusieurs course.</p>
-              <div className="modal-upload modal-upload--double">
-                <div className="modal-upload__block">
-                  <label className="modal-upload__circle" htmlFor="course-image">
-                    <span className="modal-upload__icon">image-polaroid</span>
-                    <span className="modal-upload__label">Upload img</span>
-                  </label>
-                  <label className="modal-upload__plus" htmlFor="course-image">
-                    +
-                  </label>
-                  <input
-                    id="course-image"
-                    className="modal-upload__input"
-                    type="file"
-                    accept="image/*"
+              <div className="modal-upload-simple">
+                <label className="modal-upload-simple__button" htmlFor="course-image">
+                  <span className="modal-upload-simple__icon">+</span>
+                  <span className="modal-upload-simple__text">Télécharger une image pour la course</span>
+                </label>
+                <input
+                  id="course-image"
+                  className="modal-upload-simple__input"
+                  type="file"
+                  accept="image/*"
                   ref={courseImageRef}
-                  />
-                </div>
-                <div className="modal-upload__block">
-                  <label className="modal-upload__circle" htmlFor="course-gpx">
-                    <span className="modal-upload__icon">route</span>
-                    <span className="modal-upload__label">Upload gpx</span>
-                  </label>
-                  <label className="modal-upload__plus" htmlFor="course-gpx">
-                    +
-                  </label>
-                  <input
-                    id="course-gpx"
-                    className="modal-upload__input"
-                    type="file"
-                    accept=".gpx,application/gpx+xml,application/xml,text/xml"
+                />
+              </div>
+              <div className="modal-upload-simple">
+                <label className="modal-upload-simple__button" htmlFor="course-gpx">
+                  <span className="modal-upload-simple__icon">+</span>
+                  <span className="modal-upload-simple__text">Télécharger un fichier GPX pour la course</span>
+                </label>
+                <input
+                  id="course-gpx"
+                  className="modal-upload-simple__input"
+                  type="file"
+                  accept=".gpx,application/gpx+xml,application/xml,text/xml"
                   ref={courseGpxRef}
-                  />
-                </div>
+                />
               </div>
               <div className="modal-field">
                 <label htmlFor="course-name">

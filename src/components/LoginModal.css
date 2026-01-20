@@ -16,19 +16,28 @@
   transition: var(--transition-smooth);
 }
 
+.login-modal-overlay--hidden {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 .login-modal {
   width: 100%;
   max-width: 440px;
+  max-height: 90vh;
   background: var(--color-bg-primary, #0b0e11);
   border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
   border-radius: var(--spacing-8, 16px);
-  padding: var(--spacing-16, 32px) var(--spacing-12, 24px);
+  padding: var(--spacing-12, 24px) var(--spacing-12, 24px);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-12, 24px);
+  gap: var(--spacing-8, 16px);
   position: relative;
   box-shadow: 0 var(--spacing-6, 12px) var(--spacing-20, 40px) rgba(0, 0, 0, 0.5);
   transition: var(--transition-smooth);
+  overflow-y: auto;
 }
 
 .login-modal__close {
@@ -81,13 +90,65 @@
   margin: 0;
   font-size: var(--font-body-sm-size, 14px);
   line-height: var(--font-body-sm-line-height, 1.5);
-  color: var(--color-text-secondary, #9ca3af);
+  color: var(--color-text-muted, rgba(229, 231, 235, 0.72));
+}
+
+.login-modal__forgot-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: var(--spacing-2, 4px);
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
+  color: var(--color-accent, #bfc900);
+  text-decoration: none;
+  cursor: pointer;
+  text-align: right;
+  align-self: flex-end;
+  transition: var(--transition-base);
+  font-family: inherit;
+  letter-spacing: 0.02em;
+}
+
+.login-modal__forgot-link:hover {
+  text-decoration: underline;
+  opacity: 0.9;
+  color: var(--color-brand-primary, #d4df00);
+}
+
+.login-modal__success {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-12, 24px);
+  text-align: center;
+  padding: var(--spacing-4, 8px) 0;
+}
+
+.login-modal__success .login-modal__switch {
+  width: 100%;
+  text-align: center;
+  margin-top: var(--spacing-4, 8px);
+}
+
+.login-modal__success-message {
+  margin: 0;
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
+  color: var(--color-accent, #bfc900);
+  font-weight: 500;
+}
+
+.login-modal__success-note {
+  margin: 0;
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
+  color: var(--color-text-muted, rgba(229, 231, 235, 0.72));
 }
 
 .login-modal__form {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-10, 20px);
+  gap: var(--spacing-8, 16px);
 }
 
 .login-modal__field {
@@ -188,7 +249,7 @@
 .login-modal__divider span {
   font-size: var(--font-body-sm-size, 14px);
   line-height: var(--font-body-sm-line-height, 1.5);
-  color: var(--color-text-secondary, #9ca3af);
+  color: var(--color-text-muted, rgba(229, 231, 235, 0.72));
   text-transform: none;
   letter-spacing: 0.1em;
 }
@@ -239,7 +300,7 @@
 .login-modal__switch {
   background: none;
   border: none;
-  color: var(--color-text-secondary, #9ca3af);
+  color: var(--color-text-muted, rgba(229, 231, 235, 0.72));
   font-size: var(--font-body-sm-size, 14px);
   line-height: var(--font-body-sm-line-height, 1.5);
   cursor: pointer;
@@ -247,10 +308,17 @@
   text-underline-offset: var(--spacing-2, 4px);
   transition: var(--transition-base);
   font-family: inherit;
+  letter-spacing: 0.02em;
 }
 
 .login-modal__switch:hover {
   color: var(--color-accent, #bfc900);
+}
+
+.login-modal__switch--centered {
+  width: 100%;
+  text-align: center;
+  margin-top: var(--spacing-4, 8px);
 }
 
 @media (max-width: 768px) {

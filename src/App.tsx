@@ -89,7 +89,13 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
     if (coursesError) {
       // Gérer silencieusement les erreurs de permission (RLS) pour les utilisateurs non connectés
       if (coursesError.code === 'PGRST116' || coursesError.code === '42501' || coursesError.code === 'PGRST301') {
-        console.warn('⚠️ Erreur de permission lors du chargement des courses (utilisateur non connecté ou RLS):', coursesError.message)
+        console.warn('⚠️ Erreur de permission lors du chargement des courses (utilisateur non connecté ou RLS):', {
+          code: coursesError.code,
+          message: coursesError.message,
+          hint: coursesError.hint,
+          eventsCount: eventsData.length,
+        })
+        // Retourner les events sans courses - CoursesPage chargera les courses directement
         return eventsData.map((event: EventRow) => ({
           id: event.id,
           name: event.name,
@@ -99,7 +105,12 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
           courses: [],
         }))
       }
-      console.error('Erreur lors du chargement des courses:', coursesError)
+      console.error('Erreur lors du chargement des courses:', {
+        code: coursesError.code,
+        message: coursesError.message,
+        hint: coursesError.hint,
+        details: coursesError,
+      })
       return eventsData.map((event: EventRow) => ({
         id: event.id,
         name: event.name,
@@ -109,6 +120,11 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
         courses: [],
       }))
     }
+
+    console.log('[App] Courses chargées depuis Supabase:', {
+      coursesCount: coursesData?.length || 0,
+      eventsCount: eventsData.length,
+    })
 
     // Transformer les données Supabase en EventItem[]
     const eventsMap = new Map<string, EventItem>()
@@ -124,7 +140,9 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
     })
 
     // Associer les courses à leurs events
-    if (coursesData) {
+    if (coursesData && coursesData.length > 0) {
+      console.log('[App] Association des courses aux events...')
+      let coursesWithoutEvent = 0
       coursesData.forEach((course: CourseRow) => {
         const event = eventsMap.get(course.event_id)
         if (event) {
@@ -185,8 +203,22 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
               ? [course.start_coordinates[0], course.start_coordinates[1]] as [number, number]
               : undefined,
           })
+        } else {
+          coursesWithoutEvent++
+          console.warn(`[App] Course "${course.name}" (${course.id}) n'a pas d'event parent (event_id: ${course.event_id})`)
         }
       })
+      
+      if (coursesWithoutEvent > 0) {
+        console.warn(`[App] ${coursesWithoutEvent} course(s) sans event parent`)
+      }
+      
+      console.log('[App] Résultat final:', {
+        eventsCount: eventsMap.size,
+        totalCourses: Array.from(eventsMap.values()).reduce((sum, e) => sum + e.courses.length, 0),
+      })
+    } else {
+      console.warn('[App] Aucune course chargée depuis Supabase')
     }
 
     return Array.from(eventsMap.values())
@@ -419,7 +451,6 @@ function App() {
       ? Number(payload.elevationGain.toFixed(2))
       : null
 
-    console.log('💾 Insertion course dans Supabase avec event_id:', eventIdToUse)
     const { error, data } = await supabase.from('courses').insert({
       event_id: eventIdToUse,
       name: cleanName,
@@ -483,7 +514,13 @@ function App() {
   }
 
   const handleNavigate = (nextView: AppView) => {
-    setView(nextView)
+    console.log('[App] handleNavigate appelé avec:', nextView)
+    // Scroll immédiat vers le haut avant de changer de vue pour éviter le sursaut
+    window.scrollTo({ top: 0, behavior: 'instant' })
+    // Utiliser requestAnimationFrame pour s'assurer que le scroll est terminé avant le changement de vue
+    requestAnimationFrame(() => {
+      setView(nextView)
+    })
   }
 
   useEffect(() => {
@@ -557,10 +594,7 @@ function App() {
           onEventSelect={handleSelectEvent}
           onEventEdit={handleEditEvent}
           onEventDelete={handleDeleteEvent}
-          onCreateEvent={() => {
-            handleNavigate('saison')
-            // Le modal sera ouvert automatiquement dans SaisonPage
-          }}
+          onCreateEvent={handleCreateEvent}
         />
       )}
       {view === 'courses' && (
@@ -569,10 +603,7 @@ function App() {
           events={events}
           selectedEventId={selectedEventId}
           onSelectCourse={handleSelectCourse}
-          onCreateCourse={() => {
-            handleNavigate('saison')
-            // Le modal sera ouvert automatiquement dans SaisonPage
-          }}
+          onCreateCourse={handleCreateCourse}
         />
       )}
       {view === 'strava-callback' && (

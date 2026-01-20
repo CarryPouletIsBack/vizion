@@ -129,3 +129,16 @@ export async function deleteAccount() {
     throw new Error('La suppression de compte nécessite une confirmation. Contactez le support.')
   }
 }
+
+/**
+ * Demander un email de réinitialisation de mot de passe
+ */
+export async function resetPasswordForEmail(email: string) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/auth/reset-password`,
+  })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+}

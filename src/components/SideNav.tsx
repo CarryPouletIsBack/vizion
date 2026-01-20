@@ -38,7 +38,12 @@ export default function SideNav({ activeItem = 'saison', onNavigate }: SideNavPr
       <button
         className={`side-nav__item ${activeItem === 'account' ? 'side-nav__item--active' : ''}`}
         type="button"
-        onClick={() => onNavigate?.('account')}
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          console.log('[SideNav] Clic sur Mon compte')
+          onNavigate?.('account')
+        }}
       >
         Mon compte
       </button>

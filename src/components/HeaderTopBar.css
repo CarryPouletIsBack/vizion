@@ -121,6 +121,20 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-1, 2px);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: var(--transition-base);
+  text-align: left;
+}
+
+.saison-topbar__user-info:hover {
+  opacity: 0.8;
+}
+
+.saison-topbar__user-info:active {
+  opacity: 0.6;
 }
 
 .saison-topbar__user-name {

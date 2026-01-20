@@ -23,12 +23,53 @@ type AppUser = {
 export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
   const [user, setUser] = useState<AppUser | null | 'loading'>('loading') // 'loading' pour éviter le flash
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
-  const [loginModalMode, setLoginModalMode] = useState<'login' | 'signup'>('login')
+  const [loginModalMode, setLoginModalMode] = useState<'login' | 'signup' | 'forgot-password' | 'otp-expired'>('login')
+
+  // Détecter l'erreur otp_expired dans l'URL et ouvrir automatiquement la modale
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash
+      const searchParams = new URLSearchParams(window.location.search)
+      
+      // Vérifier dans le hash (#error_code=otp_expired) ou dans les query params
+      if (hash.includes('error_code=otp_expired') || searchParams.get('error_code') === 'otp_expired') {
+        setLoginModalMode('otp-expired')
+        setIsLoginModalOpen(true)
+        // Nettoyer l'URL
+        const cleanUrl = window.location.href.split('#')[0].split('?')[0]
+        window.history.replaceState({}, '', cleanUrl)
+      }
+    }
+  }, [])
+
+  // Écouter l'événement personnalisé pour ouvrir la modale de connexion
+  useEffect(() => {
+    const handleOpenLoginModal = () => {
+      setLoginModalMode('login')
+      setIsLoginModalOpen(true)
+    }
+    window.addEventListener('openLoginModal', handleOpenLoginModal as EventListener)
+    return () => {
+      window.removeEventListener('openLoginModal', handleOpenLoginModal as EventListener)
+    }
+  }, [])
 
   // Debug en production
   useEffect(() => {
     console.log('HeaderTopBar - isLoginModalOpen:', isLoginModalOpen, 'loginModalMode:', loginModalMode)
   }, [isLoginModalOpen, loginModalMode])
+
+  // Écouter l'événement personnalisé pour ouvrir la modale de connexion
+  useEffect(() => {
+    const handleOpenLoginModal = () => {
+      setLoginModalMode('login')
+      setIsLoginModalOpen(true)
+    }
+    window.addEventListener('openLoginModal', handleOpenLoginModal as EventListener)
+    return () => {
+      window.removeEventListener('openLoginModal', handleOpenLoginModal as EventListener)
+    }
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -180,11 +221,22 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
               }}
             />
           )}
-          <div className="saison-topbar__user-info">
+          <button
+            className="saison-topbar__user-info"
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              console.log('[HeaderTopBar] Clic sur Mon compte')
+              onNavigate?.('account')
+            }}
+            title="Mon compte"
+            aria-label="Mon compte"
+          >
             <span className="saison-topbar__user-name">
               {user.firstname && user.lastname ? `${user.firstname} ${user.lastname}` : user.email}
             </span>
-          </div>
+          </button>
           <button
             className="saison-topbar__user-logout"
             type="button"
@@ -200,18 +252,11 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
           <button
             className="btn btn--ghost"
             type="button"
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              const nativeEvent = e.nativeEvent
-              if (nativeEvent.stopImmediatePropagation) {
-                nativeEvent.stopImmediatePropagation()
-              }
+            onClick={() => {
               console.log('[HeaderTopBar] Bouton Se connecter cliqué')
-              console.log('[HeaderTopBar] État avant:', { isLoginModalOpen, loginModalMode })
               setLoginModalMode('login')
               setIsLoginModalOpen(true)
-              console.log('[HeaderTopBar] État après setState')
+              console.log('[HeaderTopBar] State mis à jour')
             }}
           >
             Se connecter
@@ -219,18 +264,11 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
           <button
             className="btn btn--primary"
             type="button"
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              const nativeEvent = e.nativeEvent
-              if (nativeEvent.stopImmediatePropagation) {
-                nativeEvent.stopImmediatePropagation()
-              }
+            onClick={() => {
               console.log('[HeaderTopBar] Bouton Créer un compte cliqué')
-              console.log('[HeaderTopBar] État avant:', { isLoginModalOpen, loginModalMode })
               setLoginModalMode('signup')
               setIsLoginModalOpen(true)
-              console.log('[HeaderTopBar] État après setState')
+              console.log('[HeaderTopBar] State mis à jour')
             }}
           >
             Créer un compte

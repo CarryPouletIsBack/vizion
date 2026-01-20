@@ -6,6 +6,9 @@ import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 import SingleCourseElevationChart from '../components/SingleCourseElevationChart'
 import SimulationEngine from '../components/SimulationEngine'
+import PhysioGauge from '../components/PhysioGauge'
+import TerrainComparison from '../components/TerrainComparison'
+import RaceStrategy from '../components/RaceStrategy'
 import useGpxHoverMarker from '../hooks/useGpxHoverMarker'
 import useStravaMetrics from '../hooks/useStravaMetrics'
 import { analyzeCourseReadiness } from '../lib/courseAnalysis'
@@ -50,9 +53,26 @@ export default function SingleCoursePage({
       : '175 km · 10 150 D+ · Août 2026'
   const courseHeading = `${courseEventName.toUpperCase()} – ${courseTitle}`
   const coursePrep = 'Préparation en cours : M-6'
-  const rawProfile = (selectedCourse as { profile?: Array<[number, number]> } | undefined)?.profile
-  // S'assurer que profileData est un tableau valide
-  const profileData = Array.isArray(rawProfile) && rawProfile.length > 0 ? rawProfile : undefined
+  const rawProfile = (selectedCourse as { profile?: Array<[number, number]> | string } | undefined)?.profile
+  // Parser le profile si c'est une string JSON, sinon utiliser directement
+  let profileData: Array<[number, number]> | undefined = undefined
+  if (rawProfile) {
+    if (typeof rawProfile === 'string') {
+      try {
+        // Le profile peut être une string JSON double-encodée
+        const parsed = JSON.parse(rawProfile)
+        if (typeof parsed === 'string') {
+          profileData = JSON.parse(parsed)
+        } else if (Array.isArray(parsed)) {
+          profileData = parsed
+        }
+      } catch {
+        profileData = undefined
+      }
+    } else if (Array.isArray(rawProfile) && rawProfile.length > 0) {
+      profileData = rawProfile
+    }
+  }
   const gpxSvg = selectedCourse?.gpxSvg
   const maxDistance = profileData?.length ? profileData[profileData.length - 1][0] : undefined
   useGpxHoverMarker('gpx-inline-svg', maxDistance)
@@ -127,6 +147,19 @@ export default function SingleCoursePage({
               </div>
               <div className="single-course-course__card">
                 <SingleCourseElevationChart data={profileData} metrics={metrics} />
+              </div>
+            </div>
+
+            {/* Blocs fonctionnels : PhysioGauge, TerrainComparison, RaceStrategy */}
+            <div className="single-course-charts-grid">
+              <div className="single-course-chart-block">
+                <PhysioGauge />
+              </div>
+              <div className="single-course-chart-block">
+                <TerrainComparison />
+              </div>
+              <div className="single-course-chart-block">
+                <RaceStrategy profileData={profileData} />
               </div>
             </div>
 

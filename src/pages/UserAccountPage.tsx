@@ -43,6 +43,9 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
   useEffect(() => {
     let mounted = true
 
+    // Scroll vers le haut immédiatement au chargement de la page pour éviter le sursaut
+    window.scrollTo({ top: 0, behavior: 'instant' })
+
     // Charger l'utilisateur Supabase
     const loadUser = async () => {
       try {
@@ -80,13 +83,14 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
             birthdate: userData.birthdate || '',
           })
         } else {
-          // Rediriger vers la page d'accueil si non connecté
-          onNavigate?.('saison')
+          // Ne pas rediriger, permettre l'accès à la page même sans être connecté
+          // L'utilisateur verra un message l'invitant à se connecter
+          setUser(null)
         }
       } catch (error) {
         if (!mounted) return
         console.warn('Impossible de charger l\'utilisateur:', error)
-        onNavigate?.('saison')
+        // Ne pas rediriger immédiatement pour éviter le sursaut
       }
     }
 
@@ -353,17 +357,42 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
         </aside>
 
         <main className="user-account-main">
-          <section className="user-account-header">
-            <div>
+          {!user ? (
+            <section className="user-account-not-connected">
               <h1 className="user-account-title">Mon compte</h1>
-              <p className="user-account-subtitle">Gérez vos informations et vos connexions</p>
-            </div>
-            <button type="button" className="btn btn--ghost" onClick={handleLogout}>
-              Se déconnecter
-            </button>
-          </section>
+              <p className="user-account-subtitle">Connectez-vous pour accéder à votre compte</p>
+              <div className="user-account-not-connected__actions">
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('openLoginModal'))
+                  }}
+                >
+                  Se connecter
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  onClick={() => onNavigate?.('saison')}
+                >
+                  Retour à l'accueil
+                </button>
+              </div>
+            </section>
+          ) : (
+            <>
+              <section className="user-account-header">
+                <div>
+                  <h1 className="user-account-title">Mon compte</h1>
+                  <p className="user-account-subtitle">Gérez vos informations et vos connexions</p>
+                </div>
+                <button type="button" className="btn btn--ghost" onClick={handleLogout}>
+                  Se déconnecter
+                </button>
+              </section>
 
-          <section className="user-account-content">
+              <section className="user-account-content">
             {/* Profil utilisateur */}
             <div className="user-account-card">
               <div className="user-account-card__header">
@@ -605,7 +634,9 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
                 </div>
               </div>
             )}
-          </section>
+              </section>
+            </>
+          )}
         </main>
       </div>
     </div>
