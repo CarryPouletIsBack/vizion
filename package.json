@@ -1,0 +1,52 @@
+{
+  "name": "vizion-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@d3/versor-dragging": "https://api.observablehq.com/d/d422dd0a1d5ee8b8@231.tgz?v=3",
+    "@d3/zoom-to-bounding-box": "https://api.observablehq.com/@d3/zoom-to-bounding-box.tgz?v=3",
+    "@highcharts/dashboards": "^2.3.0",
+    "@hookform/resolvers": "^5.2.2",
+    "@observablehq/runtime": "^5.9.9",
+    "@react-google-maps/api": "^2.20.8",
+    "@supabase/supabase-js": "^2.90.1",
+    "@types/leaflet": "^1.9.21",
+    "d3": "^7.9.0",
+    "d3-tile": "^1.0.0",
+    "highcharts": "^12.1.0",
+    "highcharts-react-official": "^3.2.3",
+    "leaflet": "^1.9.4",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-hook-form": "^7.71.1",
+    "react-icons": "^5.5.0",
+    "react-leaflet": "^4.2.1",
+    "react-simple-maps": "^3.0.0",
+    "topojson-client": "^3.1.0",
+    "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@tailwindcss/vite": "4.1.12",
+    "@types/node": "^24.10.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vercel/node": "^5.5.23",
+    "@vitejs/plugin-react": "4.7.0",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "tailwindcss": "4.1.12",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.4",
+    "vite": "6.3.5"
+  }
+}

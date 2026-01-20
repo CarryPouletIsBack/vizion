@@ -1,0 +1,228 @@
+.saison-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-8, 16px);
+  padding: var(--spacing-4, 8px) var(--spacing-8, 16px);
+  background: transparent;
+  transition: var(--transition-smooth);
+}
+
+.saison-topbar__logo {
+  cursor: pointer;
+  display: inline-block;
+}
+
+.saison-topbar__logo img {
+  width: 64px;
+  height: var(--spacing-8, 16px);
+  aspect-ratio: 32 / 9;
+}
+
+.saison-topbar__race {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-8, 16px);
+  flex-wrap: wrap;
+}
+
+.race-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-4, 8px);
+  padding: var(--spacing-2, 4px) var(--spacing-5, 10px);
+  border-radius: var(--spacing-4, 8px);
+  background: var(--color-brand-secondary, rgba(76, 141, 255, 0.12));
+  backdrop-filter: blur(25px);
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
+  letter-spacing: 0.12em;
+  text-transform: none;
+}
+
+.race-tag__flag {
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.race-tag__flag img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.race-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
+  margin: 0;
+}
+
+.race-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4, 8px);
+  font-size: var(--font-size-xs, 11px);
+  line-height: var(--line-height-normal, 1.5);
+  color: var(--color-brand-primary, #d4df00);
+  text-transform: lowercase;
+}
+
+.race-progress__bar {
+  width: 112px;
+  height: var(--spacing-6, 12px);
+  border-radius: var(--spacing-2, 4px);
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  background: linear-gradient(
+    to right,
+    var(--color-brand-primary, #d4df00) 65%,
+    transparent 65%
+  );
+}
+
+.saison-topbar__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-6, 12px);
+  margin-left: auto;
+}
+
+.saison-topbar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-6, 12px);
+  margin-left: auto;
+  padding: var(--spacing-2, 4px) var(--spacing-6, 12px);
+  border-radius: var(--spacing-10, 20px);
+  background: rgba(255, 255, 255, 0.05);
+  border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
+  transition: var(--transition-base);
+}
+
+.saison-topbar__user-avatar {
+  width: var(--spacing-16, 32px);
+  height: var(--spacing-16, 32px);
+  border-radius: 50%;
+  object-fit: cover;
+  border: var(--spacing-1, 2px) solid var(--color-accent, #bfc900);
+  flex-shrink: 0;
+}
+
+.saison-topbar__user-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1, 2px);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: var(--transition-base);
+  text-align: left;
+}
+
+.saison-topbar__user-info:hover {
+  opacity: 0.8;
+}
+
+.saison-topbar__user-info:active {
+  opacity: 0.6;
+}
+
+.saison-topbar__user-name {
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
+  font-weight: 500;
+  color: var(--color-text-primary, #e5e7eb);
+  white-space: nowrap;
+}
+
+.saison-topbar__user-logout {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary, #9ca3af);
+  font-size: var(--font-size-xl, 20px);
+  line-height: var(--line-height-tight, 1.2);
+  cursor: pointer;
+  padding: var(--spacing-2, 4px) var(--spacing-4, 8px);
+  border-radius: var(--spacing-2, 4px);
+  transition: var(--transition-base);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.saison-topbar__user-logout:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.saison-topbar__user-logout svg {
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
+  flex-shrink: 0;
+}
+
+.btn {
+  border-radius: 26px;
+  padding: var(--spacing-2, 4px) var(--spacing-8, 16px);
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
+  letter-spacing: 0.12em;
+  text-transform: none;
+  border: var(--spacing-1, 2px) solid transparent;
+  cursor: pointer;
+  background: transparent;
+  color: var(--color-text-primary, #e5e7eb);
+  transition: var(--transition-base);
+}
+
+.btn--ghost {
+  border-color: rgba(229, 231, 235, 0.3);
+}
+
+.btn--primary {
+  background: var(--color-brand-primary);
+  color: var(--color-bg-primary, #0b0e11);
+}
+
+@media (max-width: 768px) {
+  .saison-topbar {
+    padding: var(--spacing-4, 8px) var(--spacing-6, 12px);
+    gap: var(--spacing-4, 8px);
+  }
+
+  .saison-topbar__actions {
+    margin-left: auto;
+  }
+
+  .saison-topbar__user {
+    gap: var(--spacing-4, 8px);
+    padding: var(--spacing-2, 4px) var(--spacing-4, 8px);
+  }
+
+  .saison-topbar__user-avatar {
+    width: var(--spacing-14, 28px);
+    height: var(--spacing-14, 28px);
+  }
+
+  .saison-topbar__user-name {
+    font-size: var(--font-size-sm, 12px);
+    line-height: var(--line-height-normal, 1.5);
+  }
+
+  .saison-topbar__user-logout {
+    font-size: var(--font-size-lg, 18px);
+    line-height: var(--line-height-tight, 1.2);
+    padding: var(--spacing-1, 2px) var(--spacing-2, 4px);
+  }
+}

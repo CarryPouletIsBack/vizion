@@ -1,0 +1,210 @@
+.world-map-simple {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+  position: relative;
+}
+
+.world-map-simple svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: transparent;
+  transform: none;
+  transform-origin: center;
+}
+
+.world-map-simple .rsm-zoomable-group {
+  transition: transform 400ms ease-out;
+  transform-origin: center;
+}
+
+/* S'assurer que la card s'affiche au-dessus de tout */
+.world-map-simple .rsm-annotation {
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.world-map-simple .rsm-annotation foreignObject {
+  z-index: 1000;
+}
+
+/* Styles pour les noms de pays */
+.world-map-simple text {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Assurer la visibilité des foreignObject en production */
+.world-map-simple foreignObject {
+  overflow: visible !important;
+  pointer-events: auto !important;
+  transform: none !important;
+}
+
+.world-map-simple foreignObject * {
+  pointer-events: auto !important;
+  transform: none !important;
+}
+
+/* S'assurer que les Marker suivent correctement les coordonnées */
+.world-map-simple g[class*="rsm-marker"] {
+  transform-origin: 0 0 !important;
+}
+
+.world-map-simple g[class*="rsm-marker"] > g {
+  transform-origin: 0 0 !important;
+}
+
+.map-tag {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border-radius: 8px;
+  background: var(--color-bg-surface, #161b21) !important;
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 0.5px solid rgba(42, 46, 26, 0.2);
+  font-size: 11px;
+  letter-spacing: 1.43px;
+  color: var(--color-text-primary, #e5e7eb) !important;
+  cursor: pointer;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 10;
+  position: relative;
+  font-family: inherit;
+  margin: 0;
+  outline: none;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.map-tag--absolute {
+  z-index: 100 !important;
+  pointer-events: auto !important;
+}
+
+.map-tag__flag {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.map-tag__flag img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.map-card {
+  width: 292px;
+  border-radius: 8px;
+  border: 0.5px solid rgba(42, 46, 26, 0.2);
+  background: var(--color-bg-surface, #161b21);
+  backdrop-filter: blur(25px);
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.map-card__media {
+  width: 100%;
+  aspect-ratio: 325 / 265;
+  background: var(--color-bg-primary, #0b0e11);
+}
+
+.map-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.map-card__heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px 0;
+  font-size: 18px;
+  letter-spacing: 2.34px;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.map-card__flag {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.map-card__flag img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.map-card__info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.map-card__details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 16px;
+  letter-spacing: 2.08px;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.map-card__details p {
+  margin: 0;
+}
+
+.map-card__gpx {
+  width: 36px;
+  height: auto;
+  opacity: 0.8;
+}
+
+.map-card__footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.6);
+}
+
+.map-card__footer-col {
+  padding: 2px 12px;
+  border-left: 0.5px solid rgba(255, 255, 255, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--color-texte-titre-var, #fff8f5);
+}
+
+.map-card__footer-col:first-child {
+  border-left: none;
+}
+
+.map-card__footer-col p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.map-card__countdown {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+}

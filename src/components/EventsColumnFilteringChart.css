@@ -1,0 +1,207 @@
+/* Styles du composant Highcharts Grid "Column Filtering". */
+.events-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(11, 14, 17, 0.4);
+  border: 1px solid rgba(42, 48, 56, 0.6);
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.events-chart__container {
+  width: 100%;
+  min-height: 360px;
+}
+
+.events-chart__pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 0 4px;
+}
+
+.events-chart__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(229, 231, 235, 0.3);
+  cursor: pointer;
+}
+
+.events-chart__dot--active {
+  background: var(--color-brand-primary, #d4df00);
+}
+
+.events-chart .highcharts-datagrid-container,
+.events-chart .highcharts-datagrid-outer-container {
+  background: transparent;
+  border: none;
+}
+
+.events-chart .highcharts-datagrid-column-headers {
+  background: transparent;
+  border-bottom: 1px solid rgba(201, 211, 214, 0.25);
+}
+
+.events-chart .highcharts-datagrid-column-header {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary, #9ca3af);
+  padding: 8px 12px;
+  border-bottom: none;
+}
+
+.events-grid__header-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.events-grid__header-sort {
+  font-size: 12px;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.events-chart .highcharts-datagrid-row {
+  background: rgba(11, 14, 17, 0.4);
+  border-bottom: 1px solid rgba(201, 211, 214, 0.12);
+  cursor: pointer;
+}
+
+/* Désactiver le clic sur la colonne Options */
+.events-chart .highcharts-datagrid-cell:last-child {
+  cursor: default;
+  pointer-events: none;
+}
+
+.events-chart .highcharts-datagrid-cell:last-child .events-grid__options-wrapper,
+.events-chart .highcharts-datagrid-cell:last-child .events-grid__options {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.events-chart .highcharts-datagrid-row:nth-child(even) {
+  background: rgba(11, 14, 17, 0.4);
+}
+
+.events-chart .highcharts-datagrid-row.hovered {
+  background: rgba(76, 141, 255, 0.08);
+}
+
+.events-chart .highcharts-datagrid-cell {
+  border-left: none;
+  border-top: none;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.events-chart .highcharts-datagrid-cell:first-child {
+  padding-left: 0;
+}
+
+.events-grid__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.events-grid__thumb {
+  width: 49px;
+  height: 49px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(202, 196, 208, 0.8);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(22, 27, 33, 0.7);
+}
+
+.events-grid__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.events-grid__options-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.events-grid__options {
+  background: rgba(11, 14, 17, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  color: var(--color-text-primary, #e5e7eb);
+  cursor: pointer;
+  transition: color 0.2s, background-color 0.2s;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  user-select: none;
+}
+
+.events-grid__options:hover {
+  color: var(--color-accent, #bfc900);
+  background: rgba(191, 201, 0, 0.1);
+}
+
+.events-grid__menu {
+  background: var(--color-bg-surface, #161b21);
+  backdrop-filter: blur(25px);
+  border: 0.5px solid rgba(42, 46, 26, 0.2);
+  border-radius: 8px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 120px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.events-grid__menu-item {
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary, #e5e7eb);
+  font-size: 14px;
+  letter-spacing: 1.82px;
+  text-align: left;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s, color 0.2s;
+  font-family: inherit;
+}
+
+.events-grid__menu-item:hover {
+  background: rgba(191, 201, 0, 0.1);
+  color: var(--color-accent, #bfc900);
+}
+
+.events-grid__menu-item--danger {
+  color: #ef4444;
+}
+
+.events-grid__menu-item--danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+}
+
+.events-chart .highcharts-datagrid-col-resize-handle,
+.events-chart .highcharts-datagrid-col-resize-crosshair {
+  display: none;
+}
