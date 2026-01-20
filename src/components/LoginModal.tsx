@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { HiX } from 'react-icons/hi'
+import { HiX, HiEye, HiEyeOff } from 'react-icons/hi'
 import { resetPasswordForEmail } from '../lib/auth'
 import './LoginModal.css'
 
@@ -44,6 +44,8 @@ export default function LoginModal({ isOpen, initialMode = 'login', onClose, onL
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot-password' | 'otp-expired'>(initialMode)
   const [isLoading, setIsLoading] = useState(false)
   const [resetEmailSent, setResetEmailSent] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const {
     register: registerLogin,
@@ -97,6 +99,8 @@ export default function LoginModal({ isOpen, initialMode = 'login', onClose, onL
       resetSignup()
       resetForgotPassword()
       setResetEmailSent(false)
+      setShowPassword(false)
+      setShowConfirmPassword(false)
     }
   }, [isOpen, initialMode, resetLogin, resetSignup, resetForgotPassword])
 
@@ -268,13 +272,23 @@ export default function LoginModal({ isOpen, initialMode = 'login', onClose, onL
 
             <div className="login-modal__field">
               <label htmlFor="login-password">Mot de passe</label>
-              <input
-                id="login-password"
-                type="password"
-                placeholder="••••••••"
-                {...registerLogin('password')}
-                className={errorsLogin.password ? 'login-modal__input--error' : ''}
-              />
+              <div className="login-modal__password-wrapper">
+                <input
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  {...registerLogin('password')}
+                  className={errorsLogin.password ? 'login-modal__input--error' : ''}
+                />
+                <button
+                  type="button"
+                  className="login-modal__password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                >
+                  {showPassword ? <HiEyeOff /> : <HiEye />}
+                </button>
+              </div>
               {errorsLogin.password && (
                 <span className="login-modal__error">{errorsLogin.password.message}</span>
               )}
@@ -313,13 +327,23 @@ export default function LoginModal({ isOpen, initialMode = 'login', onClose, onL
 
             <div className="login-modal__field">
               <label htmlFor="signup-password">Mot de passe</label>
-              <input
-                id="signup-password"
-                type="password"
-                placeholder="••••••••"
-                {...registerSignup('password')}
-                className={errorsSignup.password ? 'login-modal__input--error' : ''}
-              />
+              <div className="login-modal__password-wrapper">
+                <input
+                  id="signup-password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  {...registerSignup('password')}
+                  className={errorsSignup.password ? 'login-modal__input--error' : ''}
+                />
+                <button
+                  type="button"
+                  className="login-modal__password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                >
+                  {showPassword ? <HiEyeOff /> : <HiEye />}
+                </button>
+              </div>
               {errorsSignup.password && (
                 <span className="login-modal__error">{errorsSignup.password.message}</span>
               )}
@@ -327,13 +351,23 @@ export default function LoginModal({ isOpen, initialMode = 'login', onClose, onL
 
             <div className="login-modal__field">
               <label htmlFor="signup-confirm-password">Confirmer le mot de passe</label>
-              <input
-                id="signup-confirm-password"
-                type="password"
-                placeholder="••••••••"
-                {...registerSignup('confirmPassword')}
-                className={errorsSignup.confirmPassword ? 'login-modal__input--error' : ''}
-              />
+              <div className="login-modal__password-wrapper">
+                <input
+                  id="signup-confirm-password"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  {...registerSignup('confirmPassword')}
+                  className={errorsSignup.confirmPassword ? 'login-modal__input--error' : ''}
+                />
+                <button
+                  type="button"
+                  className="login-modal__password-toggle"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={showConfirmPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                >
+                  {showConfirmPassword ? <HiEyeOff /> : <HiEye />}
+                </button>
+              </div>
               {errorsSignup.confirmPassword && (
                 <span className="login-modal__error">{errorsSignup.confirmPassword.message}</span>
               )}

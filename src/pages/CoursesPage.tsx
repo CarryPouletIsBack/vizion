@@ -509,9 +509,14 @@ export default function CoursesPage({
     allCourses
       .filter((course) => course.name.trim().toLowerCase() !== 'sans titre')
       .map((course, index) => {
-        const courseDistanceKm = course.distanceKm ?? 175
-        const courseElevationGain = course.elevationGain ?? 10150
-        const readinessPercentage = calculateReadinessPercentage(metrics, courseDistanceKm, courseElevationGain)
+        // Utiliser les vraies valeurs de la course, ou 0 si non définies (pas de valeurs par défaut)
+        const courseDistanceKm = course.distanceKm ?? 0
+        const courseElevationGain = course.elevationGain ?? 0
+        
+        // Si la course n'a pas de distance/D+ définis, ne pas calculer le pourcentage
+        const readinessPercentage = (courseDistanceKm > 0 && courseElevationGain > 0)
+          ? calculateReadinessPercentage(metrics, courseDistanceKm, courseElevationGain)
+          : 0
         
         // Trouver l'event parent de la course
         // Si la course vient de directCourses, chercher l'event par event_id depuis Supabase
@@ -528,7 +533,7 @@ export default function CoursesPage({
               : course.distanceKm
                 ? `${course.distanceKm.toFixed(0)} km`
                 : 'Course',
-          readiness: `${readinessPercentage}%`,
+          readiness: readinessPercentage > 0 ? `${readinessPercentage}%` : '-',
           countdown: '6 mois',
           imageUrl: course.imageUrl ?? parentEvent?.imageUrl ?? grandRaidLogo,
           gpxName: course.gpxName,

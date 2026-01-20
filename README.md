@@ -225,6 +225,7 @@ Variables d'environnement Vercel :
 - Les graphiques utilisent Highcharts
 - La carte utilise Google Maps pour une meilleure interactivité
 - L'analyse est basée sur les 6-12 dernières semaines d'activités Strava
+- **Note temporaire** : La fonctionnalité "Événements" est masquée dans la navigation. Les courses sont indépendantes pour le moment et ne nécessitent pas d'être regroupées dans un événement parent.
 
 ## Déploiement
 

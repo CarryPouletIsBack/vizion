@@ -1,7 +1,7 @@
 import './SideNav.css'
 
 type SideNavProps = {
-  activeItem?: 'saison' | 'events' | 'courses' | 'infos' | 'account'
+  activeItem?: 'saison' | 'events' | 'courses' | 'account'
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
 }
 
@@ -15,10 +15,12 @@ export default function SideNav({ activeItem = 'saison', onNavigate }: SideNavPr
       >
         Saison
       </button>
+      {/* Événements masqué temporairement - les courses sont indépendantes pour le moment */}
       <button
         className={`side-nav__item ${activeItem === 'events' ? 'side-nav__item--active' : ''}`}
         type="button"
         onClick={() => onNavigate?.('events')}
+        style={{ display: 'none' }}
       >
         Événements
       </button>
@@ -28,12 +30,6 @@ export default function SideNav({ activeItem = 'saison', onNavigate }: SideNavPr
         onClick={() => onNavigate?.('courses')}
       >
         Courses
-      </button>
-      <button
-        className={`side-nav__item ${activeItem === 'infos' ? 'side-nav__item--active' : ''}`}
-        type="button"
-      >
-        Infos
       </button>
       <button
         className={`side-nav__item ${activeItem === 'account' ? 'side-nav__item--active' : ''}`}

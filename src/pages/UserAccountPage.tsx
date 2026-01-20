@@ -134,8 +134,13 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
             const data = await response.json()
             const activities = data.activities || []
             
-            const totalDistance = activities.reduce((sum: number, act: any) => sum + (act.distance || 0), 0)
-            const totalElevationGain = activities.reduce((sum: number, act: any) => sum + (act.total_elevation_gain || 0), 0)
+            // L'API retourne distanceKm et elevationGain (pas distance et total_elevation_gain)
+            const totalDistance = activities.reduce((sum: number, act: any) => {
+              // distanceKm est en km, on le convertit en mètres pour l'affichage
+              const distanceM = (act.distanceKm || 0) * 1000
+              return sum + distanceM
+            }, 0)
+            const totalElevationGain = activities.reduce((sum: number, act: any) => sum + (act.elevationGain || 0), 0)
             
             setStravaStats({
               activityCount: activities.length,
@@ -490,150 +495,150 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
                   </div>
                 )}
                 {!isEditing && user && (
-                  <button
-                    type="button"
-                    className="user-account-delete"
-                    onClick={handleDeleteAccount}
-                    disabled={isLoading}
-                  >
-                    Supprimer le compte
-                  </button>
+                  <>
+                    {/* Connexion Strava intégrée dans Profil */}
+                    <div className="user-account-profile__connections">
+                      <h3 className="user-account-profile__connections-title">Connexions</h3>
+                      <div className="user-account-connection">
+                        <div className="user-account-connection__info">
+                          <div className="user-account-connection__icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7.01 13.828h4.169" />
+                            </svg>
+                          </div>
+                          <div className="user-account-connection__details">
+                            <h3 className="user-account-connection__name">Strava</h3>
+                            <p className="user-account-connection__status">
+                              {isStravaConnected ? (
+                                <span className="user-account-connection__status--connected">Connecté</span>
+                              ) : (
+                                <span className="user-account-connection__status--disconnected">Non connecté</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        {isStravaConnected ? (
+                          <button
+                            type="button"
+                            className="user-account-connection__button user-account-connection__button--disconnect"
+                            onClick={handleStravaDisconnect}
+                          >
+                            Déconnecter
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="user-account-connection__button user-account-connection__button--connect"
+                            onClick={handleStravaConnect}
+                            disabled={isLoading}
+                          >
+                            {isLoading ? 'Connexion...' : 'Se connecter'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="user-account-delete"
+                      onClick={handleDeleteAccount}
+                      disabled={isLoading}
+                    >
+                      Supprimer le compte
+                    </button>
+                  </>
                 )}
               </div>
             </div>
 
-            {/* Connexion Strava */}
-            <div className="user-account-card">
-              <div className="user-account-card__header">
-                <h2 className="user-account-card__title">Connexions</h2>
-              </div>
-              <div className="user-account-card__body">
-                <div className="user-account-connection">
-                  <div className="user-account-connection__info">
-                    <div className="user-account-connection__icon">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7.01 13.828h4.169" />
-                      </svg>
-                    </div>
-                    <div className="user-account-connection__details">
-                      <h3 className="user-account-connection__name">Strava</h3>
-                      <p className="user-account-connection__status">
-                        {isStravaConnected ? (
-                          <span className="user-account-connection__status--connected">Connecté</span>
-                        ) : (
-                          <span className="user-account-connection__status--disconnected">Non connecté</span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                  {isStravaConnected ? (
-                    <button
-                      type="button"
-                      className="user-account-connection__button user-account-connection__button--disconnect"
-                      onClick={handleStravaDisconnect}
-                    >
-                      Déconnecter
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="user-account-connection__button user-account-connection__button--connect"
-                      onClick={handleStravaConnect}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Connexion...' : 'Se connecter'}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Import de sortie */}
-            <div className="user-account-card">
-              <div className="user-account-card__header">
-                <h2 className="user-account-card__title">Importer une sortie</h2>
-              </div>
-              <div className="user-account-card__body">
-                <div className="user-account-upload">
-                  <div className="user-account-upload__zone">
-                    <input
-                      type="file"
-                      id="activity-upload"
-                      ref={uploadFileRef}
-                      onChange={handleFileSelect}
-                      accept=".gpx,.fit,.tcx,application/gpx+xml,application/xml,text/xml"
-                      style={{ display: 'none' }}
-                    />
-                    <label htmlFor="activity-upload" className="user-account-upload__label">
-                      <div className="user-account-upload__icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                          <polyline points="17 8 12 3 7 8" />
-                          <line x1="12" y1="3" x2="12" y2="15" />
-                        </svg>
-                      </div>
-                      <span className="user-account-upload__text">
-                        {uploadFileName || 'Cliquez pour sélectionner un fichier'}
-                      </span>
-                      <span className="user-account-upload__formats">
-                        Formats supportés : GPX, FIT, TCX
-                      </span>
-                    </label>
-                  </div>
-                  {uploadFile && (
-                    <div className="user-account-upload__actions">
-                      <button
-                        type="button"
-                        className="btn btn--ghost"
-                        onClick={handleFileCancel}
-                        disabled={uploadLoading}
-                      >
-                        Annuler
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn--primary"
-                        onClick={handleFileUpload}
-                        disabled={uploadLoading}
-                      >
-                        {uploadLoading ? 'Import en cours...' : 'Importer'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Statistiques */}
-            {isStravaConnected && (
+            {/* Statistiques et Import en deux colonnes */}
+            <div className="user-account-cards-grid">
+              {/* Import de sortie */}
               <div className="user-account-card">
                 <div className="user-account-card__header">
-                  <h2 className="user-account-card__title">Statistiques</h2>
+                  <h2 className="user-account-card__title">Importer une sortie</h2>
                 </div>
                 <div className="user-account-card__body">
-                  <div className="user-account-stats">
-                    <div className="user-account-stats__item">
-                      <span className="user-account-stats__label">Activités synchronisées</span>
-                      <span className="user-account-stats__value">
-                        {statsLoading ? '...' : stravaStats.activityCount > 0 ? stravaStats.activityCount : '-'}
-                      </span>
+                  <div className="user-account-upload">
+                    <div className="user-account-upload__zone">
+                      <input
+                        type="file"
+                        id="activity-upload"
+                        ref={uploadFileRef}
+                        onChange={handleFileSelect}
+                        accept=".gpx,.fit,.tcx,application/gpx+xml,application/xml,text/xml"
+                        style={{ display: 'none' }}
+                      />
+                      <label htmlFor="activity-upload" className="user-account-upload__label">
+                        <div className="user-account-upload__icon">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                          </svg>
+                        </div>
+                        <span className="user-account-upload__text">
+                          {uploadFileName || 'Cliquez pour sélectionner un fichier'}
+                        </span>
+                        <span className="user-account-upload__formats">
+                          Formats supportés : GPX, FIT, TCX
+                        </span>
+                      </label>
                     </div>
-                    <div className="user-account-stats__item">
-                      <span className="user-account-stats__label">Distance totale</span>
-                      <span className="user-account-stats__value">
-                        {statsLoading ? '...' : stravaStats.totalDistance > 0 ? `${(stravaStats.totalDistance / 1000).toFixed(0)} km` : '-'}
-                      </span>
-                    </div>
-                    <div className="user-account-stats__item">
-                      <span className="user-account-stats__label">Dénivelé total</span>
-                      <span className="user-account-stats__value">
-                        {statsLoading ? '...' : stravaStats.totalElevationGain > 0 ? `${Math.round(stravaStats.totalElevationGain)} m` : '-'}
-                      </span>
-                    </div>
+                    {uploadFile && (
+                      <div className="user-account-upload__actions">
+                        <button
+                          type="button"
+                          className="btn btn--ghost"
+                          onClick={handleFileCancel}
+                          disabled={uploadLoading}
+                        >
+                          Annuler
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn--primary"
+                          onClick={handleFileUpload}
+                          disabled={uploadLoading}
+                        >
+                          {uploadLoading ? 'Import en cours...' : 'Importer'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            )}
+
+              {/* Statistiques */}
+              {isStravaConnected && (
+                <div className="user-account-card">
+                  <div className="user-account-card__header">
+                    <h2 className="user-account-card__title">Statistiques</h2>
+                  </div>
+                  <div className="user-account-card__body">
+                    <div className="user-account-stats">
+                      <div className="user-account-stats__item">
+                        <span className="user-account-stats__label">Activités synchronisées</span>
+                        <span className="user-account-stats__value">
+                          {statsLoading ? '...' : stravaStats.activityCount > 0 ? stravaStats.activityCount : '-'}
+                        </span>
+                      </div>
+                      <div className="user-account-stats__item">
+                        <span className="user-account-stats__label">Distance totale</span>
+                        <span className="user-account-stats__value">
+                          {statsLoading ? '...' : stravaStats.totalDistance > 0 ? `${(stravaStats.totalDistance / 1000).toFixed(0)} km` : '-'}
+                        </span>
+                      </div>
+                      <div className="user-account-stats__item">
+                        <span className="user-account-stats__label">Dénivelé total</span>
+                        <span className="user-account-stats__value">
+                          {statsLoading ? '...' : stravaStats.totalElevationGain > 0 ? `${Math.round(stravaStats.totalElevationGain)} m` : '-'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
               </section>
             </>
           )}
