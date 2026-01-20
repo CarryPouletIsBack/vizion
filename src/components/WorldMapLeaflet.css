@@ -91,32 +91,8 @@
   font-family: 'Space Grotesk', sans-serif;
 }
 
-/* Masquer complètement les tuiles OpenStreetMap (océans) */
-.world-map-leaflet .leaflet-tile-pane {
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-/* Alternative : rendre les tuiles complètement transparentes */
-.world-map-leaflet .leaflet-tile-container {
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-/* S'assurer que le conteneur de la carte a un background transparent */
-.world-map-leaflet .leaflet-container {
-  background: transparent !important;
-}
-
-/* Masquer les océans dans la section map */
-.map-section .world-map-leaflet .leaflet-tile-pane,
-.map-section .world-map-leaflet .leaflet-tile-container {
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-/* Style pour les continents GeoJSON */
+/* Style pour les continents GeoJSON (optionnel, peut être masqué si on veut voir les tuiles OSM) */
 .world-map-leaflet .leaflet-interactive {
-  fill: #E5E7EB !important;
+  fill: transparent !important;
   stroke: transparent !important;
 }

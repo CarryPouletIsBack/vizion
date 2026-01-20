@@ -202,27 +202,12 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect }: WorldM
         doubleClickZoom={true}
         dragging={true}
       >
-        {/* Tuiles OpenStreetMap complètement masquées pour ne pas afficher les océans */}
+        {/* Tuiles OpenStreetMap */}
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={19}
-          opacity={0}
         />
-        
-        {/* Afficher les continents avec GeoJSON en couleur #E5E7EB */}
-        {worldGeoJson && worldGeoJson.type === 'FeatureCollection' && Array.isArray(worldGeoJson.features) && worldGeoJson.features.length > 0 && (
-          <GeoJSON
-            key="world-continents"
-            data={worldGeoJson}
-            style={() => ({
-              color: 'transparent',
-              weight: 0,
-              fillColor: '#E5E7EB',
-              fillOpacity: 1,
-            })}
-          />
-        )}
         
         <MapClickHandler onMapClick={handleMapClick} />
         <MapZoomHandler center={mapCenter} zoom={mapZoom} />

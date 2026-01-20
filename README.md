@@ -6,7 +6,7 @@ Application React/Vite pour un simulateur de préparation trail basé sur l'anal
 
 - **Frontend** : React 18 + TypeScript + Vite
 - **Styling** : CSS (tokens dans `src/styles/tokens.css`)
-- **Cartographie** : Google Maps + `@react-google-maps/api`
+- **Cartographie** : OpenStreetMap + Leaflet (`react-leaflet`)
 - **Graphiques** : Highcharts (profil d'élévation, données)
 - **Backend** : Supabase (Base de données + Auth)
 - **API Strava** : Intégration complète (OAuth + données enrichies)
@@ -172,22 +172,6 @@ vizion-app/
 
 ### Variables d'environnement
 
-#### Google Maps API
-
-Créez un fichier `.env` à la racine du projet avec :
-
-```env
-VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
-```
-
-**Pour obtenir une clé API Google Maps :**
-1. Créez un projet sur [Google Cloud Console](https://console.cloud.google.com/)
-2. Activez la **Maps JavaScript API**
-3. Créez une clé API dans "Identifiants"
-4. Configurez les restrictions (domaines autorisés, quotas) pour la sécurité
-
-⚠️ **Important** : Google Maps est un service payant après le quota gratuit. Configurez des quotas et alertes dans Google Cloud Console pour éviter des factures surprises.
-
 #### Strava OAuth (pour les routes API Vercel)
 
 Variables d'environnement Vercel :
@@ -223,7 +207,7 @@ Variables d'environnement Vercel :
 
 - Les icônes utilisent `react-icons` (remplacement des emojis)
 - Les graphiques utilisent Highcharts
-- La carte utilise Google Maps pour une meilleure interactivité
+- La carte utilise OpenStreetMap (Leaflet) - gratuit et sans clé API requise
 - L'analyse est basée sur les 6-12 dernières semaines d'activités Strava
 - **Note temporaire** : La fonctionnalité "Événements" est masquée dans la navigation. Les courses sont indépendantes pour le moment et ne nécessitent pas d'être regroupées dans un événement parent.
 

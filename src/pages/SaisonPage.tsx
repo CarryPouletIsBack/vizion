@@ -5,7 +5,7 @@ import './SaisonPage.css'
 
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
-import WorldMapGoogle from '../components/WorldMapGoogle'
+import WorldMapLeaflet from '../components/WorldMapLeaflet'
 import { gpxToSvg, extractGpxStartCoordinates, extractGpxWaypoints } from '../lib/gpxToSvg'
 import { extractRouteIdFromUrl } from '../lib/stravaRouteParser'
 
@@ -383,7 +383,7 @@ export default function SaisonPage({
           <div className="saison-map-block">
             <section className="map-section">
               <div className="map-wrapper">
-                <WorldMapGoogle onCourseSelect={onCourseSelect} />
+                <WorldMapLeaflet onCourseSelect={onCourseSelect} />
               </div>
             </section>
 

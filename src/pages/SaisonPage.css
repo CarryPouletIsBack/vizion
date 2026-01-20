@@ -526,12 +526,23 @@
   justify-content: center;
   overflow: hidden;
   border-radius: var(--spacing-4, 8px);
+  min-height: 0;
 }
 
 @media (max-width: 768px) {
   /* Augmente la hauteur du conteneur sur mobile sans modifier la taille interne de la carte */
   .map-wrapper {
-    min-height: 360px;
+    height: 500px !important;
+    min-height: 500px;
+    aspect-ratio: unset;
+  }
+  
+  .world-map-leaflet {
+    height: 100% !important;
+  }
+  
+  .world-map-leaflet .leaflet-container {
+    height: 100% !important;
   }
 
   /* Empiler le header sur mobile : titre en haut, carte en dessous */
