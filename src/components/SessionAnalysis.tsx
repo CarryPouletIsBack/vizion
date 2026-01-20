@@ -28,7 +28,6 @@ if (!modulesReady) {
 }
 
 type SessionAnalysisProps = {
-  courseName?: string
   courseDistanceKm?: number
   courseElevationGain?: number
   metrics?: StravaMetrics | null
@@ -50,7 +49,6 @@ function formatTime(hours: number): string {
 }
 
 export default function SessionAnalysis({
-  courseName = 'Cette course',
   courseDistanceKm = 0,
   courseElevationGain = 0,
   metrics = null,

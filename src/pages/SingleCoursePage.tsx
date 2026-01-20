@@ -232,7 +232,6 @@ export default function SingleCoursePage({
                 </div>
                 <div className="single-course-chart-block">
                   <SessionAnalysis
-                    courseName={courseData.name}
                     courseDistanceKm={courseData.distanceKm}
                     courseElevationGain={courseData.elevationGain}
                     metrics={metrics}
