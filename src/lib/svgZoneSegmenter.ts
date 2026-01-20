@@ -95,14 +95,13 @@ export function segmentSvgWithZones(
     zonesGroup.appendChild(zonePath)
   })
 
-  // Insérer le groupe de zones avant le path original (pour que le path original soit au-dessus)
-  svgElement.insertBefore(zonesGroup, pathElement)
+  // Masquer le path original (on utilise les zones colorées à la place)
+  pathElement.setAttribute('stroke', 'transparent')
+  pathElement.setAttribute('opacity', '0')
+  pathElement.setAttribute('stroke-width', '0')
 
-  // Augmenter le stroke-width du path original pour qu'il soit visible au-dessus
-  const currentStrokeWidth = pathElement.getAttribute('stroke-width') || '2'
-  pathElement.setAttribute('stroke-width', String(Math.max(3, Number(currentStrokeWidth) + 1)))
-  pathElement.setAttribute('stroke', '#ffffff')
-  pathElement.setAttribute('opacity', '0.6')
+  // Insérer le groupe de zones après le path original (pour qu'elles soient visibles)
+  svgElement.appendChild(zonesGroup)
 
   return new XMLSerializer().serializeToString(doc)
   } catch (error) {

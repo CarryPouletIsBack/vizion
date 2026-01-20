@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Highcharts from 'highcharts'
 import HighchartsMore from 'highcharts/highcharts-more.js'
 import SolidGauge from 'highcharts/modules/solid-gauge.js'
+import { HiQuestionMarkCircle } from 'react-icons/hi'
 
 import './PhysioGauge.css'
 
@@ -41,6 +42,7 @@ type PhysioGaugeProps = {
 
 export default function PhysioGauge({ tsb = MOCK_DATA.tsb }: PhysioGaugeProps) {
   const ref = useRef<HTMLDivElement | null>(null)
+  const [showInfo, setShowInfo] = useState(false)
 
   useEffect(() => {
     if (!ref.current) return
@@ -131,5 +133,36 @@ export default function PhysioGauge({ tsb = MOCK_DATA.tsb }: PhysioGaugeProps) {
     return () => chart.destroy()
   }, [tsb])
 
-  return <div ref={ref} className="physio-gauge" aria-label="Training Stress Balance" />
+  return (
+    <div className="physio-gauge-wrapper">
+      <div className="physio-gauge-header">
+        <h3 className="physio-gauge-title">TSB</h3>
+        <button
+          type="button"
+          className="physio-gauge-info-button"
+          onClick={() => setShowInfo(!showInfo)}
+          aria-label="Informations sur le TSB"
+        >
+          <HiQuestionMarkCircle />
+        </button>
+      </div>
+      {showInfo && (
+        <div className="physio-gauge-info">
+          <p className="physio-gauge-info__title">Training Stress Balance (TSB)</p>
+          <p className="physio-gauge-info__text">
+            Le TSB mesure l'équilibre entre votre charge d'entraînement chronique (CTL) et votre charge aiguë (ATL).
+          </p>
+          <ul className="physio-gauge-info__list">
+            <li><strong>TSB positif (vert)</strong> : Vous êtes frais, prêt pour une performance optimale</li>
+            <li><strong>TSB proche de 0 (orange)</strong> : Équilibre, bonne forme générale</li>
+            <li><strong>TSB négatif (rouge)</strong> : Fatigue accumulée, période de récupération recommandée</li>
+          </ul>
+          <p className="physio-gauge-info__note">
+            Calculé à partir de vos activités Strava des 6 dernières semaines.
+          </p>
+        </div>
+      )}
+      <div ref={ref} className="physio-gauge" aria-label="Training Stress Balance" />
+    </div>
+  )
 }

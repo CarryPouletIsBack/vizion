@@ -1,4 +1,96 @@
-.physio-gauge {
+.physio-gauge-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4, 8px);
+}
+
+.physio-gauge-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-4, 8px);
+}
+
+.physio-gauge-title {
+  margin: 0;
+  font-family: 'Cabin', sans-serif;
+  font-size: var(--font-size-xl, 20px);
+  line-height: var(--font-h4-line-height, 1.3);
+  font-weight: 600;
+  color: var(--color-text-primary, #e5e7eb);
+  letter-spacing: 0.02em;
+}
+
+.physio-gauge-info-button {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary, #9ca3af);
+  cursor: pointer;
+  padding: var(--spacing-2, 4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-base);
+  border-radius: 50%;
+  width: var(--spacing-10, 20px);
+  height: var(--spacing-10, 20px);
+  min-width: var(--spacing-10, 20px);
+  min-height: var(--spacing-10, 20px);
+}
+
+.physio-gauge-info-button:hover {
+  color: var(--color-accent, #bfc900);
+  background: rgba(191, 201, 0, 0.1);
+}
+
+.physio-gauge-info-button svg {
   width: 100%;
   height: 100%;
+}
+
+.physio-gauge-info {
+  padding: var(--spacing-6, 12px);
+  background: var(--color-bg-surface, #161b21);
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border-radius: var(--spacing-4, 8px);
+  margin-bottom: var(--spacing-4, 8px);
+}
+
+.physio-gauge-info__title {
+  margin: 0 0 var(--spacing-4, 8px);
+  font-size: var(--font-size-lg, 18px);
+  font-weight: 600;
+  color: var(--color-accent, #bfc900);
+}
+
+.physio-gauge-info__text {
+  margin: 0 0 var(--spacing-4, 8px);
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.physio-gauge-info__list {
+  margin: 0 0 var(--spacing-4, 8px);
+  padding-left: var(--spacing-8, 16px);
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.physio-gauge-info__list li {
+  margin-bottom: var(--spacing-2, 4px);
+}
+
+.physio-gauge-info__note {
+  margin: var(--spacing-4, 8px) 0 0;
+  font-size: var(--font-size-sm, 12px);
+  line-height: var(--font-body-sm-line-height, 1.5);
+  color: var(--color-text-secondary, #9ca3af);
+  font-style: italic;
+}
+
+.physio-gauge {
+  width: 100%;
+  height: 200px;
 }

@@ -112,22 +112,33 @@ export function analyzeProfileZones(
 
   segments.forEach((seg) => {
     const segmentDPlusPerKm = seg.grade > 0 ? (seg.grade / 100) * 10 : 0
+    const absGrade = Math.abs(seg.grade)
 
-    // Déterminer la difficulté selon la capacité du coureur
+    // Déterminer la difficulté selon la capacité du coureur et la technicité
     let difficulty: ZoneDifficulty
 
     if (seg.technicity === 'chaos') {
+      // Chaos = toujours critique
       difficulty = 'critical'
     } else if (seg.technicity === 'technical') {
-      // Si le coureur est moins capable que le parcours, c'est difficile
-      difficulty = capacityFactor < 0.8 ? 'critical' : capacityFactor < 1.0 ? 'hard' : 'moderate'
+      // Technique : difficile si le coureur est moins capable
+      if (capacityFactor < 0.7) {
+        difficulty = 'critical'
+      } else if (capacityFactor < 0.9) {
+        difficulty = 'hard'
+      } else {
+        difficulty = 'moderate'
+      }
     } else {
       // Zone roulante : facile si le coureur est capable, modérée sinon
-      if (segmentDPlusPerKm > runnerDPlusPerKm * 1.2) {
-        difficulty = capacityFactor < 0.9 ? 'hard' : 'moderate'
-      } else if (segmentDPlusPerKm > runnerDPlusPerKm * 0.8) {
+      if (absGrade > 20 || segmentDPlusPerKm > runnerDPlusPerKm * 1.5) {
+        // Pente très raide ou bien au-dessus des capacités
+        difficulty = capacityFactor < 0.8 ? 'hard' : 'moderate'
+      } else if (absGrade > 10 || segmentDPlusPerKm > runnerDPlusPerKm * 1.2) {
+        // Pente modérée ou légèrement au-dessus
         difficulty = 'moderate'
       } else {
+        // Pente douce, dans les capacités
         difficulty = 'easy'
       }
     }

@@ -126,10 +126,16 @@
 
 .single-course-content {
   display: grid;
-  grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr);
+  grid-template-columns: 1fr minmax(400px, 0.8fr);
   gap: var(--spacing-10, 20px);
   align-items: start;
   transition: var(--transition-smooth);
+}
+
+.single-course-left-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-10, 20px);
 }
 
 .single-course-course {
@@ -218,10 +224,12 @@
 
 .single-course-course__card {
   width: 100%;
-  padding: var(--spacing-6, 12px);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-surface, #161b21);
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
   border-radius: var(--spacing-4, 8px);
-  border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
-  background: rgba(11, 14, 17, 0.25);
+  padding: var(--spacing-8, 16px);
   flex-shrink: 0;
 }
 
@@ -271,11 +279,12 @@
 }
 
 .single-course-panel {
-  padding: var(--spacing-8, 16px);
-  border-radius: var(--spacing-8, 16px);
-  border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.12);
   display: flex;
   flex-direction: column;
+  background: var(--color-bg-surface, #161b21);
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border-radius: var(--spacing-4, 8px);
+  padding: var(--spacing-8, 16px);
   gap: var(--spacing-8, 16px);
 }
 
@@ -341,12 +350,12 @@
 }
 
 .single-course-panel__card {
-  padding: var(--spacing-6, 12px);
-  border-radius: var(--spacing-6, 12px);
-  border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.12);
-  background: rgba(11, 14, 17, 0.25);
   display: flex;
   flex-direction: column;
+  background: var(--color-bg-surface, #161b21);
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border-radius: var(--spacing-4, 8px);
+  padding: var(--spacing-8, 16px);
   gap: var(--spacing-4, 8px);
 }
 
@@ -477,6 +486,10 @@
 
   .single-course-content {
     grid-template-columns: 1fr;
+    gap: var(--spacing-8, 16px);
+  }
+
+  .single-course-left-column {
     gap: var(--spacing-8, 16px);
   }
 
