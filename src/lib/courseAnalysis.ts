@@ -172,6 +172,25 @@ export function analyzeCourseReadiness(
     recommendations.push('Attention à l\'augmentation trop rapide de charge (risque de blessure)')
   }
 
+  // === ESTIMATION DU TEMPS DE COURSE (calculé tôt pour être utilisé dans l'analyse) ===
+  let timeEstimate: TimeEstimate | undefined
+  try {
+    timeEstimate = estimateTrailTime(
+      {
+        distanceKm: course.distanceKm,
+        elevationGain: course.elevationGain,
+        temperature: 15, // Température par défaut (peut être ajustée plus tard)
+        bagWeight: 2, // Poids du sac par défaut : 2 kg
+        refuelStops: Math.ceil(course.distanceKm / 20), // 1 ravitaillement tous les 20 km
+        refuelTimePerStop: 2,
+      },
+      metrics
+    )
+  } catch (error) {
+    console.warn('Erreur lors de l\'estimation du temps de course:', error)
+    timeEstimate = undefined
+  }
+
   // === ANALYSE POINTS D'ABANDON CRITIQUES (basée sur stats Grand Raid) ===
   if (stats) {
     // Identifier les points d'abandon critiques
@@ -184,6 +203,9 @@ export function analyzeCourseReadiness(
       recommendations.push(
         `Préparer spécifiquement le passage de "${topAbandonPoint.name}" (${topAbandonPoint.distanceKm} km) - zone à fort taux d'abandon`
       )
+      tempImmediateActions.push(
+        `Zone critique "${topAbandonPoint.name}" : ${topAbandonPoint.abandons} abandons en 2025. Planifier une sortie spécifique sur ce secteur.`
+      )
     }
 
     // Analyser les points critiques avant la distance actuelle du coureur
@@ -193,6 +215,96 @@ export function analyzeCourseReadiness(
         recommendations.push(
           `Attention : "${criticalBeforeDistance.name}" (${criticalBeforeDistance.distanceKm} km) est un point d'abandon majeur avant votre distance max actuelle`
         )
+      }
+    }
+
+    // === ANALYSE DES TEMPS DE PASSAGE RÉELS ===
+    if (stats.checkpoints && stats.checkpoints.length > 0) {
+      // Estimer le profil du coureur basé sur ses métriques
+      const estimatedFinishTime = timeEstimate?.totalHours || 0
+      let runnerProfile: 'elite' | 'fast' | 'average' | 'slow' = 'average'
+      
+      if (estimatedFinishTime > 0) {
+        const eliteTime = stats.checkpoints[stats.checkpoints.length - 1]?.times.elite || 23.5
+        const fastTime = stats.checkpoints[stats.checkpoints.length - 1]?.times.fast || 39.5
+        const averageTime = stats.checkpoints[stats.checkpoints.length - 1]?.times.average || 49.9
+        const slowTime = stats.checkpoints[stats.checkpoints.length - 1]?.times.slow || 66.0
+        
+        if (estimatedFinishTime <= eliteTime * 1.1) {
+          runnerProfile = 'elite'
+        } else if (estimatedFinishTime <= fastTime * 1.1) {
+          runnerProfile = 'fast'
+        } else if (estimatedFinishTime <= averageTime * 1.1) {
+          runnerProfile = 'average'
+        } else {
+          runnerProfile = 'slow'
+        }
+      }
+
+      // Identifier les segments critiques où les coureurs ralentissent le plus
+      const criticalSegments: Array<{ name: string; distanceKm: number; speedDrop: number }> = []
+      
+      for (let i = 1; i < stats.checkpoints.length; i++) {
+        const prev = stats.checkpoints[i - 1]
+        const curr = stats.checkpoints[i]
+        const segmentDistance = curr.distanceKm - prev.distanceKm
+        
+        if (segmentDistance > 0) {
+          // Calculer la baisse de vitesse relative entre élite et moyen
+          const eliteSpeed = curr.segmentSpeeds.elite
+          const averageSpeed = curr.segmentSpeeds.average
+          const speedDrop = eliteSpeed > 0 ? ((eliteSpeed - averageSpeed) / eliteSpeed) * 100 : 0
+          
+          // Si la baisse de vitesse est > 30%, c'est un segment critique
+          if (speedDrop > 30 && curr.segmentSpeeds.average < 5) {
+            criticalSegments.push({
+              name: curr.name,
+              distanceKm: curr.distanceKm,
+              speedDrop: Math.round(speedDrop),
+            })
+          }
+        }
+      }
+
+      // Ajouter des recommandations basées sur les segments critiques
+      if (criticalSegments.length > 0) {
+        const topCritical = criticalSegments.sort((a, b) => b.speedDrop - a.speedDrop)[0]
+        issues.push(
+          `Segment critique identifié : "${topCritical.name}" (${topCritical.distanceKm} km) - ralentissement de ${topCritical.speedDrop}% par rapport aux élites`
+        )
+        recommendations.push(
+          `Travailler spécifiquement le secteur "${topCritical.name}" : les coureurs moyens ralentissent de ${topCritical.speedDrop}% sur ce segment`
+        )
+        
+        // Ajouter une action immédiate si c'est un segment très critique
+        if (topCritical.speedDrop > 50) {
+          tempImmediateActions.push(
+            `Segment très critique "${topCritical.name}" : ralentissement de ${topCritical.speedDrop}%. Planifier un travail spécifique sur ce secteur.`
+          )
+        }
+      }
+
+      // Calculer des barrières horaires basées sur les temps réels
+      if (runnerProfile !== 'elite' && stats.checkpoints.length > 0) {
+        const targetCheckpoint = stats.checkpoints.find((cp) => cp.distanceKm >= course.distanceKm * 0.5)
+        if (targetCheckpoint) {
+          const targetTime = targetCheckpoint.times[runnerProfile]
+          const currentLongRunTime = metrics.longRunDistanceKm > 0 
+            ? (metrics.longRunDistanceKm / 8) // Estimation : 8 km/h en moyenne
+            : 0
+            
+          if (currentLongRunTime > 0 && targetTime > 0) {
+            const timeRatio = currentLongRunTime / targetTime
+            if (timeRatio > 1.2) {
+              issues.push(
+                `Temps estimé à mi-parcours (${Math.round(targetTime)}h) > 120% de votre capacité actuelle (${Math.round(currentLongRunTime)}h)`
+              )
+              recommendations.push(
+                `Objectif intermédiaire : atteindre "${targetCheckpoint.name}" en ${Math.round(targetTime)}h. Votre niveau actuel prévoit ${Math.round(currentLongRunTime)}h.`
+              )
+            }
+          }
+        }
       }
     }
   }
@@ -500,35 +612,6 @@ export function analyzeCourseReadiness(
     }
   }
 
-  // === ESTIMATION DU TEMPS DE COURSE ===
-  let timeEstimate: TimeEstimate | undefined
-  try {
-    timeEstimate = estimateTrailTime(
-      {
-        distanceKm: course.distanceKm,
-        elevationGain: course.elevationGain,
-        temperature: 15, // Température par défaut (peut être ajustée plus tard)
-        bagWeight: 2, // Poids du sac par défaut : 2 kg
-        refuelStops: Math.ceil(course.distanceKm / 20), // 1 ravitaillement tous les 20 km
-        refuelTimePerStop: 2,
-      },
-      metrics
-    )
-
-    // Ajouter une recommandation basée sur le temps estimé si très long
-    if (timeEstimate.totalHours > 20) {
-      recommendations.push(
-        `Temps estimé : ${timeEstimate.rangeFormatted}. Prévoyez une stratégie de gestion de l'effort sur la durée.`
-      )
-    } else if (timeEstimate.totalHours > 12) {
-      recommendations.push(
-        `Temps estimé : ${timeEstimate.rangeFormatted}. Travaillez votre endurance fondamentale pour tenir la distance.`
-      )
-    }
-  } catch (error) {
-    console.warn('Erreur lors de l\'estimation du temps de course:', error)
-    timeEstimate = undefined
-  }
 
   // === VERDICT DU COACH (phrases dynamiques) ===
   // Utiliser le coverageRatio déjà calculé plus haut (ligne 324)
@@ -536,32 +619,88 @@ export function analyzeCourseReadiness(
   if (metrics && timeEstimate) {
     // coverageRatio est déjà calculé ligne 324 avec la nouvelle logique
     
-    if (readiness === 'ready') {
-      // Phrases positives
-      if (coverageRatio >= 90) {
-        coachVerdict = `Ta base d'endurance est solide pour finir dans le top 20%. Continue sur cette lancée.`
-      } else if (regularity === 'bonne') {
-        coachVerdict = `Ta régularité est excellente. Avec ${coverageRatio}% de couverture, tu as toutes les chances de finir.`
+    // Utiliser les données réelles du Grand Raid si disponibles
+    if (stats && stats.checkpoints && stats.checkpoints.length > 0) {
+      const eliteTime = stats.checkpoints[stats.checkpoints.length - 1]?.times.elite || 23.5
+      const averageTime = stats.checkpoints[stats.checkpoints.length - 1]?.times.average || 49.9
+      const slowTime = stats.checkpoints[stats.checkpoints.length - 1]?.times.slow || 66.0
+      
+      // Identifier les segments critiques pour le coureur
+      const criticalSegments = stats.checkpoints
+        .filter((cp, i) => {
+          if (i === 0) return false
+          const prev = stats.checkpoints[i - 1]
+          const speedDrop = cp.segmentSpeeds.elite > 0 
+            ? ((cp.segmentSpeeds.elite - cp.segmentSpeeds.average) / cp.segmentSpeeds.elite) * 100 
+            : 0
+          return speedDrop > 40 && cp.segmentSpeeds.average < 5
+        })
+        .slice(0, 2)
+      
+      if (readiness === 'ready') {
+        // Phrases positives avec données réelles
+        if (timeEstimate.totalHours <= eliteTime * 1.15) {
+          coachVerdict = `Ta base d'endurance est solide. Temps estimé : ${timeEstimate.rangeFormatted}. Tu es dans le top 10% des finishers 2025. Continue sur cette lancée.`
+        } else if (timeEstimate.totalHours <= averageTime * 1.1) {
+          coachVerdict = `Ta régularité est excellente. Temps estimé : ${timeEstimate.rangeFormatted}. Avec ${coverageRatio}% de couverture, tu as toutes les chances de finir dans le top 50%.`
+        } else if (regularity === 'bonne') {
+          coachVerdict = `Ta régularité est excellente. Avec ${coverageRatio}% de couverture, tu as toutes les chances de finir.`
+        } else {
+          coachVerdict = `Tu es sur la bonne voie. Maintiens ta régularité et tu finiras cette course.`
+        }
+      } else if (readiness === 'needs_work') {
+        // Phrases d'alerte modérée avec segments critiques
+        if (criticalSegments.length > 0) {
+          const segment = criticalSegments[0]
+          coachVerdict = `Attention au secteur "${segment.name}" (${segment.distanceKm} km) : les coureurs moyens ralentissent de ${Math.round((segment.segmentSpeeds.elite - segment.segmentSpeeds.average) / segment.segmentSpeeds.elite * 100)}% ici. Travaille spécifiquement ce passage.`
+        } else if (metrics.longRunDistanceKm < course.distanceKm * 0.4) {
+          coachVerdict = `Attention, tu manques de sorties longues. Ton simulateur prévoit une baisse de performance après ${Math.round(course.distanceKm * 0.6)} km.`
+        } else if (regularity === 'faible') {
+          coachVerdict = `Ta régularité est insuffisante. Augmente la fréquence à 3-4 sorties par semaine pour améliorer tes chances.`
+        } else {
+          coachVerdict = `À ${coverageRatio}% de couverture, tu peux finir mais avec effort. Temps estimé : ${timeEstimate.rangeFormatted}. Augmente progressivement ton volume.`
+        }
       } else {
-        coachVerdict = `Tu es sur la bonne voie. Maintiens ta régularité et tu finiras cette course.`
-      }
-    } else if (readiness === 'needs_work') {
-      // Phrases d'alerte modérée
-      if (metrics.longRunDistanceKm < course.distanceKm * 0.4) {
-        coachVerdict = `Attention, tu manques de sorties longues. Ton simulateur prévoit une baisse de performance après ${Math.round(course.distanceKm * 0.6)} km.`
-      } else if (regularity === 'faible') {
-        coachVerdict = `Ta régularité est insuffisante. Augmente la fréquence à 3-4 sorties par semaine pour améliorer tes chances.`
-      } else {
-        coachVerdict = `À ${coverageRatio}% de couverture, tu peux finir mais avec effort. Augmente progressivement ton volume.`
+        // Phrases d'alerte forte avec données réelles
+        if (timeEstimate.totalHours > slowTime) {
+          coachVerdict = `Temps estimé : ${timeEstimate.rangeFormatted}. Attention, tu es en zone de risque d'abandon. ${stats.abandonRate}% des coureurs ont abandonné en 2025. Un plan d'action immédiat est nécessaire.`
+        } else if (timeEstimate.totalHours > 20) {
+          coachVerdict = `Temps estimé : ${timeEstimate.rangeFormatted}. Attention, tu manques de sorties longues de nuit. Les coureurs moyens ralentissent de 20-30% après 20h.`
+        } else if (coverageRatio < 50) {
+          coachVerdict = `Ton niveau actuel couvre seulement ${coverageRatio}% des exigences. Avec ${stats.abandonRate}% d'abandons en 2025, un plan d'action immédiat est nécessaire pour éviter l'abandon.`
+        } else {
+          coachVerdict = `À ${coverageRatio}% de couverture, tu es en zone de risque. Augmente rapidement ton volume et tes sorties longues.`
+        }
       }
     } else {
-      // Phrases d'alerte forte
-      if (timeEstimate.totalHours > 20) {
-        coachVerdict = `Temps estimé : ${timeEstimate.rangeFormatted}. Attention, tu manques de sorties longues de nuit. Ton simulateur prévoit une baisse de 15% de ta vitesse après 22h.`
-      } else if (coverageRatio < 50) {
-        coachVerdict = `Ton niveau actuel couvre seulement ${coverageRatio}% des exigences. Un plan d'action immédiat est nécessaire pour éviter l'abandon.`
+      // Verdict sans stats Grand Raid (analyse générale)
+      if (readiness === 'ready') {
+        // Phrases positives
+        if (coverageRatio >= 90) {
+          coachVerdict = `Ta base d'endurance est solide pour finir dans le top 20%. Continue sur cette lancée.`
+        } else if (regularity === 'bonne') {
+          coachVerdict = `Ta régularité est excellente. Avec ${coverageRatio}% de couverture, tu as toutes les chances de finir.`
+        } else {
+          coachVerdict = `Tu es sur la bonne voie. Maintiens ta régularité et tu finiras cette course.`
+        }
+      } else if (readiness === 'needs_work') {
+        // Phrases d'alerte modérée
+        if (metrics.longRunDistanceKm < course.distanceKm * 0.4) {
+          coachVerdict = `Attention, tu manques de sorties longues. Ton simulateur prévoit une baisse de performance après ${Math.round(course.distanceKm * 0.6)} km.`
+        } else if (regularity === 'faible') {
+          coachVerdict = `Ta régularité est insuffisante. Augmente la fréquence à 3-4 sorties par semaine pour améliorer tes chances.`
+        } else {
+          coachVerdict = `À ${coverageRatio}% de couverture, tu peux finir mais avec effort. Augmente progressivement ton volume.`
+        }
       } else {
-        coachVerdict = `À ${coverageRatio}% de couverture, tu es en zone de risque. Augmente rapidement ton volume et tes sorties longues.`
+        // Phrases d'alerte forte
+        if (timeEstimate.totalHours > 20) {
+          coachVerdict = `Temps estimé : ${timeEstimate.rangeFormatted}. Attention, tu manques de sorties longues de nuit. Ton simulateur prévoit une baisse de 15% de ta vitesse après 22h.`
+        } else if (coverageRatio < 50) {
+          coachVerdict = `Ton niveau actuel couvre seulement ${coverageRatio}% des exigences. Un plan d'action immédiat est nécessaire pour éviter l'abandon.`
+        } else {
+          coachVerdict = `À ${coverageRatio}% de couverture, tu es en zone de risque. Augmente rapidement ton volume et tes sorties longues.`
+        }
       }
     }
   }

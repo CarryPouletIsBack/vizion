@@ -228,7 +228,7 @@ export default function SingleCoursePage({
                   />
                 </div>
                 <div className="single-course-chart-block">
-                  <RaceStrategy profileData={profileData} />
+                  <RaceStrategy profileData={profileData} courseName={courseData.name} />
                 </div>
                 <div className="single-course-chart-block">
                   <SessionAnalysis

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import Highcharts from 'highcharts'
 
 import './RaceStrategy.css'
+import { grandRaidStats, type CheckpointTime } from '../data/grandRaidStats'
 
 // Données mockées pour le profil altimétrique
 const MOCK_PROFILE_DATA: Array<[number, number]> = [
@@ -18,24 +19,54 @@ const MOCK_PROFILE_DATA: Array<[number, number]> = [
   [70, 1050],
 ]
 
-// Données mockées pour les barrières horaires (cut-offs)
-const MOCK_BARRIERS = [
-  {
-    name: 'Ravito 1',
-    distance: 15,
-    timeLimit: '08:00',
-  },
-  {
-    name: 'Ravito 2',
-    distance: 35,
-    timeLimit: '14:00',
-  },
-  {
-    name: 'Ravito 3',
-    distance: 55,
-    timeLimit: '20:00',
-  },
-]
+// Fonction pour convertir des heures décimales en format HH:MM
+function formatHoursToTime(hours: number): string {
+  const h = Math.floor(hours)
+  const m = Math.round((hours - h) * 60)
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
+}
+
+// Générer des barrières basées sur les checkpoints du Grand Raid si disponibles
+function generateBarriersFromCheckpoints(
+  checkpoints: CheckpointTime[],
+  courseName?: string
+): Array<{ name: string; distance: number; timeLimit: string }> {
+  // Utiliser les checkpoints du Grand Raid si c'est cette course
+  const isGrandRaid = courseName?.toLowerCase().includes('grand raid') || 
+                      courseName?.toLowerCase().includes('diagonale')
+  
+  if (isGrandRaid && checkpoints.length > 0) {
+    // Utiliser les temps moyens comme barrières (plus réalistes que les élites)
+    return checkpoints
+      .filter((cp) => cp.distanceKm > 0) // Exclure le départ
+      .map((cp) => ({
+        name: cp.name,
+        distance: cp.distanceKm,
+        // Utiliser le temps moyen + 20% de marge pour les barrières
+        timeLimit: formatHoursToTime(cp.times.average * 1.2),
+      }))
+      .slice(0, 10) // Limiter à 10 barrières pour la lisibilité
+  }
+  
+  // Barrières par défaut pour les autres courses
+  return [
+    {
+      name: 'Ravito 1',
+      distance: 15,
+      timeLimit: '08:00',
+    },
+    {
+      name: 'Ravito 2',
+      distance: 35,
+      timeLimit: '14:00',
+    },
+    {
+      name: 'Ravito 3',
+      distance: 55,
+      timeLimit: '20:00',
+    },
+  ]
+}
 
 type Barrier = {
   name: string
@@ -46,12 +77,19 @@ type Barrier = {
 type RaceStrategyProps = {
   profileData?: Array<[number, number]>
   barriers?: Barrier[]
+  courseName?: string
 }
 
 export default function RaceStrategy({
   profileData = MOCK_PROFILE_DATA,
-  barriers = MOCK_BARRIERS,
+  barriers,
+  courseName,
 }: RaceStrategyProps) {
+  // Générer les barrières depuis les checkpoints si non fournies
+  const effectiveBarriers = barriers || generateBarriersFromCheckpoints(
+    grandRaidStats.checkpoints || [],
+    courseName
+  )
   const ref = useRef<HTMLDivElement | null>(null)
 
   // S'assurer que profileData est valide
@@ -67,7 +105,7 @@ export default function RaceStrategy({
     if (!ref.current) return
 
     // Créer les plotLines pour les barrières horaires
-    const plotLines = barriers.map((barrier) => ({
+    const plotLines = effectiveBarriers.map((barrier) => ({
       value: barrier.distance,
       color: '#ef4444',
       width: 2,
@@ -170,7 +208,7 @@ export default function RaceStrategy({
     })
 
     return () => chart.destroy()
-  }, [seriesData, barriers, minY, maxY])
+  }, [seriesData, effectiveBarriers, minY, maxY])
 
   return <div ref={ref} className="race-strategy" aria-label="Profil et Barrières Horaires" />
 }
