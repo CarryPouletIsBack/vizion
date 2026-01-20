@@ -30,7 +30,6 @@ export function segmentSvgWithZones(
   // Récupérer le viewBox pour calculer les coordonnées
   const viewBoxAttr = svgElement.getAttribute('viewBox')
   const viewBox = viewBoxAttr ? viewBoxAttr.split(' ').map(Number) : [0, 0, 302, 258]
-  const [minX, minY, width, height] = viewBox
 
   // Normaliser le profil pour mapper distance → coordonnées SVG
   const maxDistance = profile[profile.length - 1]?.[0] || 1

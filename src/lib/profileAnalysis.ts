@@ -4,7 +4,7 @@
  */
 
 import type { StravaMetrics } from '../types/strava'
-import { analyzeProfileTechnicity, type ProfileSegment } from './profileTechnicity'
+import { analyzeProfileTechnicity } from './profileTechnicity'
 
 export type ZoneDifficulty = 'easy' | 'moderate' | 'hard' | 'critical'
 
@@ -112,7 +112,6 @@ export function analyzeProfileZones(
 
   segments.forEach((seg) => {
     const segmentDPlusPerKm = seg.grade > 0 ? (seg.grade / 100) * 10 : 0
-    const segmentDifficulty = seg.grade < 0 ? Math.abs(seg.grade) : seg.grade
 
     // Déterminer la difficulté selon la capacité du coureur
     let difficulty: ZoneDifficulty
@@ -161,7 +160,7 @@ export function analyzeProfileZones(
 function getDifficultyDescription(
   difficulty: ZoneDifficulty,
   grade: number,
-  capacityFactor?: number
+  _capacityFactor?: number
 ): string {
   const gradeStr = Math.abs(grade).toFixed(1)
   const direction = grade > 0 ? 'montée' : 'descente'
