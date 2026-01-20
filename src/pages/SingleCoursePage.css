@@ -250,7 +250,8 @@
   padding: var(--spacing-8, 16px);
 }
 
-.single-course-chart-block:last-child {
+.single-course-chart-block:nth-child(3),
+.single-course-chart-block:nth-child(4) {
   grid-column: 1 / -1;
 }
 

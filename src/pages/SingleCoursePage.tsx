@@ -9,6 +9,7 @@ import SimulationEngine from '../components/SimulationEngine'
 import PhysioGauge from '../components/PhysioGauge'
 import TerrainComparison from '../components/TerrainComparison'
 import RaceStrategy from '../components/RaceStrategy'
+import SessionAnalysis from '../components/SessionAnalysis'
 import { useEffect, useState } from 'react'
 import useGpxHoverMarker from '../hooks/useGpxHoverMarker'
 import useStravaMetrics from '../hooks/useStravaMetrics'
@@ -228,6 +229,14 @@ export default function SingleCoursePage({
                 </div>
                 <div className="single-course-chart-block">
                   <RaceStrategy profileData={profileData} />
+                </div>
+                <div className="single-course-chart-block">
+                  <SessionAnalysis
+                    courseName={courseData.name}
+                    courseDistanceKm={courseData.distanceKm}
+                    courseElevationGain={courseData.elevationGain}
+                    metrics={metrics}
+                  />
                 </div>
               </div>
             </div>

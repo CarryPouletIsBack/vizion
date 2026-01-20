@@ -37,7 +37,7 @@ export type TimeEstimate = {
  * Calcule l'allure de base depuis les métriques Strava
  * Basé sur la vitesse moyenne des sorties longues
  */
-function calculateBasePaceFromMetrics(metrics: StravaMetrics | null): number {
+export function calculateBasePaceFromMetrics(metrics: StravaMetrics | null): number {
   if (!metrics) {
     return 6.0 // Allure par défaut : 6 min/km (10 km/h)
   }
