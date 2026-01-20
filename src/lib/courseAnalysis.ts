@@ -297,58 +297,100 @@ export function analyzeCourseReadiness(
   // Calculer le ratio de couverture de manière stricte et réaliste
   // Pour une course de 175 km / 10150 D+, les exigences minimales sérieuses sont élevées
   
-  // 1. Score de distance hebdomadaire
-  // Minimum réaliste pour une course de 175 km : 40-50 km/semaine minimum
-  // Objectif idéal à 6 mois : 50-70% de la distance hebdomadaire finale = 29-41 km/sem
-  const minDistanceWeekly = 40 // Seuil minimal strict en km/semaine
-  const idealDistanceWeekly = courseWeeklyEquivalent * 0.7 // 70% de l'exigence finale = objectif réaliste
+  // === CALCUL RELATIF À LA COURSE (approche coach F1) ===
+  // Les seuils sont maintenant adaptés à chaque course, pas fixes
+  
+  // 1. Score de distance hebdomadaire (relatif à la course)
+  // Pour une course de X km, il faut au minimum X/6 km/semaine (6 mois de préparation)
+  // Minimum réaliste : max(20% de la course, 15 km/semaine) pour les petites courses
+  // Pour une course de 6km : min = max(1.2km, 15km) = 15km, mais on adapte : 6km/sem suffit
+  const minDistanceWeekly = Math.max(course.distanceKm * 0.2, Math.min(15, course.distanceKm * 1.5)) // Adaptatif
+  const idealDistanceWeekly = courseWeeklyEquivalent * 0.7 // 70% de l'exigence finale
   let distanceCoverage = 0
   if (weeklyDistanceKm >= idealDistanceWeekly) {
     distanceCoverage = 1.0 // Excellent
   } else if (weeklyDistanceKm >= minDistanceWeekly) {
-    distanceCoverage = 0.5 + (weeklyDistanceKm - minDistanceWeekly) / (idealDistanceWeekly - minDistanceWeekly) * 0.5 // Progression linéaire entre min et ideal
+    distanceCoverage = 0.5 + (weeklyDistanceKm - minDistanceWeekly) / (idealDistanceWeekly - minDistanceWeekly) * 0.5
   } else {
-    distanceCoverage = Math.max(0, (weeklyDistanceKm / minDistanceWeekly) * 0.5) // En dessous du minimum : max 50%
+    // Pour les petites courses, être plus tolérant : si on court 2x la distance de la course par semaine, c'est bon
+    const relativeDistance = course.distanceKm > 0 ? weeklyDistanceKm / course.distanceKm : 0
+    if (relativeDistance >= 2.0) {
+      distanceCoverage = 0.8 // Si on court 2x la distance de la course par semaine, c'est très bien
+    } else if (relativeDistance >= 1.0) {
+      distanceCoverage = 0.5 + (relativeDistance - 1.0) * 0.3 // Entre 1x et 2x : progression
+    } else {
+      distanceCoverage = Math.max(0, relativeDistance * 0.5) // En dessous de 1x : max 50%
+    }
   }
   
-  // 2. Score de D+ hebdomadaire
-  // Minimum réaliste pour une course de 10150 D+ : 1500-2000 m/semaine minimum
-  // Objectif idéal à 6 mois : 50-70% du D+ hebdomadaire final = 846-1184 m/sem
-  const minDPlusWeekly = 1500 // Seuil minimal strict en m/semaine
+  // 2. Score de D+ hebdomadaire (relatif à la course)
+  // Pour une course de X m D+, il faut au minimum X/6 m/semaine
+  // Minimum réaliste : max(20% du D+ de la course, 300 m/semaine) pour les petites courses
+  const minDPlusWeekly = Math.max(course.elevationGain * 0.2, Math.min(300, course.elevationGain * 1.5)) // Adaptatif
   const idealDPlusWeekly = courseWeeklyDPlus * 0.7 // 70% de l'exigence finale
   let elevationCoverage = 0
   if (weeklyElevationGain >= idealDPlusWeekly) {
     elevationCoverage = 1.0 // Excellent
   } else if (weeklyElevationGain >= minDPlusWeekly) {
-    elevationCoverage = 0.5 + (weeklyElevationGain - minDPlusWeekly) / (idealDPlusWeekly - minDPlusWeekly) * 0.5 // Progression linéaire
+    elevationCoverage = 0.5 + (weeklyElevationGain - minDPlusWeekly) / (idealDPlusWeekly - minDPlusWeekly) * 0.5
   } else {
-    elevationCoverage = Math.max(0, (weeklyElevationGain / minDPlusWeekly) * 0.5) // En dessous du minimum : max 50%
+    // Pour les petites courses, être plus tolérant : si on fait 2x le D+ de la course par semaine, c'est bon
+    const relativeDPlus = course.elevationGain > 0 ? weeklyElevationGain / course.elevationGain : 0
+    if (relativeDPlus >= 2.0) {
+      elevationCoverage = 0.8 // Si on fait 2x le D+ de la course par semaine, c'est très bien
+    } else if (relativeDPlus >= 1.0) {
+      elevationCoverage = 0.5 + (relativeDPlus - 1.0) * 0.3 // Entre 1x et 2x : progression
+    } else {
+      elevationCoverage = Math.max(0, relativeDPlus * 0.5) // En dessous de 1x : max 50%
+    }
   }
   
-  // 3. Score de sortie longue
-  // Pour une course de 175 km, avoir fait au moins 70 km en une sortie est un minimum sérieux
-  const longRunThreshold = Math.max(course.distanceKm * 0.4, 70) // Au minimum 70 km (40% de 175 = 70)
-  const idealLongRun = course.distanceKm * 0.6 // Objectif idéal : 60% = 105 km
+  // 3. Score de sortie longue (relatif à la course)
+  // Pour une course de X km, avoir fait au moins 40% de X en une sortie
+  // Pour les petites courses (< 20km), avoir fait au moins 80% de la distance
+  const longRunThreshold = course.distanceKm < 20 
+    ? course.distanceKm * 0.8 // Pour les petites courses, viser 80%
+    : Math.max(course.distanceKm * 0.4, 10) // Pour les grandes courses, 40% minimum, mais au moins 10km
+  const idealLongRun = course.distanceKm < 20
+    ? course.distanceKm * 1.0 // Pour les petites courses, idéalement avoir fait la distance complète
+    : course.distanceKm * 0.6 // Pour les grandes courses, 60%
   let longRunCoverage = 0
   if (metrics.longRunDistanceKm >= idealLongRun) {
     longRunCoverage = 1.0
   } else if (metrics.longRunDistanceKm >= longRunThreshold) {
     longRunCoverage = 0.5 + (metrics.longRunDistanceKm - longRunThreshold) / (idealLongRun - longRunThreshold) * 0.5
   } else {
-    longRunCoverage = Math.max(0, (metrics.longRunDistanceKm / longRunThreshold) * 0.5)
+    // Pour les petites courses, si on a fait au moins 50% de la distance, c'est acceptable
+    const relativeLongRun = course.distanceKm > 0 ? metrics.longRunDistanceKm / course.distanceKm : 0
+    if (relativeLongRun >= 0.5) {
+      longRunCoverage = 0.6 // Si on a fait au moins 50% de la distance, c'est bien
+    } else {
+      longRunCoverage = Math.max(0, relativeLongRun * 1.2) // Sinon, progression linéaire
+    }
   }
   
-  // 4. Score de D+ max en une sortie
-  // Pour une course de 10150 D+, avoir fait au moins 6000 m en une sortie est un minimum sérieux
-  const dPlusThreshold = Math.max(course.elevationGain * 0.5, 6000) // Au minimum 6000 m (50% de 10150 = 5075, mais on met 6000 pour être strict)
-  const idealDPlusMax = course.elevationGain * 0.7 // Objectif idéal : 70% = 7105 m
+  // 4. Score de D+ max en une sortie (relatif à la course)
+  // Pour une course de X m D+, avoir fait au moins 50% de X en une sortie
+  // Pour les petites courses (< 500m D+), avoir fait au moins 80% du D+
+  const dPlusThreshold = course.elevationGain < 500
+    ? course.elevationGain * 0.8 // Pour les petites courses, viser 80%
+    : Math.max(course.elevationGain * 0.5, 200) // Pour les grandes courses, 50% minimum, mais au moins 200m
+  const idealDPlusMax = course.elevationGain < 500
+    ? course.elevationGain * 1.0 // Pour les petites courses, idéalement avoir fait le D+ complet
+    : course.elevationGain * 0.7 // Pour les grandes courses, 70%
   let dPlusMaxCoverage = 0
   if (metrics.longRunDPlus >= idealDPlusMax) {
     dPlusMaxCoverage = 1.0
   } else if (metrics.longRunDPlus >= dPlusThreshold) {
     dPlusMaxCoverage = 0.5 + (metrics.longRunDPlus - dPlusThreshold) / (idealDPlusMax - dPlusThreshold) * 0.5
   } else {
-    dPlusMaxCoverage = Math.max(0, (metrics.longRunDPlus / dPlusThreshold) * 0.5)
+    // Pour les petites courses, si on a fait au moins 50% du D+, c'est acceptable
+    const relativeDPlusMax = course.elevationGain > 0 ? metrics.longRunDPlus / course.elevationGain : 0
+    if (relativeDPlusMax >= 0.5) {
+      dPlusMaxCoverage = 0.6 // Si on a fait au moins 50% du D+, c'est bien
+    } else {
+      dPlusMaxCoverage = Math.max(0, relativeDPlusMax * 1.2) // Sinon, progression linéaire
+    }
   }
   
   // 5. Score de régularité (strict)

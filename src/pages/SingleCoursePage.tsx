@@ -9,10 +9,14 @@ import SimulationEngine from '../components/SimulationEngine'
 import PhysioGauge from '../components/PhysioGauge'
 import TerrainComparison from '../components/TerrainComparison'
 import RaceStrategy from '../components/RaceStrategy'
+import { useEffect, useState } from 'react'
 import useGpxHoverMarker from '../hooks/useGpxHoverMarker'
 import useStravaMetrics from '../hooks/useStravaMetrics'
 import { analyzeCourseReadiness } from '../lib/courseAnalysis'
 import { grandRaidStats } from '../data/grandRaidStats'
+import { calculateTSBFromMetrics } from '../lib/tsbCalculator'
+import { calculateElevationStats, analyzeProfileZones } from '../lib/profileAnalysis'
+import { segmentSvgWithZones, addSvgTooltips } from '../lib/svgZoneSegmenter'
 
 type SingleCoursePageProps = {
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
@@ -77,6 +81,7 @@ export default function SingleCoursePage({
   const maxDistance = profileData?.length ? profileData[profileData.length - 1][0] : undefined
   useGpxHoverMarker('gpx-inline-svg', maxDistance)
   const { metrics } = useStravaMetrics()
+  const [segmentedSvg, setSegmentedSvg] = useState<string | null>(null)
 
   // Analyser la préparation pour cette course
   const courseData = selectedCourse?.distanceKm && selectedCourse?.elevationGain
@@ -112,6 +117,44 @@ export default function SingleCoursePage({
     stravaSegments,
     useGrandRaidStats ? grandRaidStats : undefined
   )
+
+  // Calculer le TSB réel
+  const tsb = calculateTSBFromMetrics(metrics)
+
+  // Calculer les stats d'élévation depuis le profil
+  const elevationStats = profileData ? calculateElevationStats(profileData) : {
+    elevationGain: courseData.elevationGain,
+    elevationLoss: 0,
+  }
+
+  // Analyser les zones du profil
+  const profileZones = profileData && metrics
+    ? analyzeProfileZones(profileData, metrics, courseData.distanceKm, courseData.elevationGain)
+    : []
+
+  // Segmenter le SVG avec les zones
+  useEffect(() => {
+    let cleanupTooltips: (() => void) | undefined
+
+    if (gpxSvg && profileZones.length > 0 && profileData) {
+      const segmented = segmentSvgWithZones(gpxSvg, profileZones, profileData)
+      setSegmentedSvg(segmented)
+      
+      // Ajouter les tooltips après un court délai pour que le SVG soit rendu
+      const timer = setTimeout(() => {
+        cleanupTooltips = addSvgTooltips('gpx-inline-svg')
+      }, 200)
+      
+      return () => {
+        clearTimeout(timer)
+        if (cleanupTooltips) {
+          cleanupTooltips()
+        }
+      }
+    } else {
+      setSegmentedSvg(gpxSvg || null)
+    }
+  }, [gpxSvg, profileZones, profileData])
   return (
     <div className="single-course-page">
       <HeaderTopBar onNavigate={onNavigate} />
@@ -136,10 +179,10 @@ export default function SingleCoursePage({
                 <p className="single-course-course__meta-prep">{coursePrep}</p>
               </div>
               <div className="single-course-course__gpx">
-                {gpxSvg ? (
+                {segmentedSvg || gpxSvg ? (
                   <div
                     className="single-course-course__gpx-svg"
-                    dangerouslySetInnerHTML={{ __html: gpxSvg.replace('<svg', '<svg id=\"gpx-inline-svg\"') }}
+                    dangerouslySetInnerHTML={{ __html: (segmentedSvg || gpxSvg || '').replace('<svg', '<svg id=\"gpx-inline-svg\"') }}
                   />
                 ) : (
                   <img src={gpxIcon} alt="GPX" />
@@ -153,10 +196,19 @@ export default function SingleCoursePage({
             {/* Blocs fonctionnels : PhysioGauge, TerrainComparison, RaceStrategy */}
             <div className="single-course-charts-grid">
               <div className="single-course-chart-block">
-                <PhysioGauge />
+                <PhysioGauge tsb={tsb} />
               </div>
               <div className="single-course-chart-block">
-                <TerrainComparison />
+                <TerrainComparison
+                  elevationGain={{
+                    current: metrics?.longRunDPlus || 0,
+                    target: courseData.elevationGain,
+                  }}
+                  elevationLoss={{
+                    current: elevationStats.elevationLoss,
+                    target: elevationStats.elevationLoss,
+                  }}
+                />
               </div>
               <div className="single-course-chart-block">
                 <RaceStrategy profileData={profileData} />
