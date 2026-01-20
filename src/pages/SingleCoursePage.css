@@ -173,14 +173,14 @@
 }
 
 .single-course-course__gpx {
-  width: 302px;
-  height: 258px;
+  width: 100%;
+  aspect-ratio: 302 / 258;
   max-height: 258px;
   display: grid;
   place-items: center;
-  border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.08);
+  border: var(--spacing-1, 2px) solid rgba(255, 255, 255, .08);
   border-radius: var(--spacing-4, 8px);
-  background: rgba(11, 14, 17, 0.35);
+  background: #0b0e1159;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -496,5 +496,7 @@
   .single-course-course__gpx {
     width: 100%;
     max-width: 100%;
+    height: 200px;
+    max-height: 200px;
   }
 }
