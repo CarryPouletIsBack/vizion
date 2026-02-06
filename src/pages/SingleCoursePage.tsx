@@ -105,7 +105,16 @@ export default function SingleCoursePage({
   const [rainAlongRoute, setRainAlongRoute] = useState<Array<{ lat: number; lon: number; rain: boolean }> | null>(null)
 
   const startCoords = (selectedCourse as { startCoordinates?: [number, number] } | undefined)?.startCoordinates
-  const startCoordsKey = startCoords?.length === 2 ? `${startCoords[0]},${startCoords[1]}` : ''
+  const courseId = (selectedCourse as { id?: string } | undefined)?.id ?? ''
+  const isReunionCourse =
+    courseId === 'example-grand-raid-course' ||
+    /grand raid|réunion|reunion|diagonale/i.test(courseEventName)
+  const regionCoords: [number, number] | undefined = isReunionCourse
+    ? [-21.01, 55.27]
+    : startCoords?.length === 2
+      ? startCoords
+      : undefined
+  const startCoordsKey = regionCoords ? `${regionCoords[0]},${regionCoords[1]}` : ''
   const weatherSamplePoints = (selectedCourse as { weatherSamplePoints?: Array<[number, number]> } | undefined)?.weatherSamplePoints
   const gpxBounds = (selectedCourse as { gpxBounds?: GpxBounds } | undefined)?.gpxBounds
 
@@ -143,7 +152,7 @@ export default function SingleCoursePage({
 
   // Météo, lieu, heure et pluie 24h de la région de la course (cache 4h pour météo/ville)
   useEffect(() => {
-    if (!startCoords || startCoords.length < 2) {
+    if (!regionCoords || regionCoords.length < 2) {
       setWeatherTemp(null)
       setRainLast24h(null)
       setRegionCity(null)
@@ -152,7 +161,7 @@ export default function SingleCoursePage({
       return
     }
     let cancelled = false
-    const [lat, lon] = startCoords
+    const [lat, lon] = regionCoords
     const base = typeof window !== 'undefined' ? window.location.origin : ''
     Promise.all([
       getWeather(lat, lon),
@@ -171,10 +180,10 @@ export default function SingleCoursePage({
 
   // Mise à jour de l'heure de la région toutes les minutes
   useEffect(() => {
-    if (!startCoords || startCoords.length < 2) return
+    if (!regionCoords || regionCoords.length < 2) return
     const id = setInterval(() => {
       const base = typeof window !== 'undefined' ? window.location.origin : ''
-      const [lat, lon] = startCoords
+      const [lat, lon] = regionCoords
       fetch(`${base}/api/timezone?lat=${lat}&lon=${lon}`)
         .then((r) => (r.ok ? r.json() : null))
         .then((tz) => {

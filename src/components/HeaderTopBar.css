@@ -133,7 +133,10 @@
   justify-content: center;
   width: var(--spacing-20, 40px);
   height: var(--spacing-20, 40px);
+  min-width: var(--spacing-20, 40px);
+  min-height: var(--spacing-20, 40px);
   border-radius: 50%;
+  overflow: hidden;
   background: rgba(255, 255, 255, 0.05);
   border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
   color: var(--color-text-primary, #e5e7eb);
@@ -156,9 +159,13 @@
 .saison-topbar__user-trigger-avatar {
   width: 100%;
   height: 100%;
+  min-width: 100%;
+  min-height: 100%;
   border-radius: 50%;
   object-fit: cover;
+  object-position: center;
   display: block;
+  aspect-ratio: 1;
 }
 
 .saison-topbar__user {

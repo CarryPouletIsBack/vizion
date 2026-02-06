@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { HiX } from 'react-icons/hi'
 import { FiSun, FiCloud, FiCloudRain, FiMoon, FiUser } from 'react-icons/fi'
 
 import './HeaderTopBar.css'
@@ -7,7 +6,7 @@ import './HeaderTopBar.css'
 import logoVision from '../assets/c5c94aad0b681f3e62439f66f02703ba7c8b5826.svg'
 import { redirectToStravaAuth } from '../lib/stravaAuth'
 import { getWeather, getCityFromCoords, weatherIconType, type WeatherIconType } from '../lib/xweather'
-import { signIn, signUp, signOut, onAuthStateChange, getCurrentUser } from '../lib/auth'
+import { signIn, signUp, onAuthStateChange, getCurrentUser } from '../lib/auth'
 import LoginModal from './LoginModal'
 
 type HeaderTopBarProps = {
@@ -287,23 +286,10 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
     }
   }
 
-  const handleLogout = async () => {
-    try {
-      await signOut()
-      localStorage.removeItem('vizion:strava_token')
-      localStorage.removeItem('vizion:strava-metrics')
-      setUser(null)
-      window.location.reload()
-    } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error)
-      alert('Erreur lors de la déconnexion')
-    }
-  }
-
   return (
     <header className="saison-topbar">
       <div className="saison-topbar__logo" role="button" tabIndex={0} onClick={() => onNavigate?.('saison')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onNavigate?.('saison') }}>
-        <img src={logoVision} alt="VZION" />
+        <img src={logoVision} alt="Trackali" />
       </div>
 
       {/* Header race masqué pour le moment */}
@@ -327,35 +313,24 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
           </div>
         )}
         {user === 'loading' ? null : user ? (
-        <div className="saison-topbar__user">
-          <button
-            className="saison-topbar__user-trigger"
-            type="button"
-            onClick={() => onNavigate?.('account')}
-            title="Mon compte"
-            aria-label="Mon compte"
-          >
-            {user.profile && !avatarError ? (
-              <img
-                src={user.profile}
-                alt=""
-                className="saison-topbar__user-trigger-avatar"
-                onError={() => setAvatarError(true)}
-              />
-            ) : (
-              <FiUser />
-            )}
-          </button>
-          <button
-            className="saison-topbar__user-logout"
-            type="button"
-            onClick={handleLogout}
-            title="Se déconnecter"
-            aria-label="Se déconnecter"
-          >
-            <HiX />
-          </button>
-        </div>
+        <button
+          className="saison-topbar__user-trigger"
+          type="button"
+          onClick={() => onNavigate?.('account')}
+          title="Mon compte"
+          aria-label="Mon compte"
+        >
+          {user.profile && !avatarError ? (
+            <img
+              src={user.profile}
+              alt=""
+              className="saison-topbar__user-trigger-avatar"
+              onError={() => setAvatarError(true)}
+            />
+          ) : (
+            <FiUser />
+          )}
+        </button>
       ) : (
         <button
           className="saison-topbar__user-trigger"
