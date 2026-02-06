@@ -127,6 +127,40 @@
   white-space: nowrap;
 }
 
+.saison-topbar__user-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-20, 40px);
+  height: var(--spacing-20, 40px);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
+  color: var(--color-text-primary, #e5e7eb);
+  cursor: pointer;
+  transition: var(--transition-base);
+  flex-shrink: 0;
+}
+
+.saison-topbar__user-trigger:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--color-accent, #bfc900);
+}
+
+.saison-topbar__user-trigger svg {
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
+}
+
+.saison-topbar__user-trigger-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
 .saison-topbar__user {
   display: flex;
   align-items: center;

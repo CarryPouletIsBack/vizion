@@ -1,8 +1,9 @@
-/* Styles pour l'écran Événements (maquette Figma). */
+/* Styles pour l'écran Événements (référence positionnement : Saison). */
 .events-page {
   display: flex;
   flex-direction: column;
-  padding: var(--spacing-40, 80px) var(--spacing-12, 24px) var(--spacing-16, 32px);
+  gap: var(--spacing-12, 24px);
+  padding: calc(var(--spacing-8, 16px) + var(--topbar-height, 56px)) var(--spacing-12, 24px) var(--spacing-16, 32px);
   min-height: 100vh;
   color: var(--color-text-primary, #e5e7eb);
   position: relative;
@@ -73,10 +74,11 @@
 .events-main {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-12, 24px);
+  gap: var(--spacing-20, 40px);
+  row-gap: var(--spacing-20, 40px);
   margin-left: 224px;
+  width: calc(100% - 224px);
   flex: 1 0 0;
-  padding-top: var(--spacing-8, 16px);
   transition: var(--transition-smooth);
 }
 
@@ -99,14 +101,15 @@
   font-size: var(--font-h2-size, 40px);
   line-height: var(--font-h2-line-height, 1.2);
   color: var(--color-accent, #bfc900);
-  margin: 0;
+  letter-spacing: 0.12em;
+  margin: 0 0 var(--spacing-4, 8px);
 }
 
 .events-subtitle {
-  margin: var(--spacing-2, 4px) 0 0;
-  font-size: var(--font-size-sm, 12px);
-  line-height: var(--line-height-normal, 1.5);
-  color: var(--color-text-secondary, #9ca3af);
+  margin: 0;
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
+  color: var(--color-text-primary, #e5e7eb);
 }
 
 .info-card {
@@ -118,7 +121,7 @@
   width: min(473px, 100%);
   border-radius: var(--spacing-4, 8px);
   border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
-  background: var(--color-bg-primary, #0b0e11);
+  background: var(--color-card-bg);
   color: var(--color-text-primary, #e5e7eb);
   cursor: pointer;
   transition: var(--transition-base);

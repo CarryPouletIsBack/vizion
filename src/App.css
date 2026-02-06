@@ -4,3 +4,71 @@
   z-index: 2;
   background-color: transparent;
 }
+
+/* Globe en fond sur toutes les pages (sous header/sidebar et contenu) */
+.app-bg-globe {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Page Saison : le globe reçoit les clics (rotation, zoom) */
+.app-root--globe-interactive .app-bg-globe {
+  pointer-events: auto;
+}
+
+/* Chaîne pointer-events : laisser passer les clics vers le globe dans la zone « carte ».
+   On met none sur les conteneurs et auto sur les zones à garder cliquables (header, sidebar, titre, modale). */
+.app-root--globe-interactive .app-content {
+  pointer-events: none;
+}
+.app-root--globe-interactive .app-content .saison-page {
+  pointer-events: none;
+}
+.app-root--globe-interactive .app-content .saison-page > * {
+  pointer-events: auto;
+}
+.app-root--globe-interactive .app-content .saison-body {
+  pointer-events: none;
+}
+.app-root--globe-interactive .app-content .saison-body > * {
+  pointer-events: auto;
+}
+.app-root--globe-interactive .app-content .saison-main {
+  pointer-events: none;
+}
+.app-root--globe-interactive .app-content .saison-main > * {
+  pointer-events: auto;
+}
+.app-root--globe-interactive .app-content .saison-map-block {
+  pointer-events: none;
+}
+
+/* Page Saison : pas de scroll (contenu = 100vh) */
+.app-root--globe-interactive {
+  height: 100vh;
+  overflow: hidden;
+}
+.app-root--globe-interactive .app-content {
+  height: 100%;
+  min-height: 0;
+}
+
+.app-bg-globe > * {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.app-content {
+  position: relative;
+  z-index: 10;
+  min-height: 100vh;
+}

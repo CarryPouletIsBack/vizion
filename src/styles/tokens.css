@@ -1,61 +1,170 @@
+/**
+ * Design tokens — source Figma
+ * Fichier: Mon-site (node 1-11311)
+ * https://www.figma.com/design/I8ZwTv5nY3PN30UNMNA8TK/Mon-site?node-id=1-11311
+ */
+
 :root {
-  /* Colors */
-  --color-bg-primary: #0b0e11;
-  --color-bg-surface: #161b21;
-  --color-border-default: #2a3038;
-  --color-text-primary: #e5e7eb;
-  --color-text-muted: rgba(229, 231, 235, 0.72);
-  --color-accent: #bfc900;
-  --color-brand-primary: #d4df00;
-  --color-brand-secondary: rgba(76, 141, 255, 0.12);
+  /* ========== FIGMA — Couleurs ========== */
+  --figma-surface-base: #fff8f5;
+  --figma-surface-raised: #eaeae6;
+  --figma-background: #509ed8;
+  --figma-texte-titre: #f1582a;
+  --figma-texte-titre-var: #fff8f5;
+  --figma-texte-corp: #1f2937;
+  --figma-texte-corp-var: #374962;
+  --figma-border: #b2aaaa;
+  --figma-gray-0: #fff8f5;
+  --figma-gray-50: #eaeae6;
+  --figma-gray-400: #1b1c17;
+  --figma-warning-disabled: #fce9cf;
+  --figma-warning-hover: #f6be6f;
+  --figma-on-surface: #1f2937;
+  --figma-white: #ffffff;
+  --figma-dark-gray: #333333;
 
-  /* Spacing System - Table de 2 */
-  --spacing-1: 2px;
-  --spacing-2: 4px;
-  --spacing-3: 6px;
-  --spacing-4: 8px;
+  /* ========== Dark theme — contrepartie de #fff8f5 (crème chaud) ========== */
+  --dark-surface-base: #1a1816;
+  --dark-surface-raised: #252220;
+  --dark-border: #3f3f3f;
+  --dark-text-primary: #ffffff;
+  --dark-text-muted: rgba(255, 255, 255, 0.78);
+  --dark-text-secondary: rgba(255, 255, 255, 0.65);
+
+  /* ========== Grille de base 2pt — tous les espacements = multiple de 2px ========== */
+  --grid-base: 2px;
+
+  /* ========== FIGMA — Spacing (alignés sur 2pt) ========== */
+  --figma-spacing-none: 0;
+  --figma-spacing-s-2: 4px;
+  --figma-spacing-s: 8px;
+  --figma-spacing-m-3: 12px;
+  --figma-spacing-m-2: 16px;
+  --figma-spacing-m: 24px;
+  --figma-spacing-4: 24px;
+  --figma-spacing-3: 32px;
+  --figma-spacing-xxl: 40px;
+  --figma-spacing-xxxl: 48px;
+  --figma-spacing-10: 80px;
+
+  /* ========== FIGMA — Typographie ========== */
+  --figma-font-body: "Inter", system-ui, sans-serif;
+  --figma-font-headings: "Space Grotesk", system-ui, sans-serif;
+  --figma-font-display: "Space Grotesk", system-ui, sans-serif;
+  --figma-font-components: "JetBrains Mono", ui-monospace, monospace;
+
+  --figma-size-xs: 12px;
+  --figma-size-sm: 14px;
+  --figma-size-base: 16px;
+  --figma-size-lg: 20px;
+  --figma-size-xl: 24px;
+  --figma-size-2xl: 32px;
+  --figma-size-display: 72px;
+
+  --figma-line-tighter: 16px;
+  --figma-line-tight: 20px;
+  --figma-line-base: 24px;
+  --figma-line-relaxed: 32px;
+  --figma-line-hero: 64px;
+
+  /* ========== Type scale (Figma) — presets taille + line-height ========== */
+  --text-display-font-size: var(--figma-size-display);
+  --text-display-line-height: var(--figma-line-hero);
+  --text-display-font-family: var(--figma-font-display);
+
+  --text-h1-font-size: 48px;
+  --text-h1-line-height: 1.15;
+  --text-h1-font-family: var(--figma-font-headings);
+
+  --text-h2-font-size: 40px;
+  --text-h2-line-height: 1.2;
+  --text-h2-font-family: var(--figma-font-headings);
+
+  --text-h3-font-size: var(--figma-size-2xl);
+  --text-h3-line-height: var(--figma-line-relaxed);
+  --text-h3-font-family: var(--figma-font-headings);
+
+  --text-h4-font-size: var(--figma-size-xl);
+  --text-h4-line-height: var(--figma-line-base);
+  --text-h4-font-family: var(--figma-font-headings);
+
+  --text-lead-font-size: var(--figma-size-lg);
+  --text-lead-line-height: var(--figma-line-tight);
+  --text-lead-font-family: var(--figma-font-body);
+
+  --text-body-font-size: var(--figma-size-base);
+  --text-body-line-height: var(--figma-line-base);
+  --text-body-font-family: var(--figma-font-body);
+
+  --text-body-sm-font-size: var(--figma-size-sm);
+  --text-body-sm-line-height: var(--figma-line-base);
+  --text-body-sm-font-family: var(--figma-font-body);
+
+  --text-caption-font-size: var(--figma-size-xs);
+  --text-caption-line-height: var(--figma-line-tighter);
+  --text-caption-font-family: var(--figma-font-body);
+
+  --text-mono-font-family: var(--figma-font-components);
+
+  /* ========== Alias projet (thème dark, texte blanc) ========== */
+  /* Fond dark en harmonie avec #fff8f5 (chaud), texte blanc */
+  --color-bg-primary: var(--dark-surface-base);
+  --color-bg-surface: var(--dark-surface-raised);
+  --color-border-default: var(--dark-border);
+  --color-text-primary: var(--dark-text-primary);
+  --color-text-muted: var(--dark-text-muted);
+  --color-text-secondary: var(--dark-text-secondary);
+  --color-accent: var(--figma-texte-titre);
+  --color-brand-primary: var(--figma-texte-titre);
+  --color-brand-secondary: var(--figma-background);
+  /* Fond des cartes — référence course-card (noir 30 %) */
+  --color-card-bg: rgba(0, 0, 0, 0.3);
+
+  /* Spacing — grille 2pt (tous multiples de 2px) */
+  --spacing-1: var(--grid-base);
+  --spacing-2: var(--figma-spacing-s-2);
+  --spacing-3: var(--figma-spacing-s);
+  --spacing-4: var(--figma-spacing-s);
   --spacing-5: 10px;
-  --spacing-6: 12px;
-  --spacing-8: 16px;
+  --spacing-6: var(--figma-spacing-m-3);
+  --spacing-8: var(--figma-spacing-m-2);
   --spacing-10: 20px;
-  --spacing-12: 24px;
+  --spacing-12: var(--figma-spacing-m);
   --spacing-14: 28px;
-  --spacing-16: 32px;
-  --spacing-20: 40px;
-  --spacing-24: 48px;
+  --spacing-16: var(--figma-spacing-3);
+  --spacing-20: var(--figma-spacing-xxl);
+  --spacing-24: var(--figma-spacing-xxxl);
   --spacing-32: 64px;
-  --spacing-40: 80px;
+  --spacing-40: var(--figma-spacing-10);
 
-  /* Typography Scale */
-  --font-size-xs: 11px;
-  --font-size-sm: 12px;
-  --font-size-base: 14px;
-  --font-size-md: 16px;
-  --font-size-lg: 18px;
-  --font-size-xl: 20px;
-  --font-size-2xl: 24px;
-  --font-size-3xl: 32px;
-  --font-size-4xl: 40px;
-  --font-size-5xl: 48px;
+  /* Typography — alias vers type scale Figma */
+  --font-size-xs: var(--text-caption-font-size);
+  --font-size-sm: var(--text-body-sm-font-size);
+  --font-size-base: var(--text-body-font-size);
+  --font-size-md: var(--text-body-font-size);
+  --font-size-lg: var(--text-lead-font-size);
+  --font-size-xl: var(--text-h4-font-size);
+  --font-size-2xl: var(--text-h4-font-size);
+  --font-size-3xl: var(--text-h3-font-size);
+  --font-size-4xl: var(--text-h2-font-size);
+  --font-size-5xl: var(--text-h1-font-size);
 
-  /* Line Heights */
-  --line-height-tight: 1.2;
+  --line-height-tight: 1.25;
   --line-height-normal: 1.5;
   --line-height-relaxed: 1.75;
 
-  /* Typography Presets */
-  --font-h1-size: 48px;
-  --font-h1-line-height: 1.2;
-  --font-h2-size: 40px;
-  --font-h2-line-height: 1.2;
-  --font-h3-size: 32px;
+  --font-h1-size: var(--text-h1-font-size);
+  --font-h1-line-height: var(--text-h1-line-height);
+  --font-h2-size: var(--text-h2-font-size);
+  --font-h2-line-height: var(--text-h2-line-height);
+  --font-h3-size: var(--text-h3-font-size);
   --font-h3-line-height: 1.25;
-  --font-h4-size: 24px;
+  --font-h4-size: var(--text-h4-font-size);
   --font-h4-line-height: 1.3;
-  --font-body-size: 16px;
-  --font-body-line-height: 1.5;
-  --font-body-sm-size: 14px;
-  --font-body-sm-line-height: 1.5;
+  --font-body-size: var(--text-body-font-size);
+  --font-body-line-height: var(--text-body-line-height);
+  --font-body-sm-size: var(--text-body-sm-font-size);
+  --font-body-sm-line-height: var(--text-body-sm-line-height);
 
   /* Transitions */
   --transition-base: all 0.2s ease;

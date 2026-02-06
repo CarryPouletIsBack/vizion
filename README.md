@@ -25,11 +25,11 @@ L'application sera accessible sur `http://localhost:5173`
 
 ### 🗺️ Navigation et Interface
 
-- **Écran Saison** : Globe WebGL plein écran (côtes en lignes, mers transparentes) avec pastilles de courses ; fond fixe sous la sidebar et le header
+- **Écran Saison** : Globe WebGL plein écran (côtes en lignes, mers transparentes) ; fond fixe sous la sidebar et le header ; globe **interactif** (rotation, zoom) sur cette page uniquement ; référence de positionnement pour toutes les pages (titres, padding, sidebar 200px, main 224px)
 - **Écran Événements** : Tableau avec filtres (Highcharts DataGrid)
 - **Écran Courses** : Grille de cartes de courses avec statistiques
-- **Écran Single Course** : Détails complets d'une course (GPX, profil, analyse)
-- **Compte utilisateur** : Gestion du profil et connexion Strava
+- **Écran Single Course** : Détails complets d'une course (GPX pleine largeur, profil, analyse) ; météo et **heure locale avec décalage UTC** (ex. Saint-Paul · 24° · 22h06 (+4h)) ; cartes alignées sur le style `course-card` (fond `--color-card-bg`, bordure, backdrop-filter)
+- **Compte utilisateur** : Accès via **icône utilisateur** dans le header (connexion / création de compte en modale ; une fois connecté, clic sur l’icône → page Mon compte) ; lien « Mon compte » retiré de la sidebar
 
 ### 📊 Intégration Strava
 
@@ -136,8 +136,8 @@ vizion-app/
 │   ├── strava/           # Routes API Vercel pour Strava
 │   │   ├── activities.ts # Récupération activités
 │   │   └── athlete.ts    # Récupération profil athlète
-│   ├── weather.ts       # Proxy météo (Xweather)
-│   └── timezone.ts       # Fuseau horaire
+│   ├── weather.ts        # Proxy météo (Xweather)
+│   └── timezone.ts       # Fuseau horaire (heure locale + offsetHours UTC)
 ├── public/
 │   └── globe/            # Globe WebGL (globe.js, texture world.jpg, Three.js)
 ├── src/
@@ -249,6 +249,8 @@ Variables d'environnement Vercel :
 - Les graphiques utilisent Highcharts
 - L’écran Saison utilise un **globe WebGL** (Three.js) en fond plein écran : côtes en lignes, mers transparentes ; les cartes de détail utilisent Google Maps
 - L'analyse est basée sur les 6-12 dernières semaines d'activités Strava
+- **Cartes** : Fond commun `--color-card-bg` (noir 30 %) dans `tokens.css` ; style de référence = `.course-card` (bordure, backdrop-filter, border-radius)
+- **Scrollbar** : Style global (index.css) aligné sur le portfolio (WebKit + Firefox, fin, arrondi, semi-transparent)
 - **Note temporaire** : La fonctionnalité "Événements" est masquée dans la navigation. Les courses sont indépendantes pour le moment et ne nécessitent pas d'être regroupées dans un événement parent.
 
 ## Déploiement

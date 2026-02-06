@@ -100,6 +100,7 @@ export default function SingleCoursePage({
   const [rainLast24h, setRainLast24h] = useState<boolean | null>(null)
   const [regionCity, setRegionCity] = useState<string | null>(null)
   const [regionTime, setRegionTime] = useState<string | null>(null)
+  const [regionOffsetHours, setRegionOffsetHours] = useState<number | null>(null)
   /** Pluie par point échantillon le long du tracé (pour afficher les gouttes sur le GPX) */
   const [rainAlongRoute, setRainAlongRoute] = useState<Array<{ lat: number; lon: number; rain: boolean }> | null>(null)
 
@@ -147,6 +148,7 @@ export default function SingleCoursePage({
       setRainLast24h(null)
       setRegionCity(null)
       setRegionTime(null)
+      setRegionOffsetHours(null)
       return
     }
     let cancelled = false
@@ -162,6 +164,7 @@ export default function SingleCoursePage({
       setRainLast24h(weather?.rainLast24h ?? null)
       setRegionCity(city ?? null)
       setRegionTime(tz?.time ?? null)
+      setRegionOffsetHours(typeof tz?.offsetHours === 'number' ? tz.offsetHours : null)
     })
     return () => { cancelled = true }
   }, [selectedCourseId, startCoordsKey])
@@ -174,7 +177,12 @@ export default function SingleCoursePage({
       const [lat, lon] = startCoords
       fetch(`${base}/api/timezone?lat=${lat}&lon=${lon}`)
         .then((r) => (r.ok ? r.json() : null))
-        .then((tz) => tz && setRegionTime(tz.time))
+        .then((tz) => {
+          if (tz) {
+            setRegionTime(tz.time)
+            if (typeof tz.offsetHours === 'number') setRegionOffsetHours(tz.offsetHours)
+          }
+        })
     }, 60 * 1000)
     return () => clearInterval(id)
   }, [selectedCourseId, startCoordsKey])
@@ -275,7 +283,13 @@ export default function SingleCoursePage({
                 <p className="single-course-course__meta-title">{courseHeading}</p>
                 {(regionCity != null || weatherTemp != null || regionTime != null) && (
                   <p className="single-course-course__meta-region" aria-label="Météo et heure de la région">
-                    {[regionCity, weatherTemp != null ? `${Math.round(weatherTemp)}°` : null, regionTime].filter(Boolean).join(' · ')}
+                    {[
+                      regionCity,
+                      weatherTemp != null ? `${Math.round(weatherTemp)}°` : null,
+                      regionTime != null && regionOffsetHours != null
+                        ? `${regionTime} (${regionOffsetHours >= 0 ? '+' : ''}${regionOffsetHours}h)`
+                        : regionTime,
+                    ].filter(Boolean).join(' · ')}
                   </p>
                 )}
                 <p className="single-course-course__meta-stats">{courseStats}</p>
@@ -327,29 +341,30 @@ export default function SingleCoursePage({
               </div>
             </div>
 
-            {/* Blocs fonctionnels : PhysioGauge, TerrainComparison, RaceStrategy */}
-            <div className="single-course-charts-grid">
-              <div className="single-course-chart-block">
-                <PhysioGauge tsb={tsb} />
+            {/* Colonne droite : grille de graphiques puis panel en dessous */}
+            <div className="single-course-right">
+              <div className="single-course-charts-grid">
+                <div className="single-course-chart-block">
+                  <PhysioGauge tsb={tsb} />
+                </div>
+                <div className="single-course-chart-block">
+                  <TerrainComparison
+                    elevationGain={{
+                      current: metrics?.longRunDPlus || 0,
+                      target: courseData.elevationGain,
+                    }}
+                    elevationLoss={{
+                      current: elevationStats.elevationLoss,
+                      target: elevationStats.elevationLoss,
+                    }}
+                  />
+                </div>
+                <div className="single-course-chart-block">
+                  <RaceStrategy profileData={profileData} />
+                </div>
               </div>
-              <div className="single-course-chart-block">
-                <TerrainComparison
-                  elevationGain={{
-                    current: metrics?.longRunDPlus || 0,
-                    target: courseData.elevationGain,
-                  }}
-                  elevationLoss={{
-                    current: elevationStats.elevationLoss,
-                    target: elevationStats.elevationLoss,
-                  }}
-                />
-              </div>
-              <div className="single-course-chart-block">
-                <RaceStrategy profileData={profileData} />
-              </div>
-            </div>
 
-            <div className="single-course-panel">
+              <div className="single-course-panel">
               <div className="single-course-panel__header">
                 <p>CHARGE & RÉGULARITÉ (6 semaines)</p>
                 <div className="single-course-panel__value">
@@ -633,6 +648,7 @@ export default function SingleCoursePage({
                   </div>
                 </div>
               </div>
+            </div>
             </div>
           </section>
         </main>

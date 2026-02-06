@@ -9,6 +9,29 @@
   transition: var(--transition-smooth);
 }
 
+/* Quand le globe est interactif (app-root--globe-interactive), la page tient dans 100vh sans scroll */
+.app-root--globe-interactive .saison-page {
+  height: 100%;
+  min-height: 0;
+}
+.app-root--globe-interactive .saison-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.app-root--globe-interactive .saison-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.app-root--globe-interactive .saison-map-block {
+  flex: 1;
+  min-height: 0;
+}
+
 .saison-body {
   position: relative;
 }
@@ -99,7 +122,7 @@
   width: min(473px, 100%);
   border-radius: var(--spacing-4, 8px);
   border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
-  background: var(--color-bg-primary, #0b0e11);
+  background: var(--color-card-bg);
   color: var(--color-text-primary, #e5e7eb);
   cursor: pointer;
   transition: var(--transition-base);
@@ -241,7 +264,7 @@
   padding: var(--spacing-8, 16px) var(--spacing-12, 24px);
   border-radius: var(--spacing-4, 8px);
   border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
-  background: var(--color-bg-surface, #161b21);
+  background: var(--color-card-bg);
   color: var(--color-text-primary, #e5e7eb);
   text-align: left;
   cursor: pointer;
@@ -510,42 +533,21 @@
   flex-direction: column;
   gap: var(--spacing-8, 16px);
   min-height: 100vh;
+  pointer-events: none;
+}
+
+.saison-map-block .courses-section {
+  pointer-events: auto;
+  display: none; /* Masqué pour l’instant, laisse le globe interactif sur toute la zone */
 }
 
 /* Globe en fond plein écran (sous la sidebar et le contenu), zone d’interaction = tout l’écran. */
-.map-section {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 1;
-  background: transparent;
-  pointer-events: auto;
-}
-
-.map-wrapper {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border-radius: 0;
-}
-
-/* Contenu (titre, cours) au-dessus du globe */
 .saison-main {
   position: relative;
   z-index: 10;
 }
 
 @media (max-width: 768px) {
-  /* Globe reste en fixed plein écran sur mobile */
 
   /* Empiler le header sur mobile : titre en haut, carte en dessous */
   .saison-heading {

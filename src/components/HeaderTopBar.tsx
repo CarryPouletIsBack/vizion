@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { HiX } from 'react-icons/hi'
-import { FiSun, FiCloud, FiCloudRain, FiMoon } from 'react-icons/fi'
+import { FiSun, FiCloud, FiCloudRain, FiMoon, FiUser } from 'react-icons/fi'
 
 import './HeaderTopBar.css'
 
@@ -30,6 +30,7 @@ type LocationWeather = {
 
 export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
   const [user, setUser] = useState<AppUser | null | 'loading'>('loading') // 'loading' pour éviter le flash
+  const [avatarError, setAvatarError] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [loginModalMode, setLoginModalMode] = useState<'login' | 'signup' | 'forgot-password' | 'otp-expired'>('login')
   const [locationWeather, setLocationWeather] = useState<LocationWeather | null>(null)
@@ -54,6 +55,11 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
       }
     }
   }, [])
+
+  // Réinitialiser l’erreur avatar quand l’utilisateur ou sa photo change
+  useEffect(() => {
+    setAvatarError(false)
+  }, [user?.id, user?.profile])
 
   // Écouter l'événement personnalisé pour ouvrir la modale de connexion
   useEffect(() => {
@@ -307,31 +313,23 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
 
       {user === 'loading' ? null : user ? (
         <div className="saison-topbar__user">
-          {user.profile && (
-            <img
-              src={user.profile}
-              alt={`${user.firstname} ${user.lastname}`}
-              className="saison-topbar__user-avatar"
-              onError={(e) => {
-                // Si l'image ne charge pas, masquer l'avatar
-                e.currentTarget.style.display = 'none'
-              }}
-            />
-          )}
           <button
-            className="saison-topbar__user-info"
+            className="saison-topbar__user-trigger"
             type="button"
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              onNavigate?.('account')
-            }}
+            onClick={() => onNavigate?.('account')}
             title="Mon compte"
             aria-label="Mon compte"
           >
-            <span className="saison-topbar__user-name">
-              {user.firstname && user.lastname ? `${user.firstname} ${user.lastname}` : user.email}
-            </span>
+            {user.profile && !avatarError ? (
+              <img
+                src={user.profile}
+                alt=""
+                className="saison-topbar__user-trigger-avatar"
+                onError={() => setAvatarError(true)}
+              />
+            ) : (
+              <FiUser />
+            )}
           </button>
           <button
             className="saison-topbar__user-logout"
@@ -359,24 +357,16 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
             </div>
           )}
           <button
-            className="btn btn--ghost"
+            className="saison-topbar__user-trigger"
             type="button"
             onClick={() => {
               setLoginModalMode('login')
               setIsLoginModalOpen(true)
             }}
+            title="Se connecter ou créer un compte"
+            aria-label="Se connecter ou créer un compte"
           >
-            Se connecter
-          </button>
-          <button
-            className="btn btn--primary"
-            type="button"
-            onClick={() => {
-              setLoginModalMode('signup')
-              setIsLoginModalOpen(true)
-            }}
-          >
-            Créer un compte
+            <FiUser />
           </button>
         </div>
       )}

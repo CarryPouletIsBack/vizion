@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import './App.css'
+import WebGlGlobe from './components/WebGlGlobe'
 import CoursesPage from './pages/CoursesPage'
 import EventsPage from './pages/EventsPage'
 import SaisonPage from './pages/SaisonPage'
@@ -636,7 +637,11 @@ function App() {
   }
 
   return (
-    <div className="app-root">
+    <div className={`app-root${view === 'saison' ? ' app-root--globe-interactive' : ''}`}>
+      <div className="app-bg-globe" aria-hidden={view !== 'saison'}>
+        <WebGlGlobe />
+      </div>
+      <div className="app-content">
       {view === 'saison' && (
         <SaisonPage
           onCourseSelect={() => setView('course')}
@@ -684,6 +689,7 @@ function App() {
           onNavigate={handleNavigate}
         />
       )}
+      </div>
     </div>
   )
 }

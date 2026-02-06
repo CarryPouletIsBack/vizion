@@ -31,17 +31,6 @@ export default function SideNav({ activeItem = 'saison', onNavigate }: SideNavPr
       >
         Courses
       </button>
-      <button
-        className={`side-nav__item ${activeItem === 'account' ? 'side-nav__item--active' : ''}`}
-        type="button"
-        onClick={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          onNavigate?.('account')
-        }}
-      >
-        Mon compte
-      </button>
     </nav>
   )
 }

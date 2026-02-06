@@ -5,7 +5,6 @@ import './SaisonPage.css'
 
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
-import WebGlGlobe from '../components/WebGlGlobe'
 import { gpxToSvg, extractGpxStartCoordinates, extractGpxWaypoints } from '../lib/gpxToSvg'
 import { extractRouteIdFromUrl } from '../lib/stravaRouteParser'
 
@@ -28,7 +27,6 @@ type SaisonPageProps = {
 type CreateModalView = 'select' | 'event' | 'course'
 
 export default function SaisonPage({
-  onCourseSelect,
   onNavigate,
   onCreateEvent,
   onCreateCourse,
@@ -381,12 +379,6 @@ export default function SaisonPage({
           </section>
 
           <div className="saison-map-block">
-            <section className="map-section">
-              <div className="map-wrapper">
-                <WebGlGlobe onCourseSelect={onCourseSelect} />
-              </div>
-            </section>
-
             <section className="courses-section">
               <div className="courses-heading">
                 <p className="courses-title">Mes courses en cours</p>

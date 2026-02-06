@@ -380,13 +380,28 @@ export default defineConfig({
             const now = new Date()
             const formatter = new Intl.DateTimeFormat('fr-FR', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false })
             const timeShort = formatter.format(now).replace(':', 'h')
+            let offsetHours = 0
+            try {
+              const parts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, timeZoneName: 'longOffset' }).formatToParts(now)
+              const tzPart = parts.find((p) => p.type === 'timeZoneName')
+              const value = tzPart?.value ?? ''
+              const match = value.match(/GMT([+-])(\d+)(?::(\d+))?/)
+              if (match) {
+                const sign = match[1] === '+' ? 1 : -1
+                const h = parseInt(match[2], 10)
+                const m = match[3] ? parseInt(match[3], 10) : 0
+                offsetHours = sign * (h + m / 60)
+              }
+            } catch {
+              // garder 0
+            }
             res.setHeader('Content-Type', 'application/json')
             res.setHeader('Cache-Control', 'public, max-age=60')
-            res.end(JSON.stringify({ timezone, time: timeShort }))
+            res.end(JSON.stringify({ timezone, time: timeShort, offsetHours }))
           } catch (err) {
             const timeShort = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date()).replace(':', 'h')
             res.setHeader('Content-Type', 'application/json')
-            res.end(JSON.stringify({ timezone: 'UTC', time: timeShort }))
+            res.end(JSON.stringify({ timezone: 'UTC', time: timeShort, offsetHours: 0 }))
           }
         })
       },
