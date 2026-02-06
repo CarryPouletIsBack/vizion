@@ -287,7 +287,12 @@ export default function SingleCoursePage({
                       regionCity,
                       weatherTemp != null ? `${Math.round(weatherTemp)}°` : null,
                       regionTime != null && regionOffsetHours != null
-                        ? `${regionTime} (${regionOffsetHours >= 0 ? '+' : ''}${regionOffsetHours}h)`
+                        ? (() => {
+                            const userOffsetHours = -new Date().getTimezoneOffset() / 60
+                            const diffHours = Math.round((regionOffsetHours - userOffsetHours) * 100) / 100
+                            const diffStr = diffHours === 0 ? '0h' : `${diffHours >= 0 ? '+' : ''}${diffHours}h`
+                            return `${regionTime} (${diffStr})`
+                          })()
                         : regionTime,
                     ].filter(Boolean).join(' · ')}
                   </p>

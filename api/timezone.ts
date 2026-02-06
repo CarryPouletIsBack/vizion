@@ -3,7 +3,23 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 /**
  * Retourne l'heure actuelle dans la région (timezone) des coordonnées.
  * GET /api/timezone?lat=...&lon=...
+ * - time: heure locale dans la zone (ex. "23h34" à La Réunion)
+ * - offsetHours: décalage UTC de la zone (ex. +4 pour Indian/Reunion)
  */
+function formatTimeInOffset(offsetHours: number): string {
+  const now = new Date()
+  const utcMs = now.getTime()
+  const localMs = utcMs + offsetHours * 60 * 60 * 1000
+  const d = new Date(localMs)
+  const h = d.getUTCHours()
+  const m = d.getUTCMinutes()
+  return `${h.toString().padStart(2, '0')}h${m.toString().padStart(2, '0')}`
+}
+
+function getOffsetFromLon(lon: number): number {
+  return Math.round((lon / 15) * 2) / 2
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method Not Allowed' })
@@ -18,11 +34,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Paramètres lat et lon requis et valides' })
   }
 
+  const now = new Date()
+  let timezone = 'UTC'
+  let timeShort: string
+  let offsetHours: number
+
   try {
     const { find } = await import('geo-tz')
     const zones = find(latNum, lonNum)
-    const timezone = zones && zones.length > 0 ? zones[0] : 'UTC'
-    const now = new Date()
+    if (zones && zones.length > 0) {
+      timezone = zones[0]
+    }
+  } catch (err) {
+    console.warn('geo-tz failed, using longitude fallback:', err)
+  }
+
+  try {
     const formatter = new Intl.DateTimeFormat('fr-FR', {
       timeZone: timezone,
       hour: '2-digit',
@@ -30,8 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       hour12: false,
     })
     const time = formatter.format(now)
-    const timeShort = time.replace(':', 'h')
-    // Décalage UTC en heures (ex. +4 à La Réunion) : heure locale dans la zone − heure UTC
+    timeShort = time.replace(':', 'h')
     const utcH = now.getUTCHours()
     const utcM = now.getUTCMinutes()
     const utcDec = utcH + utcM / 60
@@ -43,20 +69,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }).formatToParts(now)
     const zoneH = parseInt(zoneParts.find((p) => p.type === 'hour')?.value ?? '0', 10)
     const zoneM = parseInt(zoneParts.find((p) => p.type === 'minute')?.value ?? '0', 10)
-    let offsetHours = zoneH + zoneM / 60 - utcDec
+    offsetHours = zoneH + zoneM / 60 - utcDec
     if (offsetHours > 12) offsetHours -= 24
     if (offsetHours < -12) offsetHours += 24
     offsetHours = Math.round(offsetHours * 100) / 100
-    res.setHeader('Cache-Control', 'public, max-age=60')
-    return res.status(200).json({ timezone, time: timeShort, offsetHours })
-  } catch (err) {
-    console.error('Erreur timezone', err)
-    const formatter = new Intl.DateTimeFormat('fr-FR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    })
-    const timeShort = formatter.format(new Date()).replace(':', 'h')
-    return res.status(200).json({ timezone: 'UTC', time: timeShort, offsetHours: 0 })
+  } catch {
+    offsetHours = getOffsetFromLon(lonNum)
+    timeShort = formatTimeInOffset(offsetHours)
   }
+
+  res.setHeader('Cache-Control', 'public, max-age=60')
+  return res.status(200).json({ timezone, time: timeShort, offsetHours })
 }

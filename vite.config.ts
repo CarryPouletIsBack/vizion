@@ -373,31 +373,41 @@ export default defineConfig({
             res.end(JSON.stringify({ error: 'Paramètres lat et lon requis et valides' }))
             return
           }
+          let timezone = 'UTC'
           try {
             const { find } = await import('geo-tz')
             const zones = find(latNum, lonNum)
-            const timezone = zones?.length ? zones[0] : 'UTC'
-            const now = new Date()
+            if (zones?.length) timezone = zones[0]
+          } catch {
+            // garder UTC, offset déduit de la longitude
+          }
+          const now = new Date()
+          let timeShort: string
+          let offsetHours: number
+          try {
             const formatter = new Intl.DateTimeFormat('fr-FR', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false })
-            const timeShort = formatter.format(now).replace(':', 'h')
+            timeShort = formatter.format(now).replace(':', 'h')
             const utcH = now.getUTCHours()
             const utcM = now.getUTCMinutes()
             const utcDec = utcH + utcM / 60
             const zoneParts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(now)
             const zoneH = parseInt(zoneParts.find((p) => p.type === 'hour')?.value ?? '0', 10)
             const zoneM = parseInt(zoneParts.find((p) => p.type === 'minute')?.value ?? '0', 10)
-            let offsetHours = zoneH + zoneM / 60 - utcDec
+            offsetHours = zoneH + zoneM / 60 - utcDec
             if (offsetHours > 12) offsetHours -= 24
             if (offsetHours < -12) offsetHours += 24
             offsetHours = Math.round(offsetHours * 100) / 100
-            res.setHeader('Content-Type', 'application/json')
-            res.setHeader('Cache-Control', 'public, max-age=60')
-            res.end(JSON.stringify({ timezone, time: timeShort, offsetHours }))
-          } catch (err) {
-            const timeShort = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date()).replace(':', 'h')
-            res.setHeader('Content-Type', 'application/json')
-            res.end(JSON.stringify({ timezone: 'UTC', time: timeShort, offsetHours: 0 }))
+          } catch {
+            offsetHours = Math.round((lonNum / 15) * 2) / 2
+            const localMs = now.getTime() + offsetHours * 60 * 60 * 1000
+            const d = new Date(localMs)
+            const h = d.getUTCHours()
+            const m = d.getUTCMinutes()
+            timeShort = `${h.toString().padStart(2, '0')}h${m.toString().padStart(2, '0')}`
           }
+          res.setHeader('Content-Type', 'application/json')
+          res.setHeader('Cache-Control', 'public, max-age=60')
+          res.end(JSON.stringify({ timezone, time: timeShort, offsetHours }))
         })
       },
     },
