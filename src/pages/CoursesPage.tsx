@@ -162,23 +162,19 @@ export default function CoursesPage({
   useEffect(() => {
     const loadCoursesDirectly = async () => {
       try {
-        console.log('[CoursesPage] Tentative de chargement direct des courses depuis Supabase...')
         const { data: coursesData, error } = await supabase
           .from('courses')
           .select('*')
           .order('created_at', { ascending: false })
 
         if (error) {
-          console.warn('[CoursesPage] Erreur lors du chargement direct des courses:', {
-            code: error.code,
-            message: error.message,
-            hint: error.hint,
-            details: error,
-          })
+          if (import.meta.env.DEV) {
+            console.warn('[CoursesPage] Supabase indisponible (dev), utilisation des courses en cache.')
+          } else {
+            console.warn('[CoursesPage] Erreur lors du chargement direct des courses:', error.message)
+          }
           return
         }
-
-        console.log('[CoursesPage] Courses récupérées depuis Supabase:', coursesData?.length || 0)
 
         if (coursesData && coursesData.length > 0) {
           const formattedCourses = coursesData.map((course: any) => {
@@ -213,39 +209,19 @@ export default function CoursesPage({
             }
           })
           setDirectCourses(formattedCourses)
-          console.log('[CoursesPage] ✅ Courses chargées directement:', formattedCourses.length, formattedCourses.map(c => c.name))
-        } else {
-          console.warn('[CoursesPage] ⚠️ Aucune course trouvée dans Supabase')
         }
       } catch (err) {
-        console.error('[CoursesPage] ❌ Erreur lors du chargement direct:', err)
+        if (!import.meta.env.DEV) console.error('[CoursesPage] Erreur chargement direct:', err)
       }
     }
 
-    // Charger directement seulement si les courses ne sont pas disponibles dans les events
     const totalCoursesInEvents = events.reduce((sum, event) => sum + (event.courses?.length || 0), 0)
-    console.log('[CoursesPage] Total courses dans events:', totalCoursesInEvents)
-    
-    // Toujours charger les courses directement en fallback, même si des courses sont dans les events
-    // Cela permet de récupérer les courses qui ne sont pas associées aux events chargés
     if (totalCoursesInEvents === 0) {
-      console.log('[CoursesPage] Aucune course dans les events, chargement direct depuis Supabase...')
       loadCoursesDirectly()
     } else {
-      console.log('[CoursesPage] Courses disponibles dans events, chargement direct en fallback...')
-      // Charger quand même pour avoir toutes les courses disponibles
       loadCoursesDirectly()
     }
   }, [events])
-  
-  // Debug pour identifier le problème d'affichage des courses
-  console.log('[CoursesPage] Debug:', {
-    eventsCount: events.length,
-    selectedEventId,
-    selectedEvent: selectedEvent ? { id: selectedEvent.id, name: selectedEvent.name, coursesCount: selectedEvent.courses?.length || 0 } : null,
-    allEvents: events.map(e => ({ id: e.id, name: e.name, coursesCount: e.courses?.length || 0 })),
-    directCoursesCount: directCourses.length,
-  })
   const courseNameRef = useRef<HTMLInputElement | null>(null)
   const courseImageRef = useRef<HTMLInputElement | null>(null)
   const courseGpxRef = useRef<HTMLInputElement | null>(null)
@@ -497,14 +473,6 @@ export default function CoursesPage({
   // Priorité : courses des events > courses directes
   const allCourses = allCoursesFromEvents.length > 0 ? allCoursesFromEvents : directCourses
   
-  console.log('[CoursesPage] Affichage des courses:', {
-    selectedEventCourses: selectedEvent?.courses?.length || 0,
-    allEventsCourses: events.reduce((sum, e) => sum + (e.courses?.length || 0), 0),
-    directCourses: directCourses.length,
-    totalToDisplay: allCourses.length,
-    courseNames: allCourses.map(c => c.name),
-  })
-  
   const courseCards =
     allCourses
       .filter((course) => course.name.trim().toLowerCase() !== 'sans titre')
@@ -608,11 +576,11 @@ export default function CoursesPage({
                 <footer className="course-card__footer">
                   <div className="course-card__footer-left">
                     {loading ? (
-                      <p>
+                      <div className="course-card__footer-prep">
                         État de préparation : <Skeleton width="40px" height="16px" className="skeleton-inline" />
-                      </p>
+                      </div>
                     ) : (
-                      <p>
+                      <p className="course-card__footer-prep">
                         État de préparation : <strong>{card.readiness}</strong>
                       </p>
                     )}

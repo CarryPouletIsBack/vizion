@@ -49,6 +49,7 @@ export default function SingleCourseElevationChart({ data, metrics }: SingleCour
   useEffect(() => {
     if (!ref.current) return
     const chart = Highcharts.chart(ref.current, {
+      accessibility: { enabled: false },
       chart: {
         backgroundColor: 'transparent',
         height: 200,

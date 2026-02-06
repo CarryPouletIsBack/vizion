@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { HiX } from 'react-icons/hi'
+import { FiSun, FiCloud, FiCloudRain, FiMoon } from 'react-icons/fi'
 
 import './HeaderTopBar.css'
 
 import logoVision from '../assets/c5c94aad0b681f3e62439f66f02703ba7c8b5826.svg'
 import { redirectToStravaAuth } from '../lib/stravaAuth'
+import { getWeather, getCityFromCoords, weatherIconType, type WeatherIconType } from '../lib/xweather'
 import { signIn, signUp, signOut, onAuthStateChange, getCurrentUser } from '../lib/auth'
 import LoginModal from './LoginModal'
 
@@ -20,10 +22,21 @@ type AppUser = {
   profile?: string // URL de la photo de profil (Strava)
 }
 
+type LocationWeather = {
+  city: string
+  tempC: number
+  iconType: WeatherIconType
+}
+
 export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
   const [user, setUser] = useState<AppUser | null | 'loading'>('loading') // 'loading' pour éviter le flash
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [loginModalMode, setLoginModalMode] = useState<'login' | 'signup' | 'forgot-password' | 'otp-expired'>('login')
+  const [locationWeather, setLocationWeather] = useState<LocationWeather | null>(null)
+  const [currentTime, setCurrentTime] = useState<string>(() => {
+    const d = new Date()
+    return `${d.getHours().toString().padStart(2, '0')}h${d.getMinutes().toString().padStart(2, '0')}`
+  })
 
   // Détecter l'erreur otp_expired dans l'URL et ouvrir automatiquement la modale
   useEffect(() => {
@@ -54,10 +67,57 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
     }
   }, [])
 
-  // Debug en production
+  // En local : données d'exemple pour vérifier l'affichage (ville + ° + icône)
+  const isLocal = typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+
+  const exampleWeather: LocationWeather = {
+    city: 'Saint-Denis (exemple)',
+    tempC: 24,
+    iconType: 'sun',
+  }
+
+  // Mise à jour de l'heure affichée (toutes les minutes)
   useEffect(() => {
-    console.log('HeaderTopBar - isLoginModalOpen:', isLoginModalOpen, 'loginModalMode:', loginModalMode)
-  }, [isLoginModalOpen, loginModalMode])
+    const tick = () => {
+      const d = new Date()
+      setCurrentTime(`${d.getHours().toString().padStart(2, '0')}h${d.getMinutes().toString().padStart(2, '0')}`)
+    }
+    const id = setInterval(tick, 60 * 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Météo et ville de l'utilisateur (géoloc + cache 4h) ; en local on affiche l'exemple puis éventuellement les vraies données
+  useEffect(() => {
+    if (isLocal) {
+      setLocationWeather(exampleWeather)
+    }
+
+    if (!navigator?.geolocation?.getCurrentPosition) return
+    let cancelled = false
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        if (cancelled) return
+        const { latitude, longitude } = pos.coords
+        const [weather, city] = await Promise.all([
+          getWeather(latitude, longitude),
+          getCityFromCoords(latitude, longitude),
+        ])
+        if (cancelled || !weather) return
+        const iconType = weatherIconType(weather.icon)
+        setLocationWeather({
+          city: city ?? 'Position actuelle',
+          tempC: weather.tempC,
+          iconType,
+        })
+      },
+      () => {
+        if (isLocal) setLocationWeather(exampleWeather)
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 4 * 60 * 60 * 1000 }
+    )
+    return () => { cancelled = true }
+  }, [isLocal])
 
   // Écouter l'événement personnalisé pour ouvrir la modale de connexion
   useEffect(() => {
@@ -227,7 +287,6 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              console.log('[HeaderTopBar] Clic sur Mon compte')
               onNavigate?.('account')
             }}
             title="Mon compte"
@@ -249,14 +308,25 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
         </div>
       ) : (
         <div className="saison-topbar__actions">
+          {locationWeather && (
+            <div className="saison-topbar__weather" aria-label={`Météo : ${locationWeather.city}, ${Math.round(locationWeather.tempC)}°C, ${currentTime}`}>
+              <span className="saison-topbar__weather-icon">
+                {locationWeather.iconType === 'sun' && <FiSun />}
+                {locationWeather.iconType === 'cloud' && <FiCloud />}
+                {locationWeather.iconType === 'rain' && <FiCloudRain />}
+                {locationWeather.iconType === 'moon' && <FiMoon />}
+              </span>
+              <span className="saison-topbar__weather-text">
+                {locationWeather.city} · {Math.round(locationWeather.tempC)}° · {currentTime}
+              </span>
+            </div>
+          )}
           <button
             className="btn btn--ghost"
             type="button"
             onClick={() => {
-              console.log('[HeaderTopBar] Bouton Se connecter cliqué')
               setLoginModalMode('login')
               setIsLoginModalOpen(true)
-              console.log('[HeaderTopBar] State mis à jour')
             }}
           >
             Se connecter
@@ -265,10 +335,8 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
             className="btn btn--primary"
             type="button"
             onClick={() => {
-              console.log('[HeaderTopBar] Bouton Créer un compte cliqué')
               setLoginModalMode('signup')
               setIsLoginModalOpen(true)
-              console.log('[HeaderTopBar] State mis à jour')
             }}
           >
             Créer un compte

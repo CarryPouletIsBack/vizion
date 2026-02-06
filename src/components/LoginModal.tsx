@@ -104,14 +104,6 @@ export default function LoginModal({ isOpen, initialMode = 'login', onClose, onL
     }
   }, [isOpen, initialMode, resetLogin, resetSignup, resetForgotPassword])
 
-  // Debug en production
-  useEffect(() => {
-    console.log('LoginModal - isOpen:', isOpen, 'mode:', mode, 'initialMode:', initialMode)
-    if (isOpen) {
-      console.log('LoginModal ouverte avec mode:', mode, 'initialMode:', initialMode)
-    }
-  }, [isOpen, mode, initialMode])
-
   // Ne pas retourner null, toujours rendre la structure mais la cacher avec CSS
   // Cela évite les problèmes de rendu en production
   // Utiliser une classe CSS au lieu de style inline pour éviter les problèmes de rendu

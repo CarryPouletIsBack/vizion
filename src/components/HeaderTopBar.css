@@ -91,9 +91,40 @@
 
 .saison-topbar__actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: var(--spacing-6, 12px);
   margin-left: auto;
+}
+
+.saison-topbar__weather {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3, 6px);
+  padding: var(--spacing-2, 4px) var(--spacing-5, 10px);
+  border-radius: var(--spacing-4, 8px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--color-text-secondary, #9ca3af);
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
+}
+
+.saison-topbar__weather-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-brand-primary, #d4df00);
+}
+
+.saison-topbar__weather-icon svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.saison-topbar__weather-text {
+  white-space: nowrap;
 }
 
 .saison-topbar__user {

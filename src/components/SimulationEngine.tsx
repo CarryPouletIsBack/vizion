@@ -13,6 +13,8 @@ type SimulationEngineProps = {
   elevationGain: number
   metrics: StravaMetrics | null
   baseTimeEstimate?: TimeEstimate
+  /** Température en °C (optionnel, ex. API météo) */
+  temperature?: number
 }
 
 type BarrierInfo = {
@@ -29,6 +31,7 @@ export default function SimulationEngine({
   elevationGain,
   metrics,
   baseTimeEstimate,
+  temperature,
 }: SimulationEngineProps) {
   const [fitnessLevel, setFitnessLevel] = useState(100) // 50-120%
   const [refuelTimePerStop, setRefuelTimePerStop] = useState(10) // minutes
@@ -53,12 +56,13 @@ export default function SimulationEngine({
         fitnessLevel,
         technicalIndex,
         enduranceIndex,
+        temperature,
       },
       metrics
     )
 
     return newEstimate
-  }, [distanceKm, elevationGain, baseTimeEstimate, refuelStops, refuelTimePerStop, fitnessLevel, technicalIndex, enduranceIndex, metrics])
+  }, [distanceKm, elevationGain, baseTimeEstimate, refuelStops, refuelTimePerStop, fitnessLevel, technicalIndex, enduranceIndex, metrics, temperature])
 
   // Calculer les barrières horaires (basées sur les points d'abandon du Grand Raid)
   const barriers: BarrierInfo[] = useMemo(() => {

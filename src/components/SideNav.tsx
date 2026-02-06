@@ -37,7 +37,6 @@ export default function SideNav({ activeItem = 'saison', onNavigate }: SideNavPr
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
-          console.log('[SideNav] Clic sur Mon compte')
           onNavigate?.('account')
         }}
       >

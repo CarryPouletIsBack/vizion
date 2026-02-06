@@ -10,6 +10,8 @@ export type CourseData = {
   distanceKm: number
   elevationGain: number
   name?: string
+  /** Température en °C (optionnel, ex. depuis API météo) */
+  temperature?: number
 }
 
 /**
@@ -507,7 +509,7 @@ export function analyzeCourseReadiness(
       {
         distanceKm: course.distanceKm,
         elevationGain: course.elevationGain,
-        temperature: 15, // Température par défaut (peut être ajustée plus tard)
+        temperature: course.temperature ?? 15,
         bagWeight: 2, // Poids du sac par défaut : 2 kg
         refuelStops: Math.ceil(course.distanceKm / 20), // 1 ravitaillement tous les 20 km
         refuelTimePerStop: 2,

@@ -44,6 +44,7 @@ export default function SingleCourseHeatmap() {
     if (!containerRef.current) return
 
     const chart = Highcharts.chart(containerRef.current, {
+      accessibility: { enabled: false },
       chart: {
         type: 'heatmap',
         backgroundColor: 'transparent',

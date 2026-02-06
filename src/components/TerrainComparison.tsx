@@ -34,6 +34,7 @@ export default function TerrainComparison({
     if (!ref.current) return
 
     const chart = Highcharts.chart(ref.current, {
+      accessibility: { enabled: false },
       chart: {
         type: 'bar',
         backgroundColor: 'transparent',

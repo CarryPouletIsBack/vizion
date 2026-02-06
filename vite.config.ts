@@ -276,6 +276,122 @@ export default defineConfig({
       },
     },
     {
+      name: 'weather-api',
+      configureServer(server) {
+        server.middlewares.use('/api/weather', async (req, res) => {
+          if (req.method !== 'GET') {
+            res.statusCode = 405
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: 'Method Not Allowed' }))
+            return
+          }
+
+          const url = new URL(req.url || '/', `http://${req.headers.host}`)
+          const lat = url.searchParams.get('lat')
+          const lon = url.searchParams.get('lon')
+          const latNum = lat != null ? parseFloat(lat) : NaN
+          const lonNum = lon != null ? parseFloat(lon) : NaN
+
+          if (Number.isNaN(latNum) || Number.isNaN(lonNum) || latNum < -90 || latNum > 90 || lonNum < -180 || lonNum > 180) {
+            res.statusCode = 400
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: 'Paramètres lat et lon requis et valides' }))
+            return
+          }
+
+          const clientId = process.env.XWEATHER_CLIENT_ID
+          const clientSecret = process.env.XWEATHER_CLIENT_SECRET
+
+          if (!clientId || !clientSecret) {
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'application/json')
+            res.setHeader('Cache-Control', 'public, max-age=3600')
+            res.end(JSON.stringify({ tempC: 24, icon: 'fair', rainLast24h: false }))
+            return
+          }
+
+          try {
+            const apiUrl = `https://api.aerisapi.com/observations/closest?p=${latNum},${lonNum}&client_id=${encodeURIComponent(clientId)}&client_secret=${encodeURIComponent(clientSecret)}`
+            const response = await fetch(apiUrl, { headers: { Accept: 'application/json' } })
+            if (!response.ok) {
+              res.statusCode = 502
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ error: 'Erreur API météo', status: response.status }))
+              return
+            }
+            const data = (await response.json()) as {
+              success?: boolean
+              response?: Array<{ ob?: { tempC?: number; temp?: number; icon?: string; weather?: string; precipMM?: number; precipIN?: number; precipTodayMM?: number; precipTodayIN?: number } }>
+              error?: { description?: string }
+            }
+            if (!data.success && data.error) {
+              res.statusCode = 502
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ error: 'Erreur API météo', message: data.error?.description }))
+              return
+            }
+            const ob = data.response?.[0]?.ob
+            const tempC = ob?.tempC ?? ob?.temp ?? null
+            const icon = ob?.icon ?? ob?.weather ?? undefined
+            if (tempC == null) {
+              res.statusCode = 502
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ error: 'Données météo incomplètes' }))
+              return
+            }
+            const precipMM = ob?.precipTodayMM ?? ob?.precipMM ?? (ob?.precipTodayIN != null ? ob.precipTodayIN * 25.4 : undefined) ?? (ob?.precipIN != null ? ob.precipIN * 25.4 : undefined)
+            const rainLast24h = precipMM != null ? precipMM > 0 : undefined
+            res.setHeader('Content-Type', 'application/json')
+            res.setHeader('Cache-Control', 'public, max-age=14400, s-maxage=14400')
+            res.end(JSON.stringify({ tempC: Number(tempC), icon: icon ?? undefined, rainLast24h: rainLast24h ?? undefined }))
+          } catch (err) {
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: 'Erreur serveur météo', message: err instanceof Error ? err.message : 'Erreur inconnue' }))
+          }
+        })
+      },
+    },
+    {
+      name: 'timezone-api',
+      configureServer(server) {
+        server.middlewares.use('/api/timezone', async (req, res) => {
+          if (req.method !== 'GET') {
+            res.statusCode = 405
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: 'Method Not Allowed' }))
+            return
+          }
+          const url = new URL(req.url || '/', `http://${req.headers.host}`)
+          const lat = url.searchParams.get('lat')
+          const lon = url.searchParams.get('lon')
+          const latNum = lat != null ? parseFloat(lat) : NaN
+          const lonNum = lon != null ? parseFloat(lon) : NaN
+          if (Number.isNaN(latNum) || Number.isNaN(lonNum) || latNum < -90 || latNum > 90 || lonNum < -180 || lonNum > 180) {
+            res.statusCode = 400
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: 'Paramètres lat et lon requis et valides' }))
+            return
+          }
+          try {
+            const { find } = await import('geo-tz')
+            const zones = find(latNum, lonNum)
+            const timezone = zones?.length ? zones[0] : 'UTC'
+            const now = new Date()
+            const formatter = new Intl.DateTimeFormat('fr-FR', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false })
+            const timeShort = formatter.format(now).replace(':', 'h')
+            res.setHeader('Content-Type', 'application/json')
+            res.setHeader('Cache-Control', 'public, max-age=60')
+            res.end(JSON.stringify({ timezone, time: timeShort }))
+          } catch (err) {
+            const timeShort = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date()).replace(':', 'h')
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ timezone: 'UTC', time: timeShort }))
+          }
+        })
+      },
+    },
+    {
       name: 'versor-dragging-files',
         configureServer(server) {
           // Serve JSON files from @d3/versor-dragging package

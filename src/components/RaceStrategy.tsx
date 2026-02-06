@@ -85,6 +85,7 @@ export default function RaceStrategy({
     }))
 
     const chart = Highcharts.chart(ref.current, {
+      accessibility: { enabled: false },
       chart: {
         type: 'areaspline',
         backgroundColor: 'transparent',

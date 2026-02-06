@@ -6,7 +6,7 @@ Application React/Vite pour un simulateur de préparation trail basé sur l'anal
 
 - **Frontend** : React 18 + TypeScript + Vite
 - **Styling** : CSS (tokens dans `src/styles/tokens.css`)
-- **Cartographie** : Google Maps + `@react-google-maps/api`
+- **Cartographie** : Globe WebGL (écran Saison) ; Google Maps + `@react-google-maps/api` (cartes de détail)
 - **Graphiques** : Highcharts (profil d'élévation, données)
 - **Backend** : Supabase (Base de données + Auth)
 - **API Strava** : Intégration complète (OAuth + données enrichies)
@@ -25,7 +25,7 @@ L'application sera accessible sur `http://localhost:5173`
 
 ### 🗺️ Navigation et Interface
 
-- **Écran Saison** : Carte du monde interactive avec pastilles de courses
+- **Écran Saison** : Globe WebGL plein écran (côtes en lignes, mers transparentes) avec pastilles de courses ; fond fixe sous la sidebar et le header
 - **Écran Événements** : Tableau avec filtres (Highcharts DataGrid)
 - **Écran Courses** : Grille de cartes de courses avec statistiques
 - **Écran Single Course** : Détails complets d'une course (GPX, profil, analyse)
@@ -132,11 +132,17 @@ Basée sur la logique de [pacing-trail.fr](https://pacing-trail.fr/calculateur-d
 
 ```
 vizion-app/
-├── api/strava/           # Routes API Vercel pour Strava
-│   ├── activities.ts     # Récupération activités
-│   └── athlete.ts        # Récupération profil athlète
+├── api/
+│   ├── strava/           # Routes API Vercel pour Strava
+│   │   ├── activities.ts # Récupération activités
+│   │   └── athlete.ts    # Récupération profil athlète
+│   ├── weather.ts       # Proxy météo (Xweather)
+│   └── timezone.ts       # Fuseau horaire
+├── public/
+│   └── globe/            # Globe WebGL (globe.js, texture world.jpg, Three.js)
 ├── src/
 │   ├── components/       # Composants React réutilisables
+│   │   ├── WebGlGlobe.tsx    # Globe 3D (côtes, mers transparentes)
 │   │   ├── SimulationEngine.tsx
 │   │   ├── SingleCourseElevationChart.tsx
 │   │   └── ...
@@ -188,6 +194,15 @@ VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 
 ⚠️ **Important** : Google Maps est un service payant après le quota gratuit. Configurez des quotas et alertes dans Google Cloud Console pour éviter des factures surprises.
 
+#### Météo Xweather (optionnel)
+
+Pour utiliser la température réelle dans l’estimation de temps (au lieu de 15°C par défaut), configurer dans Vercel :
+
+- `XWEATHER_CLIENT_ID` : Client ID Xweather
+- `XWEATHER_CLIENT_SECRET` : Client Secret Xweather
+
+Compte gratuit : [signup.xweather.com/developer](https://signup.xweather.com/developer). L’appel se fait via la route `/api/weather?lat=...&lon=...` ; le client applique un **cache 4h** par position pour limiter les requêtes.
+
 #### Strava OAuth (pour les routes API Vercel)
 
 Variables d'environnement Vercel :
@@ -223,7 +238,7 @@ Variables d'environnement Vercel :
 
 - Les icônes utilisent `react-icons` (remplacement des emojis)
 - Les graphiques utilisent Highcharts
-- La carte utilise Google Maps pour une meilleure interactivité
+- L’écran Saison utilise un **globe WebGL** (Three.js) en fond plein écran : côtes en lignes, mers transparentes ; les cartes de détail utilisent Google Maps
 - L'analyse est basée sur les 6-12 dernières semaines d'activités Strava
 - **Note temporaire** : La fonctionnalité "Événements" est masquée dans la navigation. Les courses sont indépendantes pour le moment et ne nécessitent pas d'être regroupées dans un événement parent.
 

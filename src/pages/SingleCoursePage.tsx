@@ -14,9 +14,20 @@ import useGpxHoverMarker from '../hooks/useGpxHoverMarker'
 import useStravaMetrics from '../hooks/useStravaMetrics'
 import { analyzeCourseReadiness } from '../lib/courseAnalysis'
 import { grandRaidStats } from '../data/grandRaidStats'
+import { getWeather, getCityFromCoords } from '../lib/xweather'
 import { calculateTSBFromMetrics } from '../lib/tsbCalculator'
 import { calculateElevationStats, analyzeProfileZones } from '../lib/profileAnalysis'
 import { segmentSvgWithZones, addSvgTooltips } from '../lib/svgZoneSegmenter'
+import { latLonToSvg, type GpxBounds } from '../lib/gpxToSvg'
+
+/** Extrait le viewBox d’une chaîne SVG (pour superposer les gouttes de pluie). */
+function parseViewBox(svgString: string): string | null {
+  const m = svgString.match(/viewBox=["']([^"']+)["']/)
+  return m ? m[1].trim() : null
+}
+
+/** Path goutte d’eau (centrée 0,0), pointe en bas */
+const DROP_PATH = 'M0 -2.2 C1.2 -2.2 2.2 -1.2 2.2 0 C2.2 1.5 0 3.5 0 3.5 S-2.2 1.5 -2.2 0 C-2.2 -1.2 -1.2 -2.2 0 -2.2 Z'
 
 type SingleCoursePageProps = {
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
@@ -34,6 +45,9 @@ type SingleCoursePageProps = {
       gpxSvg?: string
       distanceKm?: number
       elevationGain?: number
+      startCoordinates?: [number, number]
+      weatherSamplePoints?: Array<[number, number]>
+      gpxBounds?: GpxBounds
     }>
   }>
   selectedCourseId: string | null
@@ -82,6 +96,88 @@ export default function SingleCoursePage({
   useGpxHoverMarker('gpx-inline-svg', maxDistance)
   const { metrics } = useStravaMetrics()
   const [segmentedSvg, setSegmentedSvg] = useState<string | null>(null)
+  const [weatherTemp, setWeatherTemp] = useState<number | null>(null)
+  const [rainLast24h, setRainLast24h] = useState<boolean | null>(null)
+  const [regionCity, setRegionCity] = useState<string | null>(null)
+  const [regionTime, setRegionTime] = useState<string | null>(null)
+  /** Pluie par point échantillon le long du tracé (pour afficher les gouttes sur le GPX) */
+  const [rainAlongRoute, setRainAlongRoute] = useState<Array<{ lat: number; lon: number; rain: boolean }> | null>(null)
+
+  const startCoords = (selectedCourse as { startCoordinates?: [number, number] } | undefined)?.startCoordinates
+  const startCoordsKey = startCoords?.length === 2 ? `${startCoords[0]},${startCoords[1]}` : ''
+  const weatherSamplePoints = (selectedCourse as { weatherSamplePoints?: Array<[number, number]> } | undefined)?.weatherSamplePoints
+  const gpxBounds = (selectedCourse as { gpxBounds?: GpxBounds } | undefined)?.gpxBounds
+
+  // Météo par point le long du tracé (pour gouttes sur le GPX)
+  useEffect(() => {
+    const points = (selectedCourse as { weatherSamplePoints?: Array<[number, number]> } | undefined)?.weatherSamplePoints
+    const bounds = (selectedCourse as { gpxBounds?: GpxBounds } | undefined)?.gpxBounds
+    if (!points?.length || !bounds) {
+      setRainAlongRoute(null)
+      return
+    }
+    let cancelled = false
+    const isExampleCourse = (selectedCourse as { id?: string } | undefined)?.id === 'example-grand-raid-course'
+
+    Promise.all(
+      points.map(([lat, lon]) =>
+        getWeather(lat, lon).then((w) => ({ lat, lon, rain: w?.rainLast24h === true }))
+      )
+    ).then((results) => {
+      if (cancelled) return
+      // Sur la course exemple Grand Raid : forcer quelques gouttes pour la démo
+      if (isExampleCourse && results.length > 0) {
+        const withDemoDrops = results.map((p, i) => {
+          const step = Math.max(1, Math.floor(results.length / 5))
+          const showDrop = i % step === 1 || i === results.length - 2
+          return { ...p, rain: p.rain || showDrop }
+        })
+        setRainAlongRoute(withDemoDrops)
+      } else {
+        setRainAlongRoute(results)
+      }
+    })
+    return () => { cancelled = true }
+  }, [selectedCourseId, !!gpxBounds, weatherSamplePoints?.length ?? 0])
+
+  // Météo, lieu, heure et pluie 24h de la région de la course (cache 4h pour météo/ville)
+  useEffect(() => {
+    if (!startCoords || startCoords.length < 2) {
+      setWeatherTemp(null)
+      setRainLast24h(null)
+      setRegionCity(null)
+      setRegionTime(null)
+      return
+    }
+    let cancelled = false
+    const [lat, lon] = startCoords
+    const base = typeof window !== 'undefined' ? window.location.origin : ''
+    Promise.all([
+      getWeather(lat, lon),
+      getCityFromCoords(lat, lon),
+      fetch(`${base}/api/timezone?lat=${lat}&lon=${lon}`).then((r) => (r.ok ? r.json() : null)),
+    ]).then(([weather, city, tz]) => {
+      if (cancelled) return
+      setWeatherTemp(weather?.tempC ?? null)
+      setRainLast24h(weather?.rainLast24h ?? null)
+      setRegionCity(city ?? null)
+      setRegionTime(tz?.time ?? null)
+    })
+    return () => { cancelled = true }
+  }, [selectedCourseId, startCoordsKey])
+
+  // Mise à jour de l'heure de la région toutes les minutes
+  useEffect(() => {
+    if (!startCoords || startCoords.length < 2) return
+    const id = setInterval(() => {
+      const base = typeof window !== 'undefined' ? window.location.origin : ''
+      const [lat, lon] = startCoords
+      fetch(`${base}/api/timezone?lat=${lat}&lon=${lon}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((tz) => tz && setRegionTime(tz.time))
+    }, 60 * 1000)
+    return () => clearInterval(id)
+  }, [selectedCourseId, startCoordsKey])
 
   // Analyser la préparation pour cette course
   const courseData = selectedCourse?.distanceKm && selectedCourse?.elevationGain
@@ -89,11 +185,13 @@ export default function SingleCoursePage({
         distanceKm: selectedCourse.distanceKm,
         elevationGain: selectedCourse.elevationGain,
         name: selectedCourse.name,
+        temperature: weatherTemp ?? undefined,
       }
     : {
         distanceKm: 175,
         elevationGain: 10150,
         name: 'Grand Raid',
+        temperature: weatherTemp ?? undefined,
       }
 
   // Récupérer les segments Strava de la course
@@ -175,19 +273,55 @@ export default function SingleCoursePage({
             <div className="single-course-course">
               <div className="single-course-course__meta">
                 <p className="single-course-course__meta-title">{courseHeading}</p>
+                {(regionCity != null || weatherTemp != null || regionTime != null) && (
+                  <p className="single-course-course__meta-region" aria-label="Météo et heure de la région">
+                    {[regionCity, weatherTemp != null ? `${Math.round(weatherTemp)}°` : null, regionTime].filter(Boolean).join(' · ')}
+                  </p>
+                )}
                 <p className="single-course-course__meta-stats">{courseStats}</p>
                 <p className="single-course-course__meta-prep">{coursePrep}</p>
               </div>
-              <div className="single-course-course__gpx">
+              <div className="single-course-course__gpx single-course-course__gpx--with-overlay">
                 {segmentedSvg || gpxSvg ? (
-                  <div
-                    className="single-course-course__gpx-svg"
-                    dangerouslySetInnerHTML={{ __html: (segmentedSvg || gpxSvg || '').replace('<svg', '<svg id=\"gpx-inline-svg\"') }}
-                  />
+                  <>
+                    <div
+                      className="single-course-course__gpx-svg"
+                      dangerouslySetInnerHTML={{ __html: (segmentedSvg || gpxSvg || '').replace('<svg', '<svg id=\"gpx-inline-svg\"') }}
+                    />
+                    {(() => {
+                      const viewBox = parseViewBox(segmentedSvg || gpxSvg || '')
+                      if (!viewBox || !rainAlongRoute?.length || !gpxBounds) return null
+                      const rainPositions = rainAlongRoute
+                        .filter((p) => p.rain)
+                        .map((p) => latLonToSvg(p.lat, p.lon, gpxBounds))
+                      if (rainPositions.length === 0) return null
+                      return (
+                        <svg
+                          className="single-course-course__gpx-rain-overlay"
+                          viewBox={viewBox}
+                          preserveAspectRatio="xMidYMid meet"
+                          aria-hidden
+                        >
+                          <g fill="#3b82f6" stroke="#1d4ed8" strokeWidth="0.35">
+                            {rainPositions.map(([x, y], i) => (
+                              <path key={i} d={DROP_PATH} transform={`translate(${x},${y}) scale(0.9)`} />
+                            ))}
+                          </g>
+                        </svg>
+                      )
+                    })()}
+                  </>
                 ) : (
                   <img src={gpxIcon} alt="GPX" />
                 )}
               </div>
+              {rainLast24h !== null && (
+                <p className="single-course-course__circuit-weather" aria-label="État du circuit (pluie 24h)">
+                  {rainLast24h
+                    ? 'Il a plu dans les dernières 24h sur le circuit.'
+                    : 'Circuit sec — pas de pluie dans les dernières 24h.'}
+                </p>
+              )}
               <div className="single-course-course__card">
                 <SingleCourseElevationChart data={profileData} metrics={metrics} />
               </div>
@@ -397,6 +531,7 @@ export default function SingleCoursePage({
                       elevationGain={courseData.elevationGain}
                       metrics={metrics}
                       baseTimeEstimate={analysis.timeEstimate}
+                      temperature={courseData.temperature}
                     />
                   )}
                 </div>

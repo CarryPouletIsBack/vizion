@@ -1,34 +1,10 @@
 import { useEffect, useRef } from 'react'
-import Highcharts from 'highcharts'
-import HighchartsMore from 'highcharts/highcharts-more.js'
-import SolidGauge from 'highcharts/modules/solid-gauge.js'
+// Même instance ESM pour que more + solid-gauge s’enregistrent correctement
+import Highcharts from 'highcharts/esm/highcharts'
+import 'highcharts/esm/highcharts-more'
+import 'highcharts/esm/modules/solid-gauge'
 
 import './PhysioGauge.css'
-
-// Initialiser les modules Highcharts nécessaires (pattern similaire à SingleCourseHeatmap)
-let modulesReady = false
-if (!modulesReady) {
-  const moreFactory =
-    (HighchartsMore as unknown as { default?: (H: typeof Highcharts) => void }).default ??
-    (HighchartsMore as unknown as (H: typeof Highcharts) => void)
-
-  if (typeof moreFactory === 'function') {
-    moreFactory(Highcharts)
-  } else {
-    console.warn('HighchartsMore module introuvable ou invalide')
-  }
-
-  const gaugeFactory =
-    (SolidGauge as unknown as { default?: (H: typeof Highcharts) => void }).default ??
-    (SolidGauge as unknown as (H: typeof Highcharts) => void)
-
-  if (typeof gaugeFactory === 'function') {
-    gaugeFactory(Highcharts)
-  } else {
-    console.warn('SolidGauge module introuvable ou invalide')
-  }
-  modulesReady = true
-}
 
 // Données mockées pour le TSB (Training Stress Balance)
 const MOCK_DATA = {
@@ -46,6 +22,7 @@ export default function PhysioGauge({ tsb = MOCK_DATA.tsb }: PhysioGaugeProps) {
     if (!ref.current) return
 
     const chart = Highcharts.chart(ref.current, {
+      accessibility: { enabled: false },
       chart: {
         type: 'solidgauge',
         backgroundColor: 'transparent',

@@ -287,7 +287,8 @@
   padding: var(--spacing-4, 8px) var(--spacing-2, 4px);
 }
 
-.course-card__footer-left p {
+.course-card__footer-left p,
+.course-card__footer-prep {
   font-family: 'Inter', sans-serif;
   font-size: var(--font-size-sm, 12px);
   line-height: var(--line-height-normal, 1.5);

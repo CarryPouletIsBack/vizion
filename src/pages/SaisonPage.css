@@ -504,35 +504,48 @@
   cursor: not-allowed;
 }
 
+/* Réserve la hauteur d’écran pour le scroll (globe en fixed ne prend plus de place). */
 .saison-map-block {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-8, 16px);
+  min-height: 100vh;
 }
 
+/* Globe en fond plein écran (sous la sidebar et le contenu), zone d’interaction = tout l’écran. */
 .map-section {
-  width: 100%;
-  position: relative;
-  z-index: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
   background: transparent;
+  pointer-events: auto;
 }
 
 .map-wrapper {
-  position: relative;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  aspect-ratio: 2000 / 857;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: var(--spacing-4, 8px);
+  border-radius: 0;
+}
+
+/* Contenu (titre, cours) au-dessus du globe */
+.saison-main {
+  position: relative;
+  z-index: 10;
 }
 
 @media (max-width: 768px) {
-  /* Augmente la hauteur du conteneur sur mobile sans modifier la taille interne de la carte */
-  .map-wrapper {
-    min-height: 360px;
-  }
+  /* Globe reste en fixed plein écran sur mobile */
 
   /* Empiler le header sur mobile : titre en haut, carte en dessous */
   .saison-heading {
@@ -563,7 +576,8 @@
 }
 
 .map-wrapper > .world-map-leaflet,
-.map-wrapper > .world-map-simple {
+.map-wrapper > .world-map-simple,
+.map-wrapper > .webgl-globe {
   width: 100%;
   height: 100%;
 }

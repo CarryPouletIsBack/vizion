@@ -8,6 +8,7 @@ import SingleCoursePage from './pages/SingleCoursePage'
 import StravaCallbackPage from './pages/StravaCallbackPage'
 import UserAccountPage from './pages/UserAccountPage'
 import { supabase, type EventRow, type CourseRow } from './lib/supabase'
+import { gpxToSvg, computeGpxStats, extractGpxStartCoordinates, getBoundsFromGpx, samplePointsAlongTrack, type GpxBounds } from './lib/gpxToSvg'
 
 type AppView = 'saison' | 'course' | 'events' | 'courses' | 'strava-callback' | 'account'
 
@@ -30,6 +31,10 @@ type CourseItem = {
     type: 'climb' | 'descent' | 'flat'
   }>
   startCoordinates?: [number, number]
+  /** Points échantillonnés le long du tracé pour météo (pluie par segment) */
+  weatherSamplePoints?: Array<[number, number]>
+  /** Bornes du GPX pour placer les gouttes sur le SVG */
+  gpxBounds?: GpxBounds
 }
 
 type EventItem = {
@@ -60,6 +65,60 @@ async function blobUrlToBase64(blobUrl: string): Promise<string | undefined> {
   }
 }
 
+/** En local, préfixe toujours la course exemple Grand Raid pour le dev */
+async function prependExampleIfLocal(events: EventItem[]): Promise<EventItem[]> {
+  const isLocal =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  if (!isLocal) return events
+  const ex = await loadExampleCourse()
+  if (ex.length === 0) return events
+  const exampleIds = new Set(ex.map((e) => e.id))
+  return [...ex, ...events.filter((e) => !exampleIds.has(e.id))]
+}
+
+/** Course exemple avec le tracé GPX Grand Raid (public/data/grand-raid-exemple.gpx) */
+async function loadExampleCourse(): Promise<EventItem[]> {
+  try {
+    const base = typeof window !== 'undefined' ? window.location.origin : ''
+    const res = await fetch(`${base}/data/grand-raid-exemple.gpx`)
+    if (!res.ok) return []
+    const gpxText = await res.text()
+    const stats = computeGpxStats(gpxText)
+    const startCoordinates = extractGpxStartCoordinates(gpxText) ?? undefined
+    if (!stats) return []
+
+    const gpxSvg = gpxToSvg(gpxText)
+    const weatherSamplePoints = samplePointsAlongTrack(gpxText, 15)
+    const gpxBounds = getBoundsFromGpx(gpxText) ?? undefined
+
+    const course: CourseItem = {
+      id: 'example-grand-raid-course',
+      name: 'Grand Raid (exemple)',
+      distanceKm: stats.distanceKm,
+      elevationGain: stats.elevationGain,
+      profile: stats.profile,
+      gpxName: 'grand-raid-exemple.gpx',
+      gpxSvg,
+      startCoordinates,
+      weatherSamplePoints,
+      gpxBounds,
+    }
+
+    const event: EventItem = {
+      id: 'example-grand-raid-event',
+      name: 'Grand Raid Réunion',
+      country: 'La Réunion',
+      startLabel: 'Exemple · tracé GPX inclus',
+      courses: [course],
+    }
+
+    return [event]
+  } catch {
+    return []
+  }
+}
+
 // Fonction pour charger les events depuis Supabase
 async function loadEventsFromSupabase(): Promise<EventItem[]> {
   try {
@@ -70,13 +129,19 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
       .order('created_at', { ascending: false })
 
     if (eventsError) {
-      console.error('Erreur lors du chargement des events:', eventsError)
-      return []
+      // En dev (ex. pas de réseau / Supabase indisponible), on affiche la course exemple sans polluer la console
+      if (import.meta.env.DEV) {
+        console.warn('Supabase indisponible (dev), utilisation de la course exemple.')
+      } else {
+        console.error('Erreur lors du chargement des events:', eventsError)
+      }
+      return prependExampleIfLocal([])
     }
 
     if (!eventsData || eventsData.length === 0) {
-      // Retourner un tableau vide si rien n'est stocké
-      // Les données par défaut seront créées lors de la première création d'event/course
+      // Charger la course exemple Grand Raid (tracé GPX dans public/data)
+      const example = await loadExampleCourse()
+      if (example.length > 0) return example
       return []
     }
 
@@ -96,14 +161,16 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
           eventsCount: eventsData.length,
         })
         // Retourner les events sans courses - CoursesPage chargera les courses directement
-        return eventsData.map((event: EventRow) => ({
-          id: event.id,
-          name: event.name,
-          country: event.country,
-          startLabel: event.start_label,
-          imageUrl: event.image_url || undefined,
-          courses: [],
-        }))
+        return prependExampleIfLocal(
+          eventsData.map((event: EventRow) => ({
+            id: event.id,
+            name: event.name,
+            country: event.country,
+            startLabel: event.start_label,
+            imageUrl: event.image_url || undefined,
+            courses: [],
+          }))
+        )
       }
       console.error('Erreur lors du chargement des courses:', {
         code: coursesError.code,
@@ -111,14 +178,16 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
         hint: coursesError.hint,
         details: coursesError,
       })
-      return eventsData.map((event: EventRow) => ({
-        id: event.id,
-        name: event.name,
-        country: event.country,
-        startLabel: event.start_label,
-        imageUrl: event.image_url || undefined,
-        courses: [],
-      }))
+      return prependExampleIfLocal(
+        eventsData.map((event: EventRow) => ({
+          id: event.id,
+          name: event.name,
+          country: event.country,
+          startLabel: event.start_label,
+          imageUrl: event.image_url || undefined,
+          courses: [],
+        }))
+      )
     }
 
     console.log('[App] Courses chargées depuis Supabase:', {
@@ -221,10 +290,10 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
       console.warn('[App] Aucune course chargée depuis Supabase')
     }
 
-    return Array.from(eventsMap.values())
+    return prependExampleIfLocal(Array.from(eventsMap.values()))
   } catch (error) {
     console.error('Erreur lors du chargement depuis Supabase:', error)
-    return []
+    return prependExampleIfLocal([])
   }
 }
 

@@ -105,6 +105,164 @@ export function extractGpxStartCoordinates(gpxText: string): [number, number] | 
   return [points[0][0], points[0][1]]
 }
 
+export type GpxStats = {
+  distanceKm: number
+  elevationGain: number
+  profile: Array<[number, number]>
+}
+
+/**
+ * Calcule distance, D+ et profil d'élévation à partir d'un GPX (trkpt/rtept uniquement).
+ */
+export function computeGpxStats(gpxText: string): GpxStats | null {
+  if (!gpxText || typeof gpxText !== 'string') return null
+  try {
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(gpxText, 'application/xml')
+    const points = Array.from(doc.querySelectorAll('trkpt, rtept'))
+    const coords = points
+      .map((pt) => {
+        const lat = Number(pt.getAttribute('lat'))
+        const lon = Number(pt.getAttribute('lon'))
+        const eleNode = pt.querySelector('ele')
+        const ele = eleNode ? Number(eleNode.textContent) : undefined
+        if (Number.isNaN(lat) || Number.isNaN(lon)) return null
+        return { lat, lon, ele }
+      })
+      .filter((pt): pt is { lat: number; lon: number; ele: number | undefined } => pt !== null)
+
+    if (coords.length < 2) return null
+
+    const toRad = (v: number) => (v * Math.PI) / 180
+    const haversineKm = (
+      a: { lat: number; lon: number },
+      b: { lat: number; lon: number }
+    ) => {
+      const R = 6371
+      const dLat = toRad(b.lat - a.lat)
+      const dLon = toRad(b.lon - a.lon)
+      const lat1 = toRad(a.lat)
+      const lat2 = toRad(b.lat)
+      const h =
+        Math.sin(dLat / 2) ** 2 +
+        Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2)
+      return 2 * R * Math.asin(Math.sqrt(h))
+    }
+
+    let distanceKm = 0
+    let elevationGain = 0
+    const profile: Array<[number, number]> = []
+
+    for (let i = 1; i < coords.length; i += 1) {
+      const prev = coords[i - 1]
+      const curr = coords[i]
+      distanceKm += haversineKm(prev, curr)
+      if (prev.ele !== undefined && curr.ele !== undefined && curr.ele > prev.ele) {
+        elevationGain += curr.ele - prev.ele
+      }
+      if (i % 10 === 0 && curr.ele !== undefined) {
+        profile.push([Number(distanceKm.toFixed(2)), Math.round(curr.ele)])
+      }
+    }
+    const last = coords[coords.length - 1]
+    if (last?.ele !== undefined) {
+      profile.push([Number(distanceKm.toFixed(2)), Math.round(last.ele)])
+    }
+
+    return { distanceKm, elevationGain, profile }
+  } catch {
+    return null
+  }
+}
+
+export type GpxBounds = { minLat: number; maxLat: number; minLon: number; maxLon: number }
+
+/**
+ * Retourne les bornes géographiques du GPX (pour conversion lat/lon → SVG).
+ */
+export function getBoundsFromGpx(gpxText: string): GpxBounds | null {
+  const points = parseGpxPoints(gpxText)
+  if (points.length === 0) return null
+  const lats = points.map((p) => p[0])
+  const lons = points.map((p) => p[1])
+  return {
+    minLat: Math.min(...lats),
+    maxLat: Math.max(...lats),
+    minLon: Math.min(...lons),
+    maxLon: Math.max(...lons),
+  }
+}
+
+const HAVERSINE_R = 6371
+function haversineKm(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
+  const toRad = (v: number) => (v * Math.PI) / 180
+  const dLat = toRad(b.lat - a.lat)
+  const dLon = toRad(b.lon - a.lon)
+  const lat1 = toRad(a.lat)
+  const lat2 = toRad(b.lat)
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2)
+  return 2 * HAVERSINE_R * Math.asin(Math.sqrt(h))
+}
+
+/**
+ * Échantillonne des points le long du tracé (par distance) pour interroger la météo.
+ * Retourne au plus maxPoints [lat, lon], espacés approximativement de façon égale en distance.
+ */
+export function samplePointsAlongTrack(gpxText: string, maxPoints = 15): Array<[number, number]> {
+  const points = parseGpxPoints(gpxText)
+  if (points.length === 0) return []
+  if (points.length === 1) return [[points[0][0], points[0][1]]]
+
+  const withCumul: Array<{ lat: number; lon: number; cumulKm: number }> = []
+  let cumul = 0
+  withCumul.push({ lat: points[0][0], lon: points[0][1], cumulKm: 0 })
+  for (let i = 1; i < points.length; i++) {
+    cumul += haversineKm(
+      { lat: points[i - 1][0], lon: points[i - 1][1] },
+      { lat: points[i][0], lon: points[i][1] }
+    )
+    withCumul.push({ lat: points[i][0], lon: points[i][1], cumulKm: cumul })
+  }
+
+  const totalKm = withCumul[withCumul.length - 1]?.cumulKm ?? 0
+  if (totalKm <= 0) return [[points[0][0], points[0][1]]]
+
+  const out: Array<[number, number]> = []
+  const n = Math.min(maxPoints, withCumul.length)
+  for (let k = 0; k < n; k++) {
+    const targetKm = totalKm * (k / (n - 1 || 1))
+    const idx = withCumul.findIndex((p) => p.cumulKm >= targetKm)
+    const p = idx <= 0 ? withCumul[0] : withCumul[Math.min(idx, withCumul.length - 1)]
+    out.push([p.lat, p.lon])
+  }
+  return out
+}
+
+/** Constantes de normalisation SVG (identiques à normalizeCoordinates) */
+const SVG_TARGET_WIDTH = 302
+const SVG_TARGET_HEIGHT = 258
+const SVG_MARGIN = 20
+
+/**
+ * Convertit (lat, lon) en coordonnées SVG (même repère que le path GPX).
+ * À utiliser avec le viewBox du SVG produit par gpxToSvg.
+ */
+export function latLonToSvg(lat: number, lon: number, bounds: GpxBounds): [number, number] {
+  const latRange = bounds.maxLat - bounds.minLat || 0.001
+  const lonRange = bounds.maxLon - bounds.minLon || 0.001
+  const scaleLat = (SVG_TARGET_HEIGHT - 2 * SVG_MARGIN) / latRange
+  const scaleLon = (SVG_TARGET_WIDTH - 2 * SVG_MARGIN) / lonRange
+  const aspectRatio = lonRange / latRange
+  const targetAspectRatio = SVG_TARGET_WIDTH / SVG_TARGET_HEIGHT
+  const scale =
+    aspectRatio > targetAspectRatio ? scaleLon : scaleLat
+  const x = SVG_MARGIN + (lon - bounds.minLon) * scale
+  const y = SVG_TARGET_HEIGHT - SVG_MARGIN - (lat - bounds.minLat) * scale
+  return [x, y]
+}
+
 /**
  * Normalise les coordonnées GPS en coordonnées SVG
  */
