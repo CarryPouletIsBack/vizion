@@ -203,6 +203,15 @@ Pour utiliser la température réelle dans l’estimation de temps (au lieu de 1
 
 Compte gratuit : [signup.xweather.com/developer](https://signup.xweather.com/developer). L’appel se fait via la route `/api/weather?lat=...&lon=...` ; le client applique un **cache 4h** par position pour limiter les requêtes.
 
+#### Supabase (auth + données, obligatoire en prod)
+
+En production (Vercel), définir :
+
+- `VITE_SUPABASE_URL` : URL du projet (ex. `https://xxxx.supabase.co`)
+- `VITE_SUPABASE_ANON_KEY` : clé anon publique
+
+Si les requêtes vers `*.supabase.co` échouent avec **ERR_NAME_NOT_RESOLVED**, vérifier que l’URL est correcte et que le projet Supabase n’est pas en pause (dashboard Supabase).
+
 #### Strava OAuth (pour les routes API Vercel)
 
 Variables d'environnement Vercel :

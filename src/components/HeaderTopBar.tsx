@@ -140,14 +140,13 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
         const supabaseUser = await getCurrentUser()
         if (!mounted) return
 
-        if (supabaseUser) {
-          // Charger les données Strava si disponibles
+        if (supabaseUser?.id) {
           const tokenData = localStorage.getItem('vizion:strava_token')
           let stravaData = null
           if (tokenData) {
             try {
               stravaData = JSON.parse(tokenData)
-            } catch (e) {
+            } catch {
               // Ignorer les erreurs de parsing
             }
           }
@@ -155,13 +154,33 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
           if (mounted) {
             setUser({
               id: supabaseUser.id,
-              email: supabaseUser.email || '',
-              firstname: stravaData?.athlete?.firstname || supabaseUser.user_metadata?.firstname,
-              lastname: stravaData?.athlete?.lastname || supabaseUser.user_metadata?.lastname,
-              profile: stravaData?.athlete?.profile || stravaData?.athlete?.profile_medium || stravaData?.athlete?.profile_large,
+              email: supabaseUser.email ?? '',
+              firstname: stravaData?.athlete?.firstname ?? supabaseUser.user_metadata?.firstname,
+              lastname: stravaData?.athlete?.lastname ?? supabaseUser.user_metadata?.lastname,
+              profile: stravaData?.athlete?.profile ?? stravaData?.athlete?.profile_medium ?? stravaData?.athlete?.profile_large,
             })
           }
         } else {
+          // Supabase indisponible ou non connecté : afficher "connecté" si token Strava présent (après callback OAuth)
+          const tokenData = localStorage.getItem('vizion:strava_token')
+          if (mounted && tokenData) {
+            try {
+              const parsed = JSON.parse(tokenData)
+              const athlete = parsed?.athlete
+              if (athlete?.id) {
+                setUser({
+                  id: String(athlete.id),
+                  email: parsed.athlete?.email ?? '',
+                  firstname: athlete.firstname,
+                  lastname: athlete.lastname,
+                  profile: athlete.profile ?? athlete.profile_medium ?? athlete.profile_large,
+                })
+                return
+              }
+            } catch {
+              // Ignorer
+            }
+          }
           if (mounted) setUser(null)
         }
       } catch (error) {
@@ -174,29 +193,47 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
     loadSupabaseUser()
 
     // Écouter les changements d'authentification Supabase
-    const { data: { subscription } } = onAuthStateChange(async (supabaseUser) => {
+    const { data: { subscription } } = onAuthStateChange((supabaseUser) => {
       if (!mounted) return
 
-      if (supabaseUser) {
-        // Charger les données Strava si disponibles
+      if (supabaseUser?.id) {
         const tokenData = localStorage.getItem('vizion:strava_token')
         let stravaData = null
         if (tokenData) {
           try {
             stravaData = JSON.parse(tokenData)
-          } catch (e) {
-            // Ignorer les erreurs de parsing
+          } catch {
+            // Ignorer
           }
         }
 
         setUser({
           id: supabaseUser.id,
-          email: supabaseUser.email || '',
-          firstname: stravaData?.athlete?.firstname || supabaseUser.user_metadata?.firstname,
-          lastname: stravaData?.athlete?.lastname || supabaseUser.user_metadata?.lastname,
-          profile: stravaData?.athlete?.profile || stravaData?.athlete?.profile_medium || stravaData?.athlete?.profile_large,
+          email: supabaseUser.email ?? '',
+          firstname: stravaData?.athlete?.firstname ?? supabaseUser.user_metadata?.firstname,
+          lastname: stravaData?.athlete?.lastname ?? supabaseUser.user_metadata?.lastname,
+          profile: stravaData?.athlete?.profile ?? stravaData?.athlete?.profile_medium ?? stravaData?.athlete?.profile_large,
         })
       } else {
+        const tokenData = localStorage.getItem('vizion:strava_token')
+        if (tokenData) {
+          try {
+            const parsed = JSON.parse(tokenData)
+            const athlete = parsed?.athlete
+            if (athlete?.id) {
+              setUser({
+                id: String(athlete.id),
+                email: parsed.athlete?.email ?? '',
+                firstname: athlete.firstname,
+                lastname: athlete.lastname,
+                profile: athlete.profile ?? athlete.profile_medium ?? athlete.profile_large,
+              })
+              return
+            }
+          } catch {
+            // Ignorer
+          }
+        }
         setUser(null)
       }
     })

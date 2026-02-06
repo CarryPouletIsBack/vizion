@@ -52,16 +52,15 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
         const supabaseUser = await getCurrentUser()
         if (!mounted) return
 
-        if (supabaseUser) {
-          // Charger les données Strava si disponibles
+        if (supabaseUser?.id) {
           const tokenData = localStorage.getItem('vizion:strava_token')
           let stravaData = null
           if (tokenData) {
             try {
               stravaData = JSON.parse(tokenData)
               setIsStravaConnected(true)
-            } catch (e) {
-              // Ignorer les erreurs de parsing
+            } catch {
+              // Ignorer
             }
           }
 
@@ -69,22 +68,46 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
 
           const userData = {
             id: supabaseUser.id,
-            email: supabaseUser.email || '',
-            firstname: stravaData?.athlete?.firstname || supabaseUser.user_metadata?.firstname,
-            lastname: stravaData?.athlete?.lastname || supabaseUser.user_metadata?.lastname,
+            email: supabaseUser.email ?? '',
+            firstname: stravaData?.athlete?.firstname ?? supabaseUser.user_metadata?.firstname,
+            lastname: stravaData?.athlete?.lastname ?? supabaseUser.user_metadata?.lastname,
             birthdate: supabaseUser.user_metadata?.birthdate,
             profile: profileUrl,
           }
           setUser(userData)
           setFormData({
             email: userData.email,
-            firstname: userData.firstname || '',
-            lastname: userData.lastname || '',
-            birthdate: userData.birthdate || '',
+            firstname: userData.firstname ?? '',
+            lastname: userData.lastname ?? '',
+            birthdate: userData.birthdate ?? '',
           })
         } else {
-          // Ne pas rediriger, permettre l'accès à la page même sans être connecté
-          // L'utilisateur verra un message l'invitant à se connecter
+          const tokenData = localStorage.getItem('vizion:strava_token')
+          if (tokenData) {
+            try {
+              const parsed = JSON.parse(tokenData)
+              const athlete = parsed?.athlete
+              if (athlete?.id) {
+                setUser({
+                  id: String(athlete.id),
+                  email: athlete.email ?? '',
+                  firstname: athlete.firstname,
+                  lastname: athlete.lastname,
+                  profile: athlete.profile ?? athlete.profile_medium ?? athlete.profile_large,
+                })
+                setIsStravaConnected(true)
+                setFormData({
+                  email: athlete.email ?? '',
+                  firstname: athlete.firstname ?? '',
+                  lastname: athlete.lastname ?? '',
+                  birthdate: '',
+                })
+                return
+              }
+            } catch {
+              // Ignorer
+            }
+          }
           setUser(null)
         }
       } catch (error) {
@@ -238,13 +261,13 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
 
       // Recharger l'utilisateur
       const supabaseUser = await getCurrentUser()
-      if (supabaseUser) {
+      if (supabaseUser?.id) {
         const tokenData = localStorage.getItem('vizion:strava_token')
         let stravaData = null
         if (tokenData) {
           try {
             stravaData = JSON.parse(tokenData)
-          } catch (e) {
+          } catch {
             // Ignorer
           }
         }

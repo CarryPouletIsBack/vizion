@@ -65,12 +65,8 @@ async function blobUrlToBase64(blobUrl: string): Promise<string | undefined> {
   }
 }
 
-/** En local, préfixe toujours la course exemple Grand Raid pour le dev */
-async function prependExampleIfLocal(events: EventItem[]): Promise<EventItem[]> {
-  const isLocal =
-    typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  if (!isLocal) return events
+/** Préfixe la course exemple Grand Raid (dev et prod) si le GPX est disponible */
+async function prependExampleCourse(events: EventItem[]): Promise<EventItem[]> {
   const ex = await loadExampleCourse()
   if (ex.length === 0) return events
   const exampleIds = new Set(ex.map((e) => e.id))
@@ -135,7 +131,7 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
       } else {
         console.error('Erreur lors du chargement des events:', eventsError)
       }
-      return prependExampleIfLocal([])
+      return prependExampleCourse([])
     }
 
     if (!eventsData || eventsData.length === 0) {
@@ -161,7 +157,7 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
           eventsCount: eventsData.length,
         })
         // Retourner les events sans courses - CoursesPage chargera les courses directement
-        return prependExampleIfLocal(
+        return prependExampleCourse(
           eventsData.map((event: EventRow) => ({
             id: event.id,
             name: event.name,
@@ -178,7 +174,7 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
         hint: coursesError.hint,
         details: coursesError,
       })
-      return prependExampleIfLocal(
+      return prependExampleCourse(
         eventsData.map((event: EventRow) => ({
           id: event.id,
           name: event.name,
@@ -290,10 +286,10 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
       console.warn('[App] Aucune course chargée depuis Supabase')
     }
 
-    return prependExampleIfLocal(Array.from(eventsMap.values()))
+    return prependExampleCourse(Array.from(eventsMap.values()))
   } catch (error) {
     console.error('Erreur lors du chargement depuis Supabase:', error)
-    return prependExampleIfLocal([])
+    return prependExampleCourse([])
   }
 }
 
