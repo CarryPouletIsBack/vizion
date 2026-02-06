@@ -416,8 +416,8 @@ export default defineConfig({
             res.end(JSON.stringify({ error: 'Method Not Allowed' }))
             return
           }
-          const chunks = []
-          req.on('data', (chunk) => chunks.push(chunk))
+          const chunks: Buffer[] = []
+          req.on('data', (chunk: Buffer) => chunks.push(chunk))
           req.on('end', async () => {
           const body = JSON.parse(Buffer.concat(chunks).toString('utf8'))
           const { distanceKm, elevationGain, metricsSummary, currentEstimate, params } = body
@@ -439,7 +439,7 @@ export default defineConfig({
           promptLines.push('', 'Réponds UNIQUEMENT avec un JSON valide, sans texte avant ou après, avec exactement ces deux clés (nombres entiers, temps total de course en minutes) :', '{"suggestedMinMinutes": <nombre>, "suggestedMaxMinutes": <nombre>}', 'Exemple pour 28h-32h : {"suggestedMinMinutes": 1680, "suggestedMaxMinutes": 1920}')
           const prompt = promptLines.join('\n')
           const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434'
-          function parseJsonFromResponse(content) {
+          function parseJsonFromResponse(content: string) {
             const trimmed = (content || '').trim()
             const jsonMatch = trimmed.match(/\{[\s\S]*"suggestedMinMinutes"[\s\S]*"suggestedMaxMinutes"[\s\S]*\}/) || trimmed.match(/\{[\s\S]*\}/)
             if (!jsonMatch) return null
@@ -469,7 +469,7 @@ export default defineConfig({
               res.end(JSON.stringify({ error: 'Ollama indisponible', message: `Lancer Ollama (ollama run mistral) et laisser ${ollamaUrl} actif.` }))
               return
             }
-            const data = await ollamaRes.json()
+            const data = await ollamaRes.json() as { message?: { content?: string } }
             const content = data?.message?.content?.trim() || ''
             const refined = parseJsonFromResponse(content)
             if (!refined) {
@@ -481,7 +481,7 @@ export default defineConfig({
             res.setHeader('Content-Type', 'application/json')
             res.setHeader('Cache-Control', 'no-store')
             res.end(JSON.stringify(refined))
-          } catch (err) {
+          } catch (err: unknown) {
             res.statusCode = 500
             res.setHeader('Content-Type', 'application/json')
             res.end(JSON.stringify({ error: 'Erreur Ollama', message: err instanceof Error ? err.message : 'Erreur inconnue' }))

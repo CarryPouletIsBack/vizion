@@ -59,7 +59,7 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
   // Réinitialiser l’erreur avatar quand l’utilisateur ou sa photo change
   useEffect(() => {
     setAvatarError(false)
-  }, [user?.id, user?.profile])
+  }, [user != null && user !== 'loading' ? user.id : null, user != null && user !== 'loading' ? user.profile : null])
 
   // Écouter l'événement personnalisé pour ouvrir la modale de connexion
   useEffect(() => {
