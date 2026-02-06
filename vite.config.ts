@@ -380,21 +380,16 @@ export default defineConfig({
             const now = new Date()
             const formatter = new Intl.DateTimeFormat('fr-FR', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false })
             const timeShort = formatter.format(now).replace(':', 'h')
-            let offsetHours = 0
-            try {
-              const parts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, timeZoneName: 'longOffset' }).formatToParts(now)
-              const tzPart = parts.find((p) => p.type === 'timeZoneName')
-              const value = tzPart?.value ?? ''
-              const match = value.match(/GMT([+-])(\d+)(?::(\d+))?/)
-              if (match) {
-                const sign = match[1] === '+' ? 1 : -1
-                const h = parseInt(match[2], 10)
-                const m = match[3] ? parseInt(match[3], 10) : 0
-                offsetHours = sign * (h + m / 60)
-              }
-            } catch {
-              // garder 0
-            }
+            const utcH = now.getUTCHours()
+            const utcM = now.getUTCMinutes()
+            const utcDec = utcH + utcM / 60
+            const zoneParts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(now)
+            const zoneH = parseInt(zoneParts.find((p) => p.type === 'hour')?.value ?? '0', 10)
+            const zoneM = parseInt(zoneParts.find((p) => p.type === 'minute')?.value ?? '0', 10)
+            let offsetHours = zoneH + zoneM / 60 - utcDec
+            if (offsetHours > 12) offsetHours -= 24
+            if (offsetHours < -12) offsetHours += 24
+            offsetHours = Math.round(offsetHours * 100) / 100
             res.setHeader('Content-Type', 'application/json')
             res.setHeader('Cache-Control', 'public, max-age=60')
             res.end(JSON.stringify({ timezone, time: timeShort, offsetHours }))
