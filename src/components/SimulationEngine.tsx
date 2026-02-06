@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { FiSettings, FiAlertCircle } from 'react-icons/fi'
+import { useState, useMemo, useCallback } from 'react'
+import { FiSettings, FiAlertCircle, FiZap } from 'react-icons/fi'
 import { IoMdStar } from 'react-icons/io'
 import { FaTrophy, FaMedal, FaWalking, FaRunning } from 'react-icons/fa'
 import { GiTurtle } from 'react-icons/gi'
@@ -37,6 +37,9 @@ export default function SimulationEngine({
   const [refuelTimePerStop, setRefuelTimePerStop] = useState(10) // minutes
   const [technicalIndex, setTechnicalIndex] = useState<'good' | 'average' | 'cautious'>('average')
   const [enduranceIndex, setEnduranceIndex] = useState<'elite' | 'experienced' | 'intermediate' | 'beginner'>('intermediate')
+  const [aiRefined, setAiRefined] = useState<{ suggestedMinMinutes: number; suggestedMaxMinutes: number } | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
 
   // Calculer le nombre de ravitaillements (1 tous les 20 km environ)
   const refuelStops = Math.ceil(distanceKm / 20)
@@ -100,6 +103,65 @@ export default function SimulationEngine({
     const m = Math.round((hours - h) * 60)
     return `${h}h${m > 0 ? ` ${m}min` : ''}`
   }
+
+  const formatMinutesToTime = (minutes: number): string => {
+    const h = Math.floor(minutes / 60)
+    const m = Math.round(minutes % 60)
+    return `${h}h${m > 0 ? ` ${m}min` : ''}`
+  }
+
+  const fetchAiRefine = useCallback(async () => {
+    if (!timeEstimate) return
+    setAiLoading(true)
+    setAiError(null)
+    setAiRefined(null)
+    const metricsSummary = metrics
+      ? `${metrics.kmPerWeek} km/sem, ${metrics.dPlusPerWeek} m D+/sem, sortie longue max ${metrics.longRunDistanceKm} km / ${metrics.longRunDPlus} m D+`
+      : null
+    try {
+      const base = typeof window !== 'undefined' ? window.location.origin : ''
+      const res = await fetch(`${base}/api/simulator/refine`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          distanceKm,
+          elevationGain,
+          metricsSummary,
+          currentEstimate: {
+            rangeFormatted: timeEstimate.rangeFormatted,
+            formatted: timeEstimate.formatted,
+            basePace: timeEstimate.basePace,
+            finalPace: timeEstimate.finalPace,
+            totalMinutes: timeEstimate.totalMinutes,
+          },
+          params: {
+            fitnessLevel,
+            technicalIndex,
+            enduranceIndex,
+            refuelStops,
+            temperature,
+          },
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setAiError(data?.message || data?.error || 'Erreur')
+        return
+      }
+      if (typeof data.suggestedMinMinutes === 'number' && typeof data.suggestedMaxMinutes === 'number') {
+        setAiRefined({
+          suggestedMinMinutes: Math.round(data.suggestedMinMinutes),
+          suggestedMaxMinutes: Math.round(data.suggestedMaxMinutes),
+        })
+      } else {
+        setAiError('Réponse IA invalide (fourchette attendue)')
+      }
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : 'Erreur réseau')
+    } finally {
+      setAiLoading(false)
+    }
+  }, [timeEstimate, distanceKm, elevationGain, metrics, fitnessLevel, technicalIndex, enduranceIndex, refuelStops, temperature])
 
   return (
     <div className="simulation-engine">
@@ -221,47 +283,6 @@ export default function SimulationEngine({
         </div>
       </div>
 
-      {/* Indice d'Endurance */}
-      <div className="simulation-engine__control">
-        <label className="simulation-engine__label">Indice d'Endurance</label>
-        <div className="simulation-engine__radio-group">
-          <button
-            type="button"
-            className={`simulation-engine__radio ${enduranceIndex === 'elite' ? 'simulation-engine__radio--active' : ''}`}
-            onClick={() => setEnduranceIndex('elite')}
-          >
-            <FaTrophy style={{ marginRight: '4px', width: '24px', height: '24px' }} /> Elite
-          </button>
-          <button
-            type="button"
-            className={`simulation-engine__radio ${enduranceIndex === 'experienced' ? 'simulation-engine__radio--active' : ''}`}
-            onClick={() => setEnduranceIndex('experienced')}
-          >
-            <IoMdStar style={{ marginRight: '4px', width: '24px', height: '24px' }} /> Expérimenté
-          </button>
-          <button
-            type="button"
-            className={`simulation-engine__radio ${enduranceIndex === 'intermediate' ? 'simulation-engine__radio--active' : ''}`}
-            onClick={() => setEnduranceIndex('intermediate')}
-          >
-            <IoMdStar style={{ marginRight: '4px', width: '24px', height: '24px' }} /> Intermédiaire
-          </button>
-          <button
-            type="button"
-            className={`simulation-engine__radio ${enduranceIndex === 'beginner' ? 'simulation-engine__radio--active' : ''}`}
-            onClick={() => setEnduranceIndex('beginner')}
-          >
-            <FaMedal style={{ marginRight: '4px', width: '24px', height: '24px' }} /> Débutant
-          </button>
-        </div>
-        <div className="simulation-engine__hint">
-          {enduranceIndex === 'elite' && 'Vitesse stable du début à la fin'}
-          {enduranceIndex === 'experienced' && 'Légère baisse de performance en fin de course (-5%)'}
-          {enduranceIndex === 'intermediate' && 'Baisse progressive de performance (-10%)'}
-          {enduranceIndex === 'beginner' && 'Baisse significative de 20% à partir de la mi-course'}
-        </div>
-      </div>
-
       {/* Temps estimé mis à jour */}
       {timeEstimate && (
         <div className="simulation-engine__result">
@@ -273,6 +294,27 @@ export default function SimulationEngine({
               {Math.round((timeEstimate.totalMinutes - baseTimeEstimate.totalMinutes) / 60)}h{' '}
               {Math.abs(Math.round((timeEstimate.totalMinutes - baseTimeEstimate.totalMinutes) % 60))}min vs estimation
               initiale
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Affinage IA : fourchette de temps (calcul, pas texte) */}
+      {timeEstimate && (
+        <div className="simulation-engine__ai">
+          <button
+            type="button"
+            className="simulation-engine__ai-trigger"
+            onClick={fetchAiRefine}
+            disabled={aiLoading}
+          >
+            <FiZap style={{ marginRight: '6px', width: '18px', height: '18px' }} />
+            {aiLoading ? 'Calcul...' : 'Affiner avec l\'IA'}
+          </button>
+          {aiError && <p className="simulation-engine__ai-error">{aiError}</p>}
+          {aiRefined && (
+            <p className="simulation-engine__ai-refined">
+              Estimation affinée (IA) : {formatMinutesToTime(aiRefined.suggestedMinMinutes)} – {formatMinutesToTime(aiRefined.suggestedMaxMinutes)}
             </p>
           )}
         </div>

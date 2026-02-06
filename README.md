@@ -137,7 +137,9 @@ vizion-app/
 │   │   ├── activities.ts # Récupération activités
 │   │   └── athlete.ts    # Récupération profil athlète
 │   ├── weather.ts        # Proxy météo (Xweather)
-│   └── timezone.ts       # Fuseau horaire (heure locale + offsetHours UTC)
+│   ├── timezone.ts       # Fuseau horaire (heure locale + offsetHours UTC)
+│   └── simulator/
+│       └── refine.ts    # Conseils IA (Mistral API) pour le simulateur
 ├── public/
 │   └── globe/            # Globe WebGL (globe.js, texture world.jpg, Three.js)
 ├── src/
@@ -211,6 +213,22 @@ En production (Vercel), définir :
 - `VITE_SUPABASE_ANON_KEY` : clé anon publique
 
 Si les requêtes vers `*.supabase.co` échouent avec **ERR_NAME_NOT_RESOLVED**, vérifier que l’URL est correcte et que le projet Supabase n’est pas en pause (dashboard Supabase).
+
+#### IA pour le simulateur (Conseils IA – optionnel)
+
+Le bouton **« Conseils IA »** dans le Moteur de Simulation envoie la situation (course, métriques, estimation) à un modèle de langage pour obtenir une fourchette de temps et des conseils jour J.
+
+- **En local (développement)** : le serveur Vite appelle **Ollama** sur ta machine. Lance Ollama et un modèle Mistral :
+  ```bash
+  ollama run mistral
+  ```
+  L’app tourne sur `http://localhost:5173` ; le middleware appelle `http://localhost:11434` par défaut. Optionnel : `OLLAMA_URL`, `OLLAMA_SIMULATOR_MODEL` (défaut `mistral`).
+
+- **En production (Vercel)** : utilise l’**API Mistral**. Dans Vercel, définis :
+  - `MISTRAL_API_KEY` : clé API Mistral ([console Mistral](https://console.mistral.ai/))
+  - Optionnel : `MISTRAL_SIMULATOR_MODEL` (défaut : `mistral-small-latest`)
+
+**Note** : **mistral-vibe** est un assistant en ligne de commande (CLI) pour le code ; il ne sert pas de serveur de modèle pour Vizion. Pour améliorer le simulateur avec l’IA, il faut soit **Ollama** (local) soit l’**API Mistral** (cloud), comme ci‑dessus.
 
 #### Strava OAuth (pour les routes API Vercel)
 

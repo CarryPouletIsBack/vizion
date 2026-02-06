@@ -407,6 +407,90 @@ export default defineConfig({
       },
     },
     {
+      name: 'simulator-refine-api',
+      configureServer(server) {
+        server.middlewares.use('/api/simulator/refine', (req, res) => {
+          if (req.method !== 'POST') {
+            res.statusCode = 405
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: 'Method Not Allowed' }))
+            return
+          }
+          const chunks = []
+          req.on('data', (chunk) => chunks.push(chunk))
+          req.on('end', async () => {
+          const body = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+          const { distanceKm, elevationGain, metricsSummary, currentEstimate, params } = body
+          if (typeof distanceKm !== 'number' || typeof elevationGain !== 'number' || !currentEstimate?.rangeFormatted) {
+            res.statusCode = 400
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: 'Body invalide', message: 'Requiert distanceKm, elevationGain, currentEstimate.rangeFormatted' }))
+            return
+          }
+          const promptLines = [
+            'Tu es un coach trail expert. Donne UNIQUEMENT une fourchette de temps réaliste pour cette course, sous forme d\'objet JSON.',
+            '',
+            `**Course** : ${distanceKm} km, ${elevationGain} m D+.`,
+            `**Estimation actuelle du simulateur** : ${currentEstimate.rangeFormatted} (temps central : ${currentEstimate.formatted}).`,
+            `Allure de base : ${currentEstimate.basePace?.toFixed?.(1) ?? '-'} min/km, allure ajustée : ${currentEstimate.finalPace?.toFixed?.(1) ?? '-'} min/km.`,
+          ]
+          if (metricsSummary) promptLines.push('', `**Profil coureur** : ${metricsSummary}`)
+          if (params) promptLines.push('', `**Paramètres** : forme ${params.fitnessLevel ?? '-'}%, technicité ${params.technicalIndex ?? '-'}, endurance ${params.enduranceIndex ?? '-'}, ravitaillements ${params.refuelStops ?? '-'}, température ${params.temperature ?? '-'}°C.`)
+          promptLines.push('', 'Réponds UNIQUEMENT avec un JSON valide, sans texte avant ou après, avec exactement ces deux clés (nombres entiers, temps total de course en minutes) :', '{"suggestedMinMinutes": <nombre>, "suggestedMaxMinutes": <nombre>}', 'Exemple pour 28h-32h : {"suggestedMinMinutes": 1680, "suggestedMaxMinutes": 1920}')
+          const prompt = promptLines.join('\n')
+          const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434'
+          function parseJsonFromResponse(content) {
+            const trimmed = (content || '').trim()
+            const jsonMatch = trimmed.match(/\{[\s\S]*"suggestedMinMinutes"[\s\S]*"suggestedMaxMinutes"[\s\S]*\}/) || trimmed.match(/\{[\s\S]*\}/)
+            if (!jsonMatch) return null
+            try {
+              const parsed = JSON.parse(jsonMatch[0])
+              const min = typeof parsed.suggestedMinMinutes === 'number' ? Math.round(parsed.suggestedMinMinutes) : null
+              const max = typeof parsed.suggestedMaxMinutes === 'number' ? Math.round(parsed.suggestedMaxMinutes) : null
+              if (min == null || max == null || min < 0 || max < 0 || min > max) return null
+              return { suggestedMinMinutes: min, suggestedMaxMinutes: max }
+            } catch {
+              return null
+            }
+          }
+          try {
+            const ollamaRes = await fetch(`${ollamaUrl}/api/chat`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                model: process.env.OLLAMA_SIMULATOR_MODEL || 'mistral',
+                messages: [{ role: 'user', content: prompt }],
+                stream: false,
+              }),
+            })
+            if (!ollamaRes.ok) {
+              res.statusCode = 503
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ error: 'Ollama indisponible', message: `Lancer Ollama (ollama run mistral) et laisser ${ollamaUrl} actif.` }))
+              return
+            }
+            const data = await ollamaRes.json()
+            const content = data?.message?.content?.trim() || ''
+            const refined = parseJsonFromResponse(content)
+            if (!refined) {
+              res.statusCode = 422
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ error: 'Réponse IA invalide', message: 'Le modèle n\'a pas renvoyé un JSON avec suggestedMinMinutes et suggestedMaxMinutes.' }))
+              return
+            }
+            res.setHeader('Content-Type', 'application/json')
+            res.setHeader('Cache-Control', 'no-store')
+            res.end(JSON.stringify(refined))
+          } catch (err) {
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: 'Erreur Ollama', message: err instanceof Error ? err.message : 'Erreur inconnue' }))
+          }
+          })
+        })
+      },
+    },
+    {
       name: 'versor-dragging-files',
         configureServer(server) {
           // Serve JSON files from @d3/versor-dragging package
