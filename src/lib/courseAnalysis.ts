@@ -95,8 +95,10 @@ export function analyzeCourseReadiness(
   const issues: string[] = []
   const strengths: string[] = []
   const recommendations: string[] = []
-  // Stocker temporairement les actions critiques basées sur les stats
   const tempImmediateActions: string[] = []
+
+  const isShortCourse = course.distanceKm < 20
+  const isVeryShortCourse = course.distanceKm <= 12 && course.elevationGain < 600
 
   // === ANALYSE DISTANCE ===
   const distanceRatio = metrics.longRunDistanceKm > 0 ? course.distanceKm / metrics.longRunDistanceKm : Infinity
@@ -109,39 +111,58 @@ export function analyzeCourseReadiness(
     strengths.push(`Distance max entraînée (${metrics.longRunDistanceKm} km) couvre la course (${course.distanceKm} km)`)
   }
 
-  // === ANALYSE DÉNIVELÉ ===
-  if (course.elevationGain > metrics.longRunDPlus) {
-    issues.push(`D+ course (${Math.round(course.elevationGain)} m) > D+ max entraîné (${Math.round(metrics.longRunDPlus)} m)`)
-    recommendations.push(`Augmenter le travail en montée : objectif ${Math.round(course.elevationGain * 0.8)} m D+ sur une sortie`)
-  } else {
+  // === ANALYSE DÉNIVELÉ (pour courses courtes avec peu de D+, ne pas être excessif) ===
+  const dPlusGap = course.elevationGain - metrics.longRunDPlus
+  const dPlusThresholdShort = course.elevationGain * 0.6
+  if (course.elevationGain > 0 && metrics.longRunDPlus < course.elevationGain) {
+    if (isVeryShortCourse && metrics.longRunDPlus >= dPlusThresholdShort) {
+      recommendations.push(`Ajouter un peu de dénivelé : objectif ${Math.round(course.elevationGain * 0.8)} m D+ sur une sortie pour être à l'aise`)
+    } else if (!isVeryShortCourse || dPlusGap > course.elevationGain * 0.5) {
+      issues.push(`D+ course (${Math.round(course.elevationGain)} m) > D+ max entraîné (${Math.round(metrics.longRunDPlus)} m)`)
+      recommendations.push(`Augmenter le travail en montée : objectif ${Math.round(course.elevationGain * 0.8)} m D+ sur une sortie`)
+    } else {
+      recommendations.push(`Augmenter le travail en montée : objectif ${Math.round(course.elevationGain * 0.8)} m D+ sur une sortie`)
+    }
+  } else if (course.elevationGain > 0) {
     strengths.push(`D+ max entraîné (${Math.round(metrics.longRunDPlus)} m) couvre la course (${Math.round(course.elevationGain)} m)`)
   }
 
-  // === ANALYSE VOLUME HEBDOMADAIRE ===
+  // === ANALYSE VOLUME HEBDOMADAIRE (seuils proportionnés à la course) ===
   const weeklyDistanceKm = metrics.kmPerWeek
   const weeklyElevationGain = metrics.dPlusPerWeek
   const courseWeeklyEquivalent = course.distanceKm / 6
-  const minWeeklyKm = course.distanceKm < 15
-    ? Math.max(course.distanceKm * 0.3, 1)
+  // Pour les courses courtes : objectif réaliste (ex. 9 km → 5–9 km/sem suffisant)
+  const minWeeklyKm = isShortCourse
+    ? Math.max(2, course.distanceKm * 0.4)
     : courseWeeklyEquivalent * 0.5
+  const targetWeeklyKm = isShortCourse
+    ? Math.max(minWeeklyKm, Math.min(course.distanceKm * 1.2, 15))
+    : Math.max(courseWeeklyEquivalent * 0.7, 15)
 
   if (weeklyDistanceKm < minWeeklyKm) {
-    issues.push(`Volume hebdo faible (${weeklyDistanceKm} km/sem) vs objectif (~${Math.round(Math.max(minWeeklyKm, courseWeeklyEquivalent * 0.7))} km/sem)`)
-    recommendations.push(`Augmenter le volume progressivement : objectif ${Math.round(courseWeeklyEquivalent * 0.7)} km/semaine`)
-  } else if (weeklyDistanceKm < courseWeeklyEquivalent * 0.8) {
-    recommendations.push(`Continuer à augmenter le volume : viser ${Math.round(courseWeeklyEquivalent)} km/semaine`)
+    issues.push(`Volume hebdo faible (${weeklyDistanceKm} km/sem) vs objectif (~${Math.round(targetWeeklyKm)} km/sem)`)
+    recommendations.push(`Augmenter le volume progressivement : objectif ${Math.round(targetWeeklyKm)} km/semaine`)
+  } else if (weeklyDistanceKm < targetWeeklyKm * 0.8) {
+    recommendations.push(`Continuer à augmenter le volume : viser ${Math.round(targetWeeklyKm)} km/semaine`)
   } else {
     strengths.push(`Volume hebdomadaire solide (${weeklyDistanceKm} km/semaine)`)
   }
 
-  // === ANALYSE DÉNIVELÉ HEBDOMADAIRE ===
+  // === ANALYSE DÉNIVELÉ HEBDOMADAIRE (proportionné au D+ de la course) ===
   const courseWeeklyDPlus = course.elevationGain / 6
-  if (weeklyElevationGain < courseWeeklyDPlus * 0.5) {
-    issues.push(`D+ hebdo faible (${Math.round(weeklyElevationGain)} m/sem) vs objectif (~${Math.round(courseWeeklyDPlus)} m/sem)`)
-    recommendations.push(`Augmenter le D+ hebdomadaire : objectif ${Math.round(courseWeeklyDPlus * 0.7)} m/semaine`)
-  } else if (weeklyElevationGain < courseWeeklyDPlus * 0.8) {
-    recommendations.push(`Continuer à augmenter le D+ : viser ${Math.round(courseWeeklyDPlus)} m/semaine`)
-  } else {
+  const minWeeklyDPlus = isShortCourse && course.elevationGain < 500
+    ? Math.max(0, course.elevationGain * 0.2)
+    : Math.max(course.elevationGain * 0.15, 100)
+  const targetWeeklyDPlus = isShortCourse && course.elevationGain < 500
+    ? Math.max(minWeeklyDPlus, course.elevationGain * 0.5)
+    : Math.max(courseWeeklyDPlus * 0.7, 200)
+
+  if (course.elevationGain > 50 && weeklyElevationGain < minWeeklyDPlus) {
+    issues.push(`D+ hebdo faible (${Math.round(weeklyElevationGain)} m/sem) vs objectif (~${Math.round(targetWeeklyDPlus)} m/sem)`)
+    recommendations.push(`Augmenter le D+ hebdomadaire : objectif ${Math.round(targetWeeklyDPlus)} m/semaine`)
+  } else if (course.elevationGain > 50 && weeklyElevationGain < targetWeeklyDPlus * 0.8) {
+    recommendations.push(`Continuer à augmenter le D+ : viser ${Math.round(targetWeeklyDPlus)} m/semaine`)
+  } else if (course.elevationGain > 50) {
     strengths.push(`D+ hebdomadaire solide (${Math.round(weeklyElevationGain)} m/semaine)`)
   }
 
@@ -160,10 +181,10 @@ export function analyzeCourseReadiness(
     regularityDetails = '4+ sorties par semaine en moyenne'
   }
 
-  // === ANALYSE SORTIES LONGUES ===
-  const longRunThresholdMin = course.distanceKm * 0.4 // 40% de la distance de course
+  // === ANALYSE SORTIES LONGUES (seuil proportionné : court = 70%, long = 40%) ===
+  const longRunThresholdMin = isShortCourse ? course.distanceKm * 0.7 : Math.max(course.distanceKm * 0.4, 10)
   if (metrics.longRunDistanceKm < longRunThresholdMin) {
-    issues.push(`Sortie longue max (${metrics.longRunDistanceKm} km) < 40% de la course (${Math.round(longRunThresholdMin)} km)`)
+    issues.push(`Sortie longue max (${metrics.longRunDistanceKm} km) < objectif (${Math.round(longRunThresholdMin)} km pour ${course.distanceKm} km)`)
     recommendations.push(`Planifier des sorties longues progressives : objectif ${Math.round(longRunThresholdMin)} km`)
   } else {
     strengths.push(`Sorties longues adaptées (max ${metrics.longRunDistanceKm} km)`)
@@ -266,7 +287,6 @@ export function analyzeCourseReadiness(
   }
 
   // === RECOMMANDATIONS GÉNÉRALES (adaptées à la longueur de la course) ===
-  const isShortCourse = course.distanceKm < 20
   const longRunCoversCourse = metrics.longRunDistanceKm >= course.distanceKm * 1.05
   if (!isShortCourse && metrics.longRunDistanceKm < 20) {
     recommendations.push('Ajouter 2 sorties > 4h dans les prochaines semaines')
@@ -283,7 +303,11 @@ export function analyzeCourseReadiness(
   let readinessLabel: 'Prêt' | 'À renforcer' | 'Risque'
 
   const criticalIssues = issues.filter((issue) => {
-    if (issue.includes('> 120%') || issue.includes('> D+ max') || issue.includes('Régularité faible')) return true
+    if (issue.includes('> 120%') || issue.includes('Régularité faible')) return true
+    if (issue.includes('> D+ max') || issue.includes('D+ course')) {
+      if (isVeryShortCourse) return false
+      return true
+    }
     if (issue.includes('Volume hebdo faible')) {
       if (isShortCourse && weeklyDistanceKm >= course.distanceKm) return false
       return true
@@ -291,9 +315,10 @@ export function analyzeCourseReadiness(
     return false
   })
 
-  // Pour les courses courtes : si la sortie longue couvre la course (et D+ idem), ne pas mettre "risque"
   const dPlusCoversCourse = course.elevationGain <= metrics.longRunDPlus * 1.1
-  if (isShortCourse && longRunCoversCourse && dPlusCoversCourse && criticalIssues.length < 2) {
+  const dPlusPartiallyCovered = course.elevationGain > 0 && metrics.longRunDPlus >= course.elevationGain * 0.4
+
+  if (isShortCourse && longRunCoversCourse && (dPlusCoversCourse || (isVeryShortCourse && dPlusPartiallyCovered)) && criticalIssues.length < 2) {
     if (criticalIssues.length >= 1) {
       readiness = 'needs_work'
       readinessLabel = 'À renforcer'
@@ -304,6 +329,9 @@ export function analyzeCourseReadiness(
       readiness = 'ready'
       readinessLabel = 'Prêt'
     }
+  } else if (isVeryShortCourse && longRunCoversCourse && criticalIssues.length <= 1) {
+    readiness = dPlusCoversCourse || dPlusPartiallyCovered ? 'ready' : 'needs_work'
+    readinessLabel = readiness === 'ready' ? 'Prêt' : 'À renforcer'
   } else if (criticalIssues.length >= 2) {
     readiness = 'risk'
     readinessLabel = 'Risque'
@@ -322,97 +350,75 @@ export function analyzeCourseReadiness(
   // === CALCUL RELATIF À LA COURSE (approche coach F1) ===
   // Les seuils sont maintenant adaptés à chaque course, pas fixes
   
-  // 1. Score de distance hebdomadaire (relatif à la course)
-  // Pour une course de X km, il faut au minimum X/6 km/semaine (6 mois de préparation)
-  // Minimum réaliste : max(20% de la course, 15 km/semaine) pour les petites courses
-  // Pour une course de 6km : min = max(1.2km, 15km) = 15km, mais on adapte : 6km/sem suffit
-  const minDistanceWeekly = Math.max(course.distanceKm * 0.2, Math.min(15, course.distanceKm * 1.5)) // Adaptatif
-  const idealDistanceWeekly = courseWeeklyEquivalent * 0.7 // 70% de l'exigence finale
+  // 1. Score de distance hebdomadaire (relatif à la course, précis pour court/long)
+  const minDistanceWeekly = isShortCourse
+    ? Math.max(2, course.distanceKm * 0.4)
+    : Math.max(course.distanceKm * 0.2, Math.min(15, course.distanceKm * 1.5))
+  const idealDistanceWeekly = isShortCourse
+    ? Math.max(minDistanceWeekly, course.distanceKm * 0.8)
+    : courseWeeklyEquivalent * 0.7
   let distanceCoverage = 0
   if (weeklyDistanceKm >= idealDistanceWeekly) {
-    distanceCoverage = 1.0 // Excellent
-  } else if (weeklyDistanceKm >= minDistanceWeekly) {
-    distanceCoverage = 0.5 + (weeklyDistanceKm - minDistanceWeekly) / (idealDistanceWeekly - minDistanceWeekly) * 0.5
+    distanceCoverage = 1.0
+  } else if (weeklyDistanceKm >= minDistanceWeekly && idealDistanceWeekly > minDistanceWeekly) {
+    distanceCoverage = 0.5 + ((weeklyDistanceKm - minDistanceWeekly) / (idealDistanceWeekly - minDistanceWeekly)) * 0.5
   } else {
-    // Pour les petites courses, être plus tolérant : si on court 2x la distance de la course par semaine, c'est bon
     const relativeDistance = course.distanceKm > 0 ? weeklyDistanceKm / course.distanceKm : 0
-    if (relativeDistance >= 2.0) {
-      distanceCoverage = 0.8 // Si on court 2x la distance de la course par semaine, c'est très bien
-    } else if (relativeDistance >= 1.0) {
-      distanceCoverage = 0.5 + (relativeDistance - 1.0) * 0.3 // Entre 1x et 2x : progression
-    } else {
-      distanceCoverage = Math.max(0, relativeDistance * 0.5) // En dessous de 1x : max 50%
-    }
+    if (relativeDistance >= 1.2) distanceCoverage = 0.85
+    else if (relativeDistance >= 1.0) distanceCoverage = 0.7
+    else if (relativeDistance >= 0.6) distanceCoverage = 0.4 + (relativeDistance - 0.6) * 0.75
+    else distanceCoverage = Math.max(0, relativeDistance * 0.65)
   }
-  
+
   // 2. Score de D+ hebdomadaire (relatif à la course)
-  // Pour une course de X m D+, il faut au minimum X/6 m/semaine
-  // Minimum réaliste : max(20% du D+ de la course, 300 m/semaine) pour les petites courses
-  const minDPlusWeekly = Math.max(course.elevationGain * 0.2, Math.min(300, course.elevationGain * 1.5)) // Adaptatif
-  const idealDPlusWeekly = courseWeeklyDPlus * 0.7 // 70% de l'exigence finale
+  const minDPlusWeekly = isShortCourse && course.elevationGain < 500
+    ? Math.max(0, course.elevationGain * 0.2)
+    : Math.max(course.elevationGain * 0.15, Math.min(300, course.elevationGain * 0.8))
+  const idealDPlusWeekly = isShortCourse && course.elevationGain < 500
+    ? Math.max(minDPlusWeekly, course.elevationGain * 0.5)
+    : courseWeeklyDPlus * 0.7
   let elevationCoverage = 0
-  if (weeklyElevationGain >= idealDPlusWeekly) {
-    elevationCoverage = 1.0 // Excellent
-  } else if (weeklyElevationGain >= minDPlusWeekly) {
-    elevationCoverage = 0.5 + (weeklyElevationGain - minDPlusWeekly) / (idealDPlusWeekly - minDPlusWeekly) * 0.5
+  if (course.elevationGain <= 0) {
+    elevationCoverage = 1.0
+  } else if (weeklyElevationGain >= idealDPlusWeekly) {
+    elevationCoverage = 1.0
+  } else if (weeklyElevationGain >= minDPlusWeekly && idealDPlusWeekly > minDPlusWeekly) {
+    elevationCoverage = 0.5 + ((weeklyElevationGain - minDPlusWeekly) / (idealDPlusWeekly - minDPlusWeekly)) * 0.5
   } else {
-    // Pour les petites courses, être plus tolérant : si on fait 2x le D+ de la course par semaine, c'est bon
-    const relativeDPlus = course.elevationGain > 0 ? weeklyElevationGain / course.elevationGain : 0
-    if (relativeDPlus >= 2.0) {
-      elevationCoverage = 0.8 // Si on fait 2x le D+ de la course par semaine, c'est très bien
-    } else if (relativeDPlus >= 1.0) {
-      elevationCoverage = 0.5 + (relativeDPlus - 1.0) * 0.3 // Entre 1x et 2x : progression
-    } else {
-      elevationCoverage = Math.max(0, relativeDPlus * 0.5) // En dessous de 1x : max 50%
-    }
+    const relativeDPlus = weeklyElevationGain / course.elevationGain
+    if (relativeDPlus >= 0.8) elevationCoverage = 0.75
+    else if (relativeDPlus >= 0.5) elevationCoverage = 0.5 + (relativeDPlus - 0.5) * 0.5
+    else elevationCoverage = Math.max(0, relativeDPlus * 1.0)
   }
   
   // 3. Score de sortie longue (relatif à la course)
-  // Pour une course de X km, avoir fait au moins 40% de X en une sortie
-  // Pour les petites courses (< 20km), avoir fait au moins 80% de la distance
-  const longRunThreshold = course.distanceKm < 20 
-    ? course.distanceKm * 0.8 // Pour les petites courses, viser 80%
-    : Math.max(course.distanceKm * 0.4, 10) // Pour les grandes courses, 40% minimum, mais au moins 10km
-  const idealLongRun = course.distanceKm < 20
-    ? course.distanceKm * 1.0 // Pour les petites courses, idéalement avoir fait la distance complète
-    : course.distanceKm * 0.6 // Pour les grandes courses, 60%
+  const longRunThreshold = isShortCourse ? course.distanceKm * 0.7 : Math.max(course.distanceKm * 0.4, 10)
+  const idealLongRun = isShortCourse ? course.distanceKm : course.distanceKm * 0.6
   let longRunCoverage = 0
   if (metrics.longRunDistanceKm >= idealLongRun) {
     longRunCoverage = 1.0
-  } else if (metrics.longRunDistanceKm >= longRunThreshold) {
-    longRunCoverage = 0.5 + (metrics.longRunDistanceKm - longRunThreshold) / (idealLongRun - longRunThreshold) * 0.5
+  } else if (metrics.longRunDistanceKm >= longRunThreshold && idealLongRun > longRunThreshold) {
+    longRunCoverage = 0.5 + ((metrics.longRunDistanceKm - longRunThreshold) / (idealLongRun - longRunThreshold)) * 0.5
   } else {
-    // Pour les petites courses, si on a fait au moins 50% de la distance, c'est acceptable
     const relativeLongRun = course.distanceKm > 0 ? metrics.longRunDistanceKm / course.distanceKm : 0
-    if (relativeLongRun >= 0.5) {
-      longRunCoverage = 0.6 // Si on a fait au moins 50% de la distance, c'est bien
-    } else {
-      longRunCoverage = Math.max(0, relativeLongRun * 1.2) // Sinon, progression linéaire
-    }
+    longRunCoverage = relativeLongRun >= 0.5 ? 0.55 + (relativeLongRun - 0.5) * 0.9 : Math.max(0, relativeLongRun * 1.1)
   }
-  
+
   // 4. Score de D+ max en une sortie (relatif à la course)
-  // Pour une course de X m D+, avoir fait au moins 50% de X en une sortie
-  // Pour les petites courses (< 500m D+), avoir fait au moins 80% du D+
   const dPlusThreshold = course.elevationGain < 500
-    ? course.elevationGain * 0.8 // Pour les petites courses, viser 80%
-    : Math.max(course.elevationGain * 0.5, 200) // Pour les grandes courses, 50% minimum, mais au moins 200m
-  const idealDPlusMax = course.elevationGain < 500
-    ? course.elevationGain * 1.0 // Pour les petites courses, idéalement avoir fait le D+ complet
-    : course.elevationGain * 0.7 // Pour les grandes courses, 70%
+    ? course.elevationGain * 0.5
+    : Math.max(course.elevationGain * 0.5, 200)
+  const idealDPlusMax = course.elevationGain < 500 ? course.elevationGain : course.elevationGain * 0.7
   let dPlusMaxCoverage = 0
-  if (metrics.longRunDPlus >= idealDPlusMax) {
+  if (course.elevationGain <= 0) {
     dPlusMaxCoverage = 1.0
-  } else if (metrics.longRunDPlus >= dPlusThreshold) {
-    dPlusMaxCoverage = 0.5 + (metrics.longRunDPlus - dPlusThreshold) / (idealDPlusMax - dPlusThreshold) * 0.5
+  } else if (metrics.longRunDPlus >= idealDPlusMax) {
+    dPlusMaxCoverage = 1.0
+  } else if (metrics.longRunDPlus >= dPlusThreshold && idealDPlusMax > dPlusThreshold) {
+    dPlusMaxCoverage = 0.5 + ((metrics.longRunDPlus - dPlusThreshold) / (idealDPlusMax - dPlusThreshold)) * 0.5
   } else {
-    // Pour les petites courses, si on a fait au moins 50% du D+, c'est acceptable
-    const relativeDPlusMax = course.elevationGain > 0 ? metrics.longRunDPlus / course.elevationGain : 0
-    if (relativeDPlusMax >= 0.5) {
-      dPlusMaxCoverage = 0.6 // Si on a fait au moins 50% du D+, c'est bien
-    } else {
-      dPlusMaxCoverage = Math.max(0, relativeDPlusMax * 1.2) // Sinon, progression linéaire
-    }
+    const relativeDPlusMax = metrics.longRunDPlus / course.elevationGain
+    dPlusMaxCoverage = relativeDPlusMax >= 0.4 ? 0.5 + (relativeDPlusMax - 0.4) * 0.83 : Math.max(0, relativeDPlusMax * 1.25)
   }
   
   // 5. Score de régularité (strict)
@@ -441,26 +447,47 @@ export function analyzeCourseReadiness(
     }
   } else {
     if (readiness === 'ready') {
-      summary = `Ton niveau d'entraînement actuel couvre environ ${coverageRatio}% des exigences de cette course. Tu es sur la bonne voie.`
+      summary = `Ton niveau d'entraînement couvre environ ${coverageRatio}% des exigences de cette course. Tu es sur la bonne voie.`
     } else if (readiness === 'needs_work') {
-      summary = `À 6 mois de la course, ton volume actuel couvre environ ${coverageRatio}% des exigences. C'est insuffisant mais rattrapable avec une montée progressive.`
+      summary = isVeryShortCourse
+        ? `Ton volume couvre environ ${coverageRatio}% des exigences. Quelques ajustements (dénivelé, régularité) te mettront à l'aise.`
+        : `Ton volume actuel couvre environ ${coverageRatio}% des exigences. C'est rattrapable avec une montée progressive.`
     } else {
-      summary = `Aujourd'hui, ton niveau d'entraînement couvre environ ${coverageRatio}% des exigences de cette course. Un plan d'action est nécessaire.`
+      summary = isVeryShortCourse && longRunCoversCourse
+        ? `Tu as la distance pour cette course. Travaille le dénivelé et la régularité pour être prêt.`
+        : `Ton niveau couvre environ ${coverageRatio}% des exigences. Un plan d'action est nécessaire.`
     }
   }
 
-  // === OBJECTIFS DES 4 PROCHAINES SEMAINES ===
-  // Calculer des objectifs progressifs et cohérents (toujours min < max)
-  const baseVolumeTarget = Math.round(courseWeeklyEquivalent * 0.5)
-  const targetVolumeMin = Math.max(Math.round(weeklyDistanceKm * 1.15), baseVolumeTarget - 5)
-  const targetVolumeMax = Math.max(targetVolumeMin + 5, Math.round(courseWeeklyEquivalent * 0.7))
-  
-  const baseDPlusTarget = Math.round(courseWeeklyDPlus * 0.5)
-  const targetDPlusMin = Math.max(Math.round(weeklyElevationGain * 1.15), baseDPlusTarget - 100)
-  const targetDPlusMax = Math.max(targetDPlusMin + 200, Math.round(courseWeeklyDPlus * 0.7))
-  
+  // === OBJECTIFS DES 4 PROCHAINES SEMAINES (proportionnés à la course) ===
+  const baseVolumeTarget = isShortCourse
+    ? Math.max(3, Math.round(course.distanceKm * 0.6))
+    : Math.round(courseWeeklyEquivalent * 0.5)
+  const targetVolumeMin = Math.max(
+    Math.round(weeklyDistanceKm * 1.1),
+    baseVolumeTarget,
+    isShortCourse ? Math.round(course.distanceKm * 0.5) : 10
+  )
+  const targetVolumeMax = Math.max(
+    targetVolumeMin + (isShortCourse ? 3 : 5),
+    isShortCourse ? Math.round(course.distanceKm * 1.2) : Math.round(courseWeeklyEquivalent * 0.7)
+  )
+
+  const baseDPlusTarget = course.elevationGain > 0
+    ? (isShortCourse && course.elevationGain < 500
+        ? Math.round(course.elevationGain * 0.3)
+        : Math.round(courseWeeklyDPlus * 0.5))
+    : 0
+  const targetDPlusMin = Math.max(Math.round(weeklyElevationGain * 1.1), baseDPlusTarget, 0)
+  const targetDPlusMax = Math.max(
+    targetDPlusMin + (course.elevationGain < 500 ? 50 : 150),
+    course.elevationGain > 0 ? Math.round((isShortCourse ? course.elevationGain * 0.5 : courseWeeklyDPlus * 0.7)) : 0
+  )
+
   const targetFrequency = regularity === 'faible' ? 3 : regularity === 'moyenne' ? 4 : 4
-  const targetLongRunHours = Math.max(2, Math.round((longRunThreshold / 8) * 10) / 10) // Estimation : 8 km/h en moyenne, minimum 2h
+  const targetLongRunHours = isShortCourse
+    ? Math.max(0.5, Math.round((course.distanceKm / 8) * 10) / 10)
+    : Math.max(2, Math.round((longRunThreshold / 8) * 10) / 10)
 
   // === CATÉGORISATION DES RECOMMANDATIONS ===
   const immediateActions: string[] = []
@@ -577,11 +604,14 @@ export function analyzeCourseReadiness(
         coachVerdict = `À ${coverageRatio}% de couverture, tu peux finir mais avec effort. Augmente progressivement ton volume.`
       }
     } else {
-      // Phrases d'alerte forte
-      if (timeEstimate.totalHours > 20) {
+      if (isVeryShortCourse && longRunCoversCourse) {
+        coachVerdict = `Tu as la distance pour cette course courte. Ajoute un peu de dénivelé à l'entraînement pour être à l'aise le jour J.`
+      } else if (timeEstimate.totalHours > 20) {
         coachVerdict = `Temps estimé : ${timeEstimate.rangeFormatted}. Attention, tu manques de sorties longues de nuit. Ton simulateur prévoit une baisse de 15% de ta vitesse après 22h.`
-      } else if (coverageRatio < 50) {
+      } else if (coverageRatio < 50 && !isVeryShortCourse) {
         coachVerdict = `Ton niveau actuel couvre seulement ${coverageRatio}% des exigences. Un plan d'action immédiat est nécessaire pour éviter l'abandon.`
+      } else if (coverageRatio < 50) {
+        coachVerdict = `Ton niveau couvre environ ${coverageRatio}% des exigences. Augmente progressivement volume et dénivelé pour être prêt.`
       } else {
         coachVerdict = `À ${coverageRatio}% de couverture, tu es en zone de risque. Augmente rapidement ton volume et tes sorties longues.`
       }
@@ -602,12 +632,12 @@ export function analyzeCourseReadiness(
     testActions: [...new Set(testActions)],
     next4WeeksGoals: {
       volumeKm: {
-        min: Math.round(targetVolumeMin),
-        max: Math.round(targetVolumeMax),
+        min: Math.max(1, Math.round(targetVolumeMin)),
+        max: Math.max(Math.round(targetVolumeMin) + 1, Math.round(targetVolumeMax)),
       },
       dPlus: {
-        min: Math.round(targetDPlusMin),
-        max: Math.round(targetDPlusMax),
+        min: Math.max(0, Math.round(targetDPlusMin)),
+        max: Math.max(Math.round(targetDPlusMin), Math.round(targetDPlusMax)),
       },
       frequency: targetFrequency,
       longRunHours: Math.round(targetLongRunHours * 10) / 10,

@@ -1,6 +1,6 @@
 import './SingleCoursePage.css'
 
-import { FiAlertCircle, FiZap, FiChevronRight, FiMapPin, FiSun, FiClock, FiWind } from 'react-icons/fi'
+import { FiAlertCircle, FiZap, FiChevronRight, FiMapPin, FiSun, FiClock, FiWind, FiRefreshCw } from 'react-icons/fi'
 import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
@@ -257,6 +257,10 @@ export default function SingleCoursePage({
   /** Utilisateur connecté (Trackali) et ses activités .fit sauvegardées */
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [userFitActivities, setUserFitActivities] = useState<UserFitActivityRow[]>([])
+  /** Conseils personnalisés par l'IA (basés sur les .fit renseignés) */
+  const [aiAdvice, setAiAdvice] = useState<string | null>(null)
+  const [aiAdviceLoading, setAiAdviceLoading] = useState(false)
+  const [aiAdviceError, setAiAdviceError] = useState<string | null>(null)
 
   const startCoords = (selectedCourse as { startCoordinates?: [number, number] } | undefined)?.startCoordinates
   const courseId = (selectedCourse as { id?: string } | undefined)?.id ?? ''
@@ -343,6 +347,43 @@ export default function SingleCoursePage({
       } catch {}
       return next
     })
+  }
+
+  const fetchAiPreparationAdvice = () => {
+    if (!courseData) return
+    setAiAdviceError(null)
+    setAiAdviceLoading(true)
+    const fitPayload = effectiveFitTop5.map((s, i) => ({
+      distanceKm: s.distanceKm ?? null,
+      durationSec: s.durationSec ?? null,
+      ascentM: s.ascentM ?? null,
+      fileName: userFitActivities[i]?.file_name ?? null,
+    }))
+    const base = typeof window !== 'undefined' ? window.location.origin : ''
+    fetch(`${base}/api/preparation/advice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        course: { distanceKm: courseData.distanceKm, elevationGain: courseData.elevationGain, name: courseData.name },
+        fitActivities: fitPayload,
+        analysisSummary: analysis?.summary ?? null,
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.error) {
+          setAiAdviceError(data.message || data.error)
+          setAiAdvice(null)
+        } else {
+          setAiAdvice(data.advice ?? null)
+          setAiAdviceError(null)
+        }
+      })
+      .catch((err) => {
+        setAiAdviceError(err?.message ?? 'Erreur réseau')
+        setAiAdvice(null)
+      })
+      .finally(() => setAiAdviceLoading(false))
   }
   const isReunionCourse =
     courseId === 'example-grand-raid-course' ||
@@ -1552,6 +1593,50 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                           </ul>
                         </div>
                       )}
+                  </div>
+                  <div className="single-course-panel__card">
+                    <p className="single-course-panel__title">🤖 Conseils personnalisés par l&apos;IA</p>
+                    <p className="single-course-preparation__segment-intro" style={{ marginBottom: '12px' }}>
+                      L&apos;IA s&apos;appuie sur les sorties .fit que tu as renseignées pour te donner des conseils adaptés à cette course.
+                    </p>
+                    <button
+                      type="button"
+                      className="single-course-preparation__export-btn"
+                      onClick={fetchAiPreparationAdvice}
+                      disabled={aiAdviceLoading}
+                      aria-label="Obtenir les conseils de l'IA"
+                    >
+                      {aiAdviceLoading ? (
+                        <>Chargement…</>
+                      ) : (
+                        <>
+                          <FiRefreshCw style={{ marginRight: '6px', verticalAlign: 'middle' }} aria-hidden />
+                          {aiAdvice ? 'Actualiser les conseils' : 'Obtenir les conseils de l\'IA'}
+                        </>
+                      )}
+                    </button>
+                    {aiAdviceError && (
+                      <p className="single-course-preparation__fit-error" role="alert" style={{ marginTop: '12px' }}>
+                        {aiAdviceError}
+                      </p>
+                    )}
+                    {aiAdvice && !aiAdviceLoading && (
+                      <div
+                        className="single-course-preparation__ai-advice"
+                        style={{
+                          marginTop: '16px',
+                          padding: '14px',
+                          background: 'rgba(191, 201, 0, 0.08)',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(191, 201, 0, 0.25)',
+                          fontSize: '14px',
+                          lineHeight: 1.5,
+                          whiteSpace: 'pre-wrap',
+                        }}
+                      >
+                        {aiAdvice}
+                      </div>
+                    )}
                   </div>
                   <div className="single-course-panel__card">
                     <p className="single-course-panel__title">🧠 PROJECTION</p>
