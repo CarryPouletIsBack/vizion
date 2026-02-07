@@ -8,6 +8,18 @@ type FitSummaryInput = {
   sport?: string | null
 }
 
+/** Normalise un résumé (camelCase ou snake_case depuis Supabase/localStorage). */
+function normalizeFitSummary(raw: unknown): FitSummaryInput | null {
+  if (raw == null || typeof raw !== 'object') return null
+  const o = raw as Record<string, unknown>
+  const distanceKm = (o.distanceKm ?? o.distance_km) != null ? Number(o.distanceKm ?? o.distance_km) : null
+  const durationSec = (o.durationSec ?? o.duration_sec) != null ? Number(o.durationSec ?? o.duration_sec) : null
+  const ascentM = (o.ascentM ?? o.ascent_m) != null ? Number(o.ascentM ?? o.ascent_m) : null
+  const sport = (o.sport != null && typeof o.sport === 'string') ? o.sport : null
+  if (distanceKm == null && ascentM == null && durationSec == null) return null
+  return { distanceKm: distanceKm ?? undefined, durationSec: durationSec ?? undefined, ascentM: ascentM ?? undefined, sport }
+}
+
 /**
  * Fusionne les métriques Strava avec le résumé d'un fichier .fit importé.
  * - Si seul le FIT est disponible : construit des métriques minimales pour l'analyse.
@@ -56,14 +68,14 @@ function syntheticMetricsFromFit(distanceKm: number, ascentM: number): StravaMet
  * - Longue sortie = max distance et max D+ parmi les FITs
  * - Volume hebdo / charge = moyenne des sorties (approximation sur 6 semaines)
  */
-export function syntheticMetricsFromFitList(fitList: FitSummaryInput[]): StravaMetrics | null {
-  const list = fitList.filter(
-    (f) => f != null && (f.distanceKm != null || f.ascentM != null || f.durationSec != null)
-  )
+export function syntheticMetricsFromFitList(fitList: (FitSummaryInput | unknown)[]): StravaMetrics | null {
+  const list = fitList
+    .map((f) => (f && typeof f === 'object' ? normalizeFitSummary(f) : null))
+    .filter((f): f is FitSummaryInput => f != null)
   if (list.length === 0) return null
 
-  const distances = list.map((f) => f.distanceKm ?? 0)
-  const ascents = list.map((f) => f.ascentM ?? 0)
+  const distances = list.map((f) => (typeof f.distanceKm === 'number' ? f.distanceKm : 0))
+  const ascents = list.map((f) => (typeof f.ascentM === 'number' ? f.ascentM : 0))
   const longRunKm = Math.max(...distances)
   const longRunDPlus = Math.max(...ascents)
   const avgKm = distances.reduce((a, b) => a + b, 0) / list.length
@@ -90,7 +102,7 @@ export function syntheticMetricsFromFitList(fitList: FitSummaryInput[]): StravaM
  */
 export function mergeMetricsWithFitList(
   metrics: StravaMetrics | null,
-  fitList: FitSummaryInput[]
+  fitList: (FitSummaryInput | unknown)[]
 ): StravaMetrics | null {
   const fromFit = syntheticMetricsFromFitList(fitList)
   if (!fromFit) return metrics

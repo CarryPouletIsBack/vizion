@@ -301,24 +301,26 @@ export default function SingleCoursePage({
 
   // Charger l'utilisateur Trackali et ses activités .fit (pour analyse sur les 5 plus longues)
   const FIT_TOP5_STORAGE_KEY = 'vizion_user_fit_top5'
+  const loadUserFitActivities = (userId: string) => {
+    getUserFitActivities(userId).then((rows) => {
+      setUserFitActivities(rows)
+      try {
+        const top5 = rows.slice(0, 5).map((r) => r.summary)
+        if (top5.length > 0) {
+          localStorage.setItem(FIT_TOP5_STORAGE_KEY, JSON.stringify(top5))
+        }
+      } catch {
+        // ignore
+      }
+    })
+  }
   useEffect(() => {
     let mounted = true
     getCurrentUser().then((user) => {
       if (!mounted) return
       if (user?.id) {
         setCurrentUserId(user.id)
-        getUserFitActivities(user.id).then((rows) => {
-          if (!mounted) return
-          setUserFitActivities(rows)
-          try {
-            const top5 = rows.slice(0, 5).map((r) => r.summary)
-            if (top5.length > 0) {
-              localStorage.setItem(FIT_TOP5_STORAGE_KEY, JSON.stringify(top5))
-            }
-          } catch {
-            // ignore
-          }
-        })
+        loadUserFitActivities(user.id)
       } else {
         setCurrentUserId(null)
         setUserFitActivities([])
@@ -326,6 +328,12 @@ export default function SingleCoursePage({
     })
     return () => { mounted = false }
   }, [])
+  // Recharger les .fit quand on affiche Ma préparation et que la liste est vide (évite race condition)
+  useEffect(() => {
+    if (currentStep !== 'ma-preparation' || !currentUserId) return
+    if (userFitActivities.length > 0) return
+    loadUserFitActivities(currentUserId)
+  }, [currentStep, currentUserId, userFitActivities.length])
 
   const togglePreparationAction = (actionText: string) => {
     setPreparationCheckedActions((prev) => {
@@ -392,20 +400,27 @@ export default function SingleCoursePage({
     Promise.all([
       getWeather(lat, lon),
       getCityFromCoords(lat, lon),
-      fetch(`${base}/api/timezone?lat=${lat}&lon=${lon}`).then((r) => (r.ok ? r.json() : null)),
-    ]).then(([weather, city, tz]) => {
-      if (cancelled) return
-      setWeatherTemp(weather?.tempC ?? null)
-      // À titre d'exemple : afficher pluie 24h si l'API ne renvoie rien (pour voir le rendu)
-      setRainLast24h(weather?.rainLast24h ?? true)
-      // À titre d'exemple : afficher vent si l'API n'en renvoie pas (pour voir le rendu)
-      const hasRealWind = weather?.windDir != null || weather?.windSpeedKmh != null
-      setWindSpeedKmh(weather?.windSpeedKmh ?? (hasRealWind ? null : 12))
-      setWindDir(weather?.windDir ?? (hasRealWind ? null : 'NNE'))
-      setRegionCity(city ?? null)
-      setRegionTime(tz?.time ?? null)
-      setRegionOffsetHours(typeof tz?.offsetHours === 'number' ? tz.offsetHours : null)
-    })
+      fetch(`${base}/api/timezone?lat=${lat}&lon=${lon}`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ])
+      .then(([weather, city, tz]) => {
+        if (cancelled) return
+        setWeatherTemp(weather?.tempC ?? null)
+        setRainLast24h(weather?.rainLast24h ?? true)
+        const hasRealWind = weather?.windDir != null || weather?.windSpeedKmh != null
+        setWindSpeedKmh(weather?.windSpeedKmh ?? (hasRealWind ? null : 12))
+        setWindDir(weather?.windDir ?? (hasRealWind ? null : 'NNE'))
+        setRegionCity(city ?? null)
+        setRegionTime(tz?.time ?? null)
+        setRegionOffsetHours(typeof tz?.offsetHours === 'number' ? tz.offsetHours : null)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setWeatherTemp(null)
+          setRainLast24h(true)
+          setWindSpeedKmh(12)
+          setWindDir('NNE')
+        }
+      })
     return () => { cancelled = true }
   }, [selectedCourseId, startCoordsKey])
 
@@ -1446,7 +1461,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                       <ul className="single-course-panel__list">
                         <li><span>km / semaine</span><span>{metricsForAnalysis ? `${metricsForAnalysis.kmPerWeek} km` : '...'}</span></li>
                         <li><span>d+ / semaine</span><span>{metricsForAnalysis ? `${metricsForAnalysis.dPlusPerWeek} m` : '...'}</span></li>
-                        <li><span>longue sortie max</span><span>{metricsForAnalysis ? `${metricsForAnalysis.longRunDistanceKm} km – ${metricsForAnalysis.longRunDPlus} d+` : '...'}</span></li>
+                        <li><span>longue sortie max</span><span>{metricsForAnalysis ? `${metricsForAnalysis.longRunDistanceKm} km – ${metricsForAnalysis.longRunDPlus} m D+` : '...'}</span></li>
                         <li>
                           <span>régularité</span>
                           <span className={`single-course-panel__pill${analysis.regularity === 'bonne' ? ' single-course-panel__pill--ok' : ''}${analysis.regularity === 'faible' ? ' single-course-panel__pill--warning' : ''}`} title={analysis.regularityDetails}>{analysis.regularity}</span>

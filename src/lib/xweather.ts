@@ -100,7 +100,7 @@ export async function getWeather(lat: number, lon: number): Promise<WeatherResul
 
   try {
     const res = await fetch(url)
-    if (!res.ok) return null
+    if (!res.ok) return null // 401, 500, 502, etc. → pas de météo (ex. XWeather non configuré ou protection Vercel)
     const data = (await res.json()) as {
       tempC?: number
       icon?: string
