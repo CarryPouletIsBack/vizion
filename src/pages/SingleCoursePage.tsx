@@ -1,6 +1,6 @@
 import './SingleCoursePage.css'
 
-import { FiAlertCircle, FiZap, FiChevronRight, FiMapPin, FiSun, FiClock, FiWind, FiRefreshCw } from 'react-icons/fi'
+import { FiAlertCircle, FiZap, FiChevronRight, FiMapPin, FiSun, FiClock, FiWind } from 'react-icons/fi'
 import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
@@ -271,7 +271,6 @@ export default function SingleCoursePage({
   } | null>(null)
   const [aiContentLoading, setAiContentLoading] = useState(false)
   const [aiContentError, setAiContentError] = useState<string | null>(null)
-  const [aiContentGeneratedAt, setAiContentGeneratedAt] = useState<number | null>(null)
 
   const startCoords = (selectedCourse as { startCoordinates?: [number, number] } | undefined)?.startCoordinates
   const courseId = (selectedCourse as { id?: string } | undefined)?.id ?? ''
@@ -592,7 +591,6 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
     })()
     if (cached) {
       setAiContent(cached.content)
-      setAiContentGeneratedAt(cached.generatedAt)
       setAiContentError(null)
       return
     }
@@ -636,7 +634,6 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
             segmentIntro: data.segmentIntro,
           }
           setAiContent(content)
-          setAiContentGeneratedAt(Date.now())
           setAiContentError(null)
           try {
             localStorage.setItem(cacheKey, JSON.stringify({ generatedAt: Date.now(), content }))
@@ -1697,7 +1694,6 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                           const key = `${AI_CONTENT_CACHE_PREFIX}${courseId}_${courseData.distanceKm}_${courseData.elevationGain}_${effectiveFitTop5.length}_${fitSignature}`
                           try { localStorage.removeItem(key) } catch {}
                           setAiContent(null)
-                          setAiContentGeneratedAt(null)
                           setAiContentLoading(true)
                           setAiContentError(null)
                           const fitPayload = effectiveFitTop5.map((s, i) => ({
@@ -1735,7 +1731,6 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                                   projectionIfFollows: data.projectionIfFollows ?? '',
                                   segmentIntro: data.segmentIntro,
                                 })
-                                setAiContentGeneratedAt(Date.now())
                                 try { localStorage.setItem(key, JSON.stringify({ generatedAt: Date.now(), content: { summary: data.summary, coachVerdict: data.coachVerdict, stateSublabel: data.stateSublabel, next4WeeksSummary: data.next4WeeksSummary, immediateActions: data.immediateActions, secondaryActions: data.secondaryActions, projectionIfContinues: data.projectionIfContinues, projectionIfFollows: data.projectionIfFollows, segmentIntro: data.segmentIntro } })) } catch {}
                               }
                             })
