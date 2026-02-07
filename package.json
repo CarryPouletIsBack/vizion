@@ -1,5 +1,5 @@
 {
-  "name": "vizion-app",
+  "name": "trackali-app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -18,6 +18,7 @@
     "@react-google-maps/api": "^2.20.8",
     "@supabase/supabase-js": "^2.90.1",
     "@types/leaflet": "^1.9.21",
+    "@types/three": "^0.182.0",
     "d3": "^7.9.0",
     "d3-tile": "^1.0.0",
     "geo-tz": "^8.1.5",
@@ -30,6 +31,7 @@
     "react-icons": "^5.5.0",
     "react-leaflet": "^4.2.1",
     "react-simple-maps": "^3.0.0",
+    "three": "^0.182.0",
     "topojson-client": "^3.1.0",
     "zod": "^4.3.5"
   },

@@ -1,0 +1,15 @@
+.gpx-segment-3d-view {
+  width: 100%;
+  min-height: 280px;
+  border-radius: var(--spacing-4, 8px);
+  overflow: hidden;
+  background: var(--color-card-bg, #0b0e11);
+  display: block;
+}
+
+.gpx-segment-3d-view canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 280px;
+}

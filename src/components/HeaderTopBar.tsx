@@ -146,7 +146,7 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
         if (!mounted) return
 
         if (supabaseUser?.id) {
-          const tokenData = localStorage.getItem('vizion:strava_token')
+          const tokenData = localStorage.getItem('trackali:strava_token')
           let stravaData = null
           if (tokenData) {
             try {
@@ -167,7 +167,7 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
           }
         } else {
           // Supabase indisponible ou non connecté : afficher "connecté" si token Strava présent (après callback OAuth)
-          const tokenData = localStorage.getItem('vizion:strava_token')
+          const tokenData = localStorage.getItem('trackali:strava_token')
           if (mounted && tokenData) {
             try {
               const parsed = JSON.parse(tokenData)
@@ -202,7 +202,7 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
       if (!mounted) return
 
       if (supabaseUser?.id) {
-        const tokenData = localStorage.getItem('vizion:strava_token')
+        const tokenData = localStorage.getItem('trackali:strava_token')
         let stravaData = null
         if (tokenData) {
           try {
@@ -220,7 +220,7 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
           profile: stravaData?.athlete?.profile ?? stravaData?.athlete?.profile_medium ?? stravaData?.athlete?.profile_large,
         })
       } else {
-        const tokenData = localStorage.getItem('vizion:strava_token')
+        const tokenData = localStorage.getItem('trackali:strava_token')
         if (tokenData) {
           try {
             const parsed = JSON.parse(tokenData)
@@ -246,7 +246,7 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
     // Écouter les changements dans localStorage pour Strava
     const handleStorageChange = (e: StorageEvent) => {
       if (!mounted) return
-      if (e.key === 'vizion:strava_token' && user && user !== 'loading') {
+      if (e.key === 'trackali:strava_token' && user && user !== 'loading') {
         try {
           const tokenData = e.newValue
           if (tokenData) {

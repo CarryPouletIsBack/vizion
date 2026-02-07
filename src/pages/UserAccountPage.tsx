@@ -53,7 +53,7 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
         if (!mounted) return
 
         if (supabaseUser?.id) {
-          const tokenData = localStorage.getItem('vizion:strava_token')
+          const tokenData = localStorage.getItem('trackali:strava_token')
           let stravaData = null
           if (tokenData) {
             try {
@@ -82,7 +82,7 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
             birthdate: userData.birthdate ?? '',
           })
         } else {
-          const tokenData = localStorage.getItem('vizion:strava_token')
+          const tokenData = localStorage.getItem('trackali:strava_token')
           if (tokenData) {
             try {
               const parsed = JSON.parse(tokenData)
@@ -120,7 +120,7 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
     loadUser()
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'vizion:strava_token' && mounted) {
+      if (e.key === 'trackali:strava_token' && mounted) {
         loadUser()
       }
     }
@@ -137,7 +137,7 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
     const loadStravaStats = async () => {
       setStatsLoading(true)
       try {
-        const tokenData = localStorage.getItem('vizion:strava_token')
+        const tokenData = localStorage.getItem('trackali:strava_token')
         if (!tokenData) {
           setStravaStats({ activityCount: 0, totalDistance: 0, totalElevationGain: 0 })
           setStatsLoading(false)
@@ -205,8 +205,8 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
 
   const handleStravaDisconnect = () => {
     if (window.confirm('Êtes-vous sûr de vouloir déconnecter votre compte Strava ?')) {
-      localStorage.removeItem('vizion:strava_token')
-      localStorage.removeItem('vizion:strava-metrics')
+      localStorage.removeItem('trackali:strava_token')
+      localStorage.removeItem('trackali:strava-metrics')
       setIsStravaConnected(false)
       // Recharger les données utilisateur sans Strava
       if (user) {
@@ -223,8 +223,8 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
   const handleLogout = async () => {
     try {
       await signOut()
-      localStorage.removeItem('vizion:strava_token')
-      localStorage.removeItem('vizion:strava-metrics')
+      localStorage.removeItem('trackali:strava_token')
+      localStorage.removeItem('trackali:strava-metrics')
       setUser(null)
       window.location.reload()
     } catch (error) {
@@ -262,7 +262,7 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
       // Recharger l'utilisateur
       const supabaseUser = await getCurrentUser()
       if (supabaseUser?.id) {
-        const tokenData = localStorage.getItem('vizion:strava_token')
+        const tokenData = localStorage.getItem('trackali:strava_token')
         let stravaData = null
         if (tokenData) {
           try {
@@ -305,8 +305,8 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
       // Note: La suppression de compte nécessite généralement une confirmation par email
       // Pour l'instant, on déconnecte l'utilisateur
       await signOut()
-      localStorage.removeItem('vizion:strava_token')
-      localStorage.removeItem('vizion:strava-metrics')
+      localStorage.removeItem('trackali:strava_token')
+      localStorage.removeItem('trackali:strava-metrics')
       alert('Votre compte a été supprimé. Vous allez être redirigé.')
       window.location.href = '/'
     } catch (error) {

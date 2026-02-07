@@ -1,0 +1,367 @@
+/**
+ * Styles partagés pour toutes les modales (Créer événement, Créer course, etc.)
+ * Alignés à l’identique sur LoginModal (overlay, fond, bouton principal).
+ */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(var(--spacing-4, 8px));
+  -webkit-backdrop-filter: blur(var(--spacing-4, 8px));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-8, 16px);
+  transition: var(--transition-smooth);
+}
+
+.modal {
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  background: var(--color-bg-primary, #0b0e11);
+  border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--spacing-8, 16px);
+  padding: var(--spacing-12, 24px) var(--spacing-12, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-8, 16px);
+  position: relative;
+  box-shadow: 0 var(--spacing-6, 12px) var(--spacing-20, 40px) rgba(0, 0, 0, 0.5);
+  transition: var(--transition-smooth);
+  overflow-y: auto;
+}
+
+.modal__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2, 4px);
+  text-align: center;
+  position: relative;
+  padding-right: calc(var(--spacing-12, 24px) + var(--spacing-8, 16px) + var(--spacing-12, 24px)); /* réserve la place du bouton fermer pour éviter la superposition avec le titre */
+}
+
+.modal__header--center {
+  text-align: center;
+}
+
+.modal__header--center h2 {
+  text-align: center;
+  width: 100%;
+}
+
+.modal__header h2 {
+  margin: 0;
+  font-family: 'Cabin', sans-serif;
+  font-size: var(--font-h3-size, 32px);
+  line-height: var(--font-h3-line-height, 1.25);
+  font-weight: 600;
+  color: var(--color-accent, #bfc900);
+  letter-spacing: 0.02em;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+.modal__close {
+  position: absolute;
+  top: var(--spacing-8, 16px);
+  right: var(--spacing-8, 16px);
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary, #e5e7eb);
+  font-size: var(--font-size-2xl, 24px);
+  line-height: var(--line-height-tight, 1.2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--spacing-4, 8px);
+  transition: var(--transition-base);
+}
+
+.modal__close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.modal__close svg {
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
+  flex-shrink: 0;
+}
+
+.modal__subtitle {
+  margin: 0;
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
+  color: var(--color-text-muted, rgba(229, 231, 235, 0.72));
+}
+
+.modal__subtitle--left {
+  text-align: left;
+}
+
+/* Bouton principal (taille réduite par rapport au bouton « Se connecter ») */
+.modal-primary {
+  padding: var(--spacing-5, 10px) var(--spacing-8, 16px);
+  background: var(--color-brand-primary, #d4df00);
+  color: var(--color-bg-primary, #0b0e11);
+  border: none;
+  border-radius: 20px;
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-line-height, 1.5);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  cursor: pointer;
+  transition: var(--transition-base);
+  font-family: inherit;
+}
+
+.modal-primary:hover:not(:disabled) {
+  background: var(--color-accent, #bfc900);
+  transform: translateY(-1px);
+}
+
+.modal-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.modal-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modal-back {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted, rgba(229, 231, 235, 0.72));
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: var(--spacing-2, 4px);
+  transition: var(--transition-base);
+  font-family: inherit;
+  letter-spacing: 0.02em;
+}
+
+.modal-back:hover {
+  color: var(--color-accent, #bfc900);
+}
+
+.modal--form {
+  gap: var(--spacing-8, 16px);
+}
+
+.modal-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-8, 16px);
+  padding: var(--spacing-8, 16px) var(--spacing-12, 24px);
+  border-radius: var(--spacing-4, 8px);
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  background: var(--color-card-bg, rgba(0, 0, 0, 0.3));
+  color: var(--color-text-primary, #e5e7eb);
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition-base);
+  width: 100%;
+}
+
+.modal-card:hover {
+  border-color: var(--color-accent, #bfc900);
+  background: rgba(191, 201, 0, 0.05);
+}
+
+.modal-card__title {
+  margin: 0 0 var(--spacing-2, 4px);
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
+  font-weight: 500;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.modal-card__text {
+  margin: 0;
+  font-size: var(--font-size-sm, 12px);
+  line-height: var(--line-height-normal, 1.5);
+  color: var(--color-text-muted, rgba(229, 231, 235, 0.72));
+}
+
+.modal-upload,
+.modal-upload-simple {
+  width: 100%;
+}
+
+.modal-upload-simple__button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-6, 12px);
+  width: 100%;
+  padding: var(--spacing-8, 16px) var(--spacing-12, 24px);
+  background: var(--color-bg-surface, #161b21);
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border-radius: var(--spacing-4, 8px);
+  color: var(--color-text-primary, #e5e7eb);
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
+  cursor: pointer;
+  transition: var(--transition-base);
+  font-family: inherit;
+}
+
+.modal-upload-simple__button:hover {
+  border-color: var(--color-accent, #bfc900);
+  background: rgba(191, 201, 0, 0.05);
+}
+
+.modal-upload-simple__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
+  min-width: var(--spacing-12, 24px);
+  min-height: var(--spacing-12, 24px);
+  border-radius: 50%;
+  background: var(--color-accent, #bfc900);
+  color: var(--color-bg-primary, #0b0e11);
+  font-size: 0; /* masque le « + » du HTML pour n’afficher que le ::before centré */
+  line-height: 1;
+  font-weight: 600;
+  flex-shrink: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* « + » centré via pseudo-élément (évite le décalage du glyphe dans beaucoup de polices) */
+.modal-upload-simple__icon::before {
+  content: '+';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.modal-upload-simple__text {
+  flex: 1;
+  text-align: left;
+}
+
+.modal-upload-simple__input {
+  display: none;
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4, 8px);
+  width: 100%;
+}
+
+.modal-field--hidden {
+  display: none !important;
+}
+
+.modal-field label {
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
+  font-weight: 500;
+  color: var(--color-text-primary, #e5e7eb);
+  letter-spacing: 0.02em;
+}
+
+.modal-field__required {
+  color: #ef4444;
+  margin-left: var(--spacing-2, 4px);
+}
+
+.modal-field__hint {
+  font-size: var(--font-size-sm, 12px);
+  line-height: var(--line-height-normal, 1.5);
+  color: var(--color-text-muted, rgba(229, 231, 235, 0.72));
+  margin-top: var(--spacing-2, 4px);
+}
+
+.modal-input {
+  width: 100%;
+  padding: var(--spacing-6, 12px) var(--spacing-8, 16px);
+  background: var(--color-bg-surface, #161b21);
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border-radius: var(--spacing-4, 8px);
+  color: var(--color-text-primary, #e5e7eb);
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
+  font-family: inherit;
+  outline: none;
+  transition: var(--transition-base);
+}
+
+.modal-input::placeholder {
+  color: var(--color-text-muted, rgba(229, 231, 235, 0.5));
+}
+
+.modal-input:focus {
+  border-color: var(--color-accent, #bfc900);
+  background: rgba(191, 201, 0, 0.05);
+}
+
+.modal-footnote {
+  text-align: center;
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
+  color: var(--color-text-muted, rgba(229, 231, 235, 0.72));
+}
+
+.modal-footnote__link {
+  text-decoration: underline;
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--spacing-8, 16px);
+}
+
+@media (max-width: 768px) {
+  .modal {
+    padding: var(--spacing-12, 24px) var(--spacing-10, 20px);
+    max-width: 100%;
+  }
+
+  .modal__header h2 {
+    font-size: var(--spacing-14, 28px);
+    line-height: var(--line-height-tight, 1.2);
+  }
+
+  .modal-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-4, 8px);
+  }
+
+  .modal-card span {
+    align-self: flex-end;
+  }
+
+  .modal-upload-simple {
+    width: 100%;
+  }
+
+  .modal-upload-simple__button {
+    flex-wrap: wrap;
+  }
+}

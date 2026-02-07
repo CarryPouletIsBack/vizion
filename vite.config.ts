@@ -34,7 +34,7 @@ export default defineConfig({
                 return
               }
 
-              const tmpDir = path.join(os.tmpdir(), 'vizion-gpx')
+              const tmpDir = path.join(os.tmpdir(), 'trackali-gpx')
               await fs.mkdir(tmpDir, { recursive: true })
 
               const hash = createHash('sha1').update(payload.gpxText).digest('hex')

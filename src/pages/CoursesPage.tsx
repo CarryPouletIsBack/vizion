@@ -397,7 +397,7 @@ export default function CoursesPage({
       if (stravaRouteId) {
         console.log('🔗 Route ID extrait:', stravaRouteId)
         try {
-          const tokenData = localStorage.getItem('vizion:strava_token')
+          const tokenData = localStorage.getItem('trackali:strava_token')
           if (tokenData) {
             const token = JSON.parse(tokenData)
             
@@ -649,7 +649,7 @@ export default function CoursesPage({
                 ref={courseNameRef}
               />
             </div>
-            <div className="modal-field">
+            <div className="modal-field modal-field--hidden" aria-hidden="true">
               <label htmlFor="course-strava-route-page">
                 URL Strava Route (optionnel)
               </label>

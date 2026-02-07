@@ -18,6 +18,25 @@
   pointer-events: none;
 }
 
+/* Overlay sombre sur toutes les pages sauf Saison (accueil), transition douce */
+.app-bg-dark {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2;
+  pointer-events: none;
+  background-color: rgba(0, 0, 0, 0.75);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.app-bg-dark--visible {
+  opacity: 1;
+}
+
 /* Page Saison : le globe reçoit les clics (rotation, zoom) */
 .app-root--globe-interactive .app-bg-globe {
   pointer-events: auto;
@@ -48,6 +67,10 @@
 }
 .app-root--globe-interactive .app-content .saison-map-block {
   pointer-events: none;
+}
+/* Zone « Mes courses en cours » cliquable (carousel, titres) ; le reste laisse passer les clics au globe */
+.app-root--globe-interactive .app-content .saison-map-block .courses-section {
+  pointer-events: auto;
 }
 
 /* Page Saison : pas de scroll (contenu = 100vh) */

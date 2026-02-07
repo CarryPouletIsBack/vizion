@@ -59,10 +59,93 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-20, 40px);
-  row-gap: var(--spacing-20, 40px);
+  row-gap: var(--spacing-4, 8px);
   margin-left: 224px;
   width: calc(100% - 224px);
   transition: var(--transition-smooth);
+}
+
+/* Fil d'Ariane (style guide type TrackTitan) */
+.single-course-breadcrumb {
+  margin-top: var(--spacing-4, 8px);
+  margin-bottom: var(--spacing-2, 4px);
+}
+
+.single-course-breadcrumb__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-2, 4px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--font-size-sm, 12px);
+  line-height: var(--line-height-normal, 1.5);
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-breadcrumb__item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 4px);
+}
+
+.single-course-breadcrumb__sep {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.6;
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-breadcrumb__link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--color-accent, #bfc900);
+  cursor: pointer;
+  text-decoration: none;
+  transition: var(--transition-base);
+}
+
+.single-course-breadcrumb__link:hover {
+  text-decoration: underline;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.single-course-breadcrumb__current-course,
+.single-course-breadcrumb__step {
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.single-course-breadcrumb__steps {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 4px);
+}
+
+.single-course-breadcrumb__step-btn {
+  background: none;
+  border: none;
+  padding: var(--spacing-2, 4px) var(--spacing-4, 8px);
+  font: inherit;
+  font-size: var(--font-size-sm, 12px);
+  color: var(--color-text-secondary, #9ca3af);
+  cursor: pointer;
+  border-radius: var(--spacing-2, 4px);
+  transition: var(--transition-base);
+}
+
+.single-course-breadcrumb__step-btn:hover {
+  color: var(--color-text-primary, #e5e7eb);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.single-course-breadcrumb__step-btn--active {
+  font-weight: 600;
+  color: var(--color-accent, #bfc900);
+  background: rgba(191, 201, 0, 0.12);
 }
 
 .single-course-heading {
@@ -144,6 +227,417 @@
   min-width: 0;
 }
 
+/* Grille de cartes segment (colonne droite Description) */
+.single-course-segment-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6, 12px);
+  width: 100%;
+}
+
+.single-course-segment-card {
+  padding: var(--spacing-6, 12px);
+  border-radius: var(--spacing-4, 8px);
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  background: var(--color-card-bg);
+  backdrop-filter: blur(100px);
+  transition: var(--transition-base);
+  cursor: pointer;
+}
+
+.single-course-segment-card--selected {
+  border-color: var(--color-accent, #bfc900);
+  background: rgba(191, 201, 0, 0.06);
+}
+
+.single-course-segment-card__title {
+  margin: 0 0 var(--spacing-1, 2px);
+  font-size: var(--font-size-md, 16px);
+  font-weight: 600;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.single-course-segment-card__km {
+  margin: 0 0 var(--spacing-4, 8px);
+  font-size: var(--font-size-sm, 12px);
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-segment-card__chart {
+  min-height: 180px;
+}
+
+.single-course-segment-card__chart .single-course-elevation-chart {
+  height: 180px;
+}
+
+/* Infos segment sous la carte (style Track Titan) */
+.single-course-segment-card__stats {
+  margin: var(--spacing-4, 8px) 0 0;
+  padding-top: var(--spacing-4, 8px);
+  border-top: 1px solid var(--color-border-default, #2a3038);
+  display: grid;
+  row-gap: 8px;
+  column-gap: var(--spacing-4, 8px);
+}
+
+.single-course-segment-card__stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--spacing-4, 8px);
+}
+
+.single-course-segment-card__stat dt {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-segment-card__stat dd {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+/* Sous-page Segment : même structure que Description (deux colonnes) */
+.single-course-segment-page__stats-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4, 8px);
+}
+
+.single-course-segment-page__stats-card .single-course-panel__title {
+  margin: 0;
+}
+
+.single-course-segment-page__stats {
+  margin: 0;
+  display: grid;
+  row-gap: 8px;
+}
+
+.single-course-segment-page__stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.single-course-segment-page__stat dt {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-segment-page__stat dd {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.single-course-segment-page__advice {
+  margin-top: var(--spacing-4, 8px);
+  padding-top: var(--spacing-4, 8px);
+  border-top: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2, 4px);
+}
+
+.single-course-segment-page__advice-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #9ca3af);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.single-course-segment-page__advice-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.single-course-segment-page__chart {
+  margin-top: var(--spacing-4, 8px);
+  padding-top: var(--spacing-4, 8px);
+  border-top: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  min-height: 200px;
+}
+
+.single-course-segment-page__chart .single-course-elevation-chart {
+  height: 200px;
+}
+
+.single-course-segment-page--empty {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: 640px;
+}
+
+.single-course-segment-page__empty {
+  margin: 0;
+  padding: var(--spacing-10, 20px);
+  font-size: var(--font-body-sm-size, 14px);
+  color: var(--color-text-secondary, #9ca3af);
+  text-align: center;
+}
+
+/* Page Ma préparation (pleine largeur) */
+.single-course-preparation__left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6, 12px);
+}
+
+.single-course-preparation__right {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6, 12px);
+}
+
+.single-course-preparation__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-4, 8px);
+  margin-bottom: var(--spacing-6, 12px);
+}
+
+.single-course-preparation__intro {
+  margin: 0;
+  font-size: var(--font-body-sm-size, 14px);
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-preparation__export {
+  display: flex;
+  gap: var(--spacing-2, 4px);
+}
+
+.single-course-preparation__export-btn {
+  padding: var(--spacing-2, 4px) var(--spacing-4, 8px);
+  font-size: var(--font-size-sm, 12px);
+  font-weight: 500;
+  color: var(--color-text-primary, #e5e7eb);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--color-border-default, #2a3038);
+  border-radius: var(--spacing-2, 4px);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.single-course-preparation__export-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--color-accent, #bfc900);
+}
+
+/* Hero : métrique principale (état + charge) */
+.single-course-preparation__hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-6, 12px);
+  padding: var(--spacing-6, 12px) var(--spacing-8, 16px);
+  border-radius: var(--spacing-4, 8px);
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border-default, #2a3038);
+  margin-bottom: var(--spacing-6, 12px);
+}
+
+.single-course-preparation__hero-state {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4, 8px);
+}
+
+.single-course-preparation__hero-emoji {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.single-course-preparation__hero-label {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.single-course-preparation__hero-sublabel {
+  margin: 4px 0 0;
+  font-size: var(--font-size-sm, 12px);
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-preparation__hero-metrics {
+  text-align: right;
+}
+
+.single-course-preparation__hero-load-value {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-accent, #bfc900);
+}
+
+.single-course-preparation__hero-load-unit {
+  font-size: var(--font-size-sm, 12px);
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-preparation__hero-delta {
+  margin-top: 4px;
+  font-size: var(--font-size-sm, 12px);
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-preparation__hero-time {
+  text-align: right;
+  padding-left: var(--spacing-6, 12px);
+  border-left: 1px solid var(--color-border-default, #2a3038);
+}
+
+.single-course-preparation__hero-time-label {
+  display: block;
+  font-size: var(--font-size-sm, 12px);
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-preparation__hero-time-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-accent, #bfc900);
+}
+
+.single-course-preparation__next-deadline {
+  padding: var(--spacing-4, 8px) var(--spacing-6, 12px);
+  border-radius: var(--spacing-4, 8px);
+  background: rgba(191, 201, 0, 0.06);
+  border: 1px solid rgba(191, 201, 0, 0.2);
+  margin-bottom: var(--spacing-6, 12px);
+}
+
+.single-course-preparation__next-deadline-label {
+  display: block;
+  font-size: var(--font-size-sm, 12px);
+  font-weight: 600;
+  color: var(--color-accent, #bfc900);
+  margin-bottom: 4px;
+}
+
+.single-course-preparation__next-deadline-text {
+  font-size: var(--font-size-sm, 12px);
+  color: var(--color-text-secondary, #9ca3af);
+  line-height: 1.4;
+}
+
+/* Tendance charge 6 semaines */
+.single-course-preparation__trend {
+  padding: var(--spacing-4, 8px) var(--spacing-6, 12px);
+  border-radius: var(--spacing-4, 8px);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border-default, #2a3038);
+  margin-bottom: var(--spacing-6, 12px);
+}
+
+.single-course-preparation__trend-title {
+  margin: 0 0 var(--spacing-2, 4px);
+  font-size: var(--font-size-sm, 12px);
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-preparation__trend-chart {
+  height: 48px;
+  width: 100%;
+}
+
+.single-course-preparation__trend-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-preparation__action-list {
+  list-style: none;
+}
+
+.single-course-preparation__action-item {
+  margin-bottom: var(--spacing-2, 4px);
+}
+
+.single-course-preparation__action-checkbox {
+  margin-top: 2px;
+  accent-color: var(--color-accent, #bfc900);
+  flex-shrink: 0;
+}
+
+.single-course-preparation__segment-intro {
+  margin: 0 0 var(--spacing-4, 8px);
+  font-size: var(--font-size-sm, 12px);
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-preparation__segment-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.single-course-preparation__segment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-2, 4px) 0;
+  font-size: var(--font-size-sm, 12px);
+}
+
+.single-course-preparation__segment-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.single-course-preparation__segment-badge--ok {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.single-course-preparation__segment-badge--warning {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.single-course-panel--full {
+  width: 100%;
+}
+
+.single-course-segment-card__no-data {
+  margin: 0;
+  padding: var(--spacing-8, 16px);
+  font-size: var(--font-size-sm, 12px);
+  color: var(--color-text-secondary, #9ca3af);
+  text-align: center;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .single-course-course {
   display: flex;
   flex-direction: column;
@@ -175,6 +669,28 @@
   font-size: var(--font-size-sm, 12px);
   line-height: var(--line-height-normal, 1.5);
   color: var(--color-text-secondary, #9ca3af);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+}
+
+.single-course-course__meta-region-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+}
+
+.single-course-course__meta-region-item svg {
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
+  opacity: 0.9;
+}
+
+.single-course-course__meta-region-sep {
+  margin: 0 0.35em;
+  user-select: none;
 }
 
 .single-course-course__meta-stats,
@@ -185,9 +701,11 @@
   color: var(--color-text-secondary, #9ca3af);
 }
 
+/* Référence taille : même bloc pour Description et Segment (carte GPX) */
 .single-course-course__gpx {
   width: 100%;
-  height: auto;
+  aspect-ratio: 16 / 10;
+  min-height: 280px;
   display: block;
   border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
   border-radius: var(--spacing-4, 8px);
@@ -200,6 +718,53 @@
   position: relative;
 }
 
+.single-course-course__gpx-toolbar {
+  position: absolute;
+  top: var(--spacing-3, 6px);
+  right: var(--spacing-3, 6px);
+  z-index: 2;
+}
+
+.single-course-course__gpx-view-toggle {
+  padding: var(--spacing-2, 4px) var(--spacing-4, 8px);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-primary, #e5e7eb);
+  background: rgba(11, 14, 17, 0.85);
+  border: 1px solid var(--color-border-default, #2a3038);
+  border-radius: var(--spacing-2, 4px);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.single-course-course__gpx-view-toggle:hover {
+  background: rgba(30, 35, 42, 0.9);
+  border-color: var(--color-accent, #bfc900);
+}
+
+.single-course-course__gpx-view-toggle[aria-pressed="true"] {
+  border-color: var(--color-accent, #bfc900);
+  color: var(--color-accent, #bfc900);
+}
+
+/* Wrapper carte + overlay pour la vue 3D */
+.single-course-course__gpx-map {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Vue 3D : perspective sur le tracé (SVG + overlay) */
+.single-course-course__gpx--view-3d {
+  perspective: 1200px;
+}
+
+.single-course-course__gpx--view-3d .single-course-course__gpx-map {
+  transform: rotateX(52deg);
+  transform-origin: center 30% center;
+  transition: transform 0.35s ease;
+}
+
 .single-course-course__gpx-rain-overlay {
   position: absolute;
   left: 0;
@@ -210,6 +775,27 @@
   max-width: 100%;
   max-height: 100%;
   display: block;
+  z-index: 2;
+}
+
+/* Pastille vent sur le tracé GPX (page Segment + Description) */
+.single-course-course__gpx-wind-badge {
+  position: absolute;
+  bottom: var(--spacing-3, 8px);
+  left: var(--spacing-3, 8px);
+  z-index: 3;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 12px;
+  border-radius: 6px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.single-course-course__gpx-wind-badge svg {
+  flex-shrink: 0;
 }
 
 .single-course-course__gpx img {
@@ -222,6 +808,7 @@
 
 .single-course-course__gpx-svg {
   width: 100%;
+  height: 100%;
   display: block;
   overflow: hidden;
 }
@@ -229,7 +816,7 @@
 .single-course-course__gpx-svg svg,
 #gpx-inline-svg {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
   vertical-align: top;
 }
@@ -250,6 +837,147 @@
   font-size: var(--font-size-sm, 12px);
   line-height: var(--line-height-normal, 1.5);
   color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-course__segment-selected {
+  margin: 0;
+  margin-top: var(--spacing-3, 6px);
+  padding: var(--spacing-2, 4px) var(--spacing-4, 8px);
+  font-size: var(--font-size-sm, 12px);
+  line-height: var(--line-height-normal, 1.5);
+  color: var(--color-accent, #bfc900);
+  background: rgba(191, 201, 0, 0.1);
+  border: 1px solid rgba(191, 201, 0, 0.3);
+  border-radius: var(--spacing-2, 4px);
+  display: inline-block;
+}
+
+/* Segment du tracé GPX : zone de clic large (invisible) + trait visible */
+.single-course-course__gpx-svg .gpx-segment-hit {
+  cursor: pointer;
+}
+
+.single-course-course__gpx-svg .gpx-segment-stroke {
+  pointer-events: none;
+  transition: stroke 0.15s ease, stroke-width 0.15s ease;
+}
+
+.single-course-course__gpx-svg .gpx-segment-stroke.gpx-segment--selected {
+  stroke: var(--color-accent, #bfc900);
+  stroke-width: 4;
+  opacity: 1;
+}
+
+/* Page Segment : tracé et curseur plus fins */
+.single-course-course--segment-view .single-course-course__gpx-svg .gpx-segment-stroke {
+  stroke-width: 1.25;
+}
+.single-course-course--segment-view .single-course-course__gpx-svg .gpx-segment-stroke.gpx-segment--selected {
+  stroke-width: 2;
+}
+/* Page Segment : tracé plus fin */
+.single-course-course--segment-view .single-course-course__gpx-svg .gpx-segment-stroke {
+  stroke-width: 1.25;
+}
+.single-course-course--segment-view .single-course-course__gpx-svg .gpx-segment-stroke.gpx-segment--selected {
+  stroke-width: 2;
+}
+
+/* Paragraphe "Quel est un bon temps..." (style Track Titan, dynamique) */
+.single-course-course__good-time {
+  width: 100%;
+  margin-top: var(--spacing-6, 12px);
+  padding: var(--spacing-6, 12px) var(--spacing-8, 16px);
+  border-radius: var(--spacing-4, 8px);
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  background: var(--color-card-bg);
+  backdrop-filter: blur(100px);
+}
+
+.single-course-course__good-time-title {
+  margin: 0 0 var(--spacing-4, 8px);
+  font-size: var(--font-size-md, 16px);
+  line-height: var(--font-body-line-height, 1.5);
+  font-weight: 600;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.single-course-course__good-time-body {
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: 1.6;
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-course__good-time-body p {
+  margin: 0 0 var(--spacing-3, 6px);
+}
+
+.single-course-course__good-time-body p:last-child {
+  margin-bottom: 0;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+/* Bloc 1er finisher (embed Strava + temps au km) */
+.single-course-course__first-finisher {
+  margin-top: var(--spacing-6, 12px);
+  padding: var(--spacing-6, 12px) var(--spacing-8, 16px);
+  border-radius: var(--spacing-4, 8px);
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  background: var(--color-card-bg);
+  backdrop-filter: blur(100px);
+}
+
+.single-course-course__first-finisher-title {
+  margin: 0 0 var(--spacing-4, 8px);
+  font-size: var(--font-size-md, 16px);
+  font-weight: 600;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.single-course-course__first-finisher .strava-embed-placeholder {
+  min-height: 280px;
+  margin-bottom: var(--spacing-4, 8px);
+}
+
+.single-course-course__first-finisher-splits-title {
+  margin: 0 0 var(--spacing-3, 6px);
+  font-size: var(--font-size-sm, 12px);
+  font-weight: 600;
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-course__first-finisher-splits-loading,
+.single-course-course__first-finisher-splits-error {
+  margin: 0;
+  font-size: var(--font-size-sm, 12px);
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-course__splits-table-wrap {
+  overflow-x: auto;
+  margin-top: var(--spacing-2, 4px);
+}
+
+.single-course-course__splits-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.single-course-course__splits-table th,
+.single-course-course__splits-table td {
+  padding: var(--spacing-2, 4px) var(--spacing-3, 6px);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-default, #2a3038);
+}
+
+.single-course-course__splits-table th {
+  font-weight: 600;
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-course__splits-table td {
+  color: var(--color-text-primary, #e5e7eb);
 }
 
 .single-course-course__card {
@@ -486,6 +1214,13 @@
 
 /* Mobile : sidebar en bas de l'écran */
 @media (max-width: 768px) {
+  .single-course-breadcrumb__current-course {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .single-course-page {
     padding-bottom: var(--spacing-40, 80px);
   }
@@ -535,5 +1270,18 @@
   .single-course-course__gpx {
     width: 100%;
     max-width: 100%;
+  }
+}
+
+@media print {
+  .single-course-side,
+  .single-course-breadcrumb,
+  .single-course-preparation__export {
+    display: none !important;
+  }
+  .single-course-preparation__hero,
+  .single-course-panel,
+  .single-course-panel__card {
+    break-inside: avoid;
   }
 }

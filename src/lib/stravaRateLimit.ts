@@ -5,7 +5,7 @@
  * - 1000 requêtes / jour
  */
 
-const RATE_LIMIT_KEY = 'vizion:strava-rate-limit'
+const RATE_LIMIT_KEY = 'trackali:strava-rate-limit'
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000 // 15 minutes en ms
 const MAX_REQUESTS_PER_WINDOW = 90 // On garde une marge de sécurité (90 au lieu de 100)
 

@@ -428,6 +428,7 @@ DAT.Globe = function(container, opts) {
   this.createPoints = createPoints;
   this.renderer = renderer;
   this.scene = scene;
+  this.camera = camera;
 
   return this;
 

@@ -1,4 +1,4 @@
-# Configuration Strava OAuth pour Vizion
+# Configuration Strava OAuth pour Trackali
 
 ## Problème : "Bad Request - client_id invalid"
 
@@ -9,7 +9,7 @@ Cette erreur signifie que le `STRAVA_CLIENT_ID` n'est pas correctement configur�
 ### 1. Accéder aux variables d'environnement Vercel
 
 1. Aller sur https://vercel.com
-2. Sélectionner le projet **vizion** (ou le nom de votre projet)
+2. Sélectionner le projet **trackali** (ou le nom de votre projet)
 3. Aller dans **Settings** > **Environment Variables**
 
 ### 2. Ajouter les variables Strava
@@ -33,18 +33,18 @@ Dans les paramètres de votre application Strava (voir l'image ci-dessus) :
 
 1. Ouvrir la modal "Modifier l'application"
 2. Dans le champ **"Domaine du rappel pour l'autorisation (Callback domain for authorization)"**, entrer :
-   - **Production** : `vizion-blush.vercel.app` (sans `https://` et sans le chemin `/auth/strava/callback`)
+   - **Production** : `trackali-blush.vercel.app` (sans `https://` et sans le chemin `/auth/strava/callback`)
    - **Développement local** : `localhost` (pour tester en local)
 
 ⚠️ **Important** : 
 - Strava n'accepte qu'**un seul domaine** par application
-- Si vous avez déjà une application pour `portfolio-react-anthony`, créez une **nouvelle application** pour Vizion
+- Si vous avez déjà une application pour `portfolio-react-anthony`, créez une **nouvelle application** pour Trackali
 - Le domaine doit correspondre exactement au domaine de votre application (sans le protocole `https://`)
 
 **Exemple** :
-- ✅ Correct : `vizion-blush.vercel.app`
-- ❌ Incorrect : `https://vizion-blush.vercel.app`
-- ❌ Incorrect : `vizion-blush.vercel.app/auth/strava/callback`
+- ✅ Correct : `trackali-blush.vercel.app`
+- ❌ Incorrect : `https://trackali-blush.vercel.app`
+- ❌ Incorrect : `trackali-blush.vercel.app/auth/strava/callback`
 
 ### 5. Redéployer sur Vercel
 
@@ -92,5 +92,5 @@ STRAVA_CLIENT_SECRET=votre_client_secret_ici
 ### Erreur : "redirect_uri_mismatch"
 
 - Vérifier que la Redirect URI configurée dans Strava correspond exactement à celle utilisée
-- Pour la production : `https://vizion-blush.vercel.app/auth/strava/callback`
+- Pour la production : `https://trackali-blush.vercel.app/auth/strava/callback`
 - Pour le développement local : `http://localhost:5173/auth/strava/callback`

@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { computeStravaMetrics } from '../lib/stravaEngine'
 import type { StravaActivity, StravaMetrics } from '../types/strava'
 
-const CACHE_KEY = 'vizion:strava-metrics'
+const CACHE_KEY = 'trackali:strava-metrics'
 const CACHE_TTL_MS = 30 * 60 * 1000 // 30 minutes pour limiter les appels (augmenté de 5 à 30 min)
-const TOKEN_KEY = 'vizion:strava_token'
+const TOKEN_KEY = 'trackali:strava_token'
 
 type State = {
   metrics: StravaMetrics | null

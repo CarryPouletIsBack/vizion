@@ -57,8 +57,18 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 })
 
+/** Course minimale avec coordonnées (depuis App ou Supabase) */
+export type CourseWithCoords = {
+  id: string
+  name: string
+  start_coordinates?: [number, number] | null
+  startCoordinates?: [number, number]
+}
+
 type WorldMapLeafletProps = {
-  onCourseSelect?: () => void
+  onCourseSelect?: (courseId?: string) => void
+  /** Quand fourni, affiche ces courses sur la carte (ex. depuis App events) au lieu de / en plus du fetch Supabase */
+  coursesFromParent?: CourseWithCoords[]
 }
 
 type MapTag = {
@@ -104,14 +114,15 @@ function MapZoomHandler({ center, zoom }: { center: [number, number]; zoom: numb
   return null
 }
 
-const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect }: WorldMapLeafletProps) {
+const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect, coursesFromParent }: WorldMapLeafletProps) {
   const [activeTagId, setActiveTagId] = useState<string | null>(null)
   const [mapCenter, setMapCenter] = useState<[number, number]>([20, 0]) // [lat, lng]
   const [mapZoom, setMapZoom] = useState(2)
-  const [courses, setCourses] = useState<CourseRow[]>([])
+  const [coursesFromDb, setCoursesFromDb] = useState<CourseRow[]>([])
 
-  // Charger les courses depuis Supabase
+  // Charger les courses depuis Supabase uniquement si pas fournies par le parent
   useEffect(() => {
+    if (coursesFromParent != null && coursesFromParent.length > 0) return
     const loadCourses = async () => {
       try {
         const { data, error } = await supabase
@@ -120,45 +131,53 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect }: WorldM
           .not('start_coordinates', 'is', null)
 
         if (error) {
-          // Ne pas afficher d'erreur si c'est juste une absence de permissions (utilisateur non connecté)
           if (error.code !== 'PGRST116' && error.code !== '42501' && error.code !== 'PGRST301') {
             console.error('Erreur lors du chargement des courses:', error)
           }
           return
         }
-
-        if (data) {
-          setCourses(data as CourseRow[])
-        }
+        if (data) setCoursesFromDb(data as CourseRow[])
       } catch (err) {
-        // Ignorer les erreurs silencieusement si l'utilisateur n'est pas connecté
         console.warn('Impossible de charger les courses (utilisateur non connecté?)', err)
       }
     }
-
     loadCourses()
-  }, [])
+  }, [coursesFromParent])
 
-  // Créer les map tags depuis les courses avec coordonnées GPX
+  // Liste de courses à afficher : prop parent prioritaire, sinon Supabase
+  const coursesToShow = useMemo(() => {
+    if (coursesFromParent != null && coursesFromParent.length > 0) {
+      return coursesFromParent.map((c) => ({
+        id: c.id,
+        name: c.name,
+        start_coordinates: c.start_coordinates ?? c.startCoordinates ?? null,
+      }))
+    }
+    return coursesFromDb.map((c) => ({
+      id: c.id,
+      name: c.name,
+      start_coordinates: c.start_coordinates,
+    }))
+  }, [coursesFromParent, coursesFromDb])
+
+  // Créer les map tags depuis les courses avec coordonnées
   const mapTags = useMemo<MapTag[]>(() => {
     const tags: MapTag[] = []
-    
-    courses.forEach((course, index) => {
-      if (course.start_coordinates && course.start_coordinates.length === 2) {
-        const [lat, lon] = course.start_coordinates
-        // Utiliser le drapeau de La Réunion par défaut (à améliorer avec le pays de l'event)
+    coursesToShow.forEach((course, index) => {
+      const coords = course.start_coordinates
+      if (coords && coords.length === 2) {
+        const [lat, lon] = coords
         tags.push({
           id: course.id,
-          label: String(index + 1),
+          label: course.name || String(index + 1),
           flag: reunionFlag,
           coordinates: [lat, lon] as [number, number],
-          course: course,
+          course: course as CourseRow,
         })
       }
     })
-
     return tags
-  }, [courses])
+  }, [coursesToShow])
 
   const handleTagClick = (tag: MapTag) => {
     setActiveTagId(tag.id)
@@ -238,7 +257,7 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect }: WorldM
               },
             }}
           >
-            {activeTag?.id === tag.id && tag.course && (
+            {activeTag?.id === tag.id && (
               <Popup
                 position={tag.coordinates}
                 className="map-card-popup"
@@ -251,16 +270,16 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect }: WorldM
                   className="course-card map-course-card"
                   role="button"
                   tabIndex={0}
-                  onClick={onCourseSelect}
+                  onClick={() => onCourseSelect?.(tag.id)}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
-                      onCourseSelect?.()
+                      onCourseSelect?.(tag.id)
                     }
                   }}
                 >
                   <div className="course-card__top">
                     <div className="course-card__gpx">
-                      {tag.course.gpx_svg ? (
+                      {tag.course?.gpx_svg ? (
                         <div
                           className="course-card__gpx-svg"
                           dangerouslySetInnerHTML={{ __html: tag.course.gpx_svg }}
@@ -270,9 +289,9 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect }: WorldM
                       )}
                     </div>
                     <div className="course-card__content">
-                      <h3 className="course-card__title">{tag.course.name}</h3>
+                      <h3 className="course-card__title">{tag.course?.name ?? tag.label}</h3>
                       <p className="course-card__stats">
-                        {tag.course.distance_km && tag.course.elevation_gain
+                        {tag.course?.distance_km != null && tag.course?.elevation_gain != null
                           ? `${Math.round(tag.course.distance_km)} km – ${Math.round(tag.course.elevation_gain)} D+`
                           : 'Course'}
                       </p>

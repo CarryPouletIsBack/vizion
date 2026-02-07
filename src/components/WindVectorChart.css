@@ -1,0 +1,23 @@
+.wind-vector-chart {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.wind-vector-chart .highcharts-container {
+  overflow: hidden;
+}
+
+.wind-vector-chart .highcharts-root {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.wind-vector-chart .highcharts-series path {
+  stroke: #bfc900;
+  fill: #bfc900;
+}

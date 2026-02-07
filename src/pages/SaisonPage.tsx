@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { HiX } from 'react-icons/hi'
 
 import './SaisonPage.css'
@@ -8,9 +8,19 @@ import SideNav from '../components/SideNav'
 import { gpxToSvg, extractGpxStartCoordinates, extractGpxWaypoints } from '../lib/gpxToSvg'
 import { extractRouteIdFromUrl } from '../lib/stravaRouteParser'
 
+type EventWithCourses = {
+  id: string
+  name: string
+  courses: Array<{
+    id: string
+    name: string
+    startCoordinates?: [number, number]
+  }>
+}
 
 type SaisonPageProps = {
-  onCourseSelect?: () => void
+  events?: EventWithCourses[]
+  onCourseSelect?: (courseId?: string) => void
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
   onCreateEvent?: (payload: { name: string; imageUrl?: string }) => void
   onCreateCourse?: (payload: {
@@ -27,10 +37,15 @@ type SaisonPageProps = {
 type CreateModalView = 'select' | 'event' | 'course'
 
 export default function SaisonPage({
+  events = [],
+  onCourseSelect,
   onNavigate,
   onCreateEvent,
   onCreateCourse,
 }: SaisonPageProps) {
+  const coursesWithCoordsCount = useMemo(() => {
+    return events.flatMap((ev) => ev.courses).filter((c) => c.startCoordinates && c.startCoordinates.length === 2).length
+  }, [events])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [createModalView, setCreateModalView] = useState<CreateModalView>('select')
   const eventNameRef = useRef<HTMLInputElement | null>(null)
@@ -233,7 +248,7 @@ export default function SaisonPage({
         // Récupérer les segments depuis l'API Strava (non bloquant)
         try {
           // Récupérer le token depuis localStorage
-          const tokenData = localStorage.getItem('vizion:strava_token')
+          const tokenData = localStorage.getItem('trackali:strava_token')
           if (tokenData) {
             const token = JSON.parse(tokenData)
             
@@ -382,7 +397,11 @@ export default function SaisonPage({
             <section className="courses-section">
               <div className="courses-heading">
                 <p className="courses-title">Mes courses en cours</p>
-                <p className="courses-subtitle">Vous n'avez pas encore de course en cours.</p>
+                <p className="courses-subtitle">
+                  {coursesWithCoordsCount > 0
+                    ? `${coursesWithCoordsCount} course(s) affichée(s) sur le globe`
+                    : "Vous n'avez pas encore de course en cours."}
+                </p>
               </div>
               <div className="courses-carousel">
                 {/* Les courses seront affichées ici une fois créées */}
@@ -551,7 +570,7 @@ export default function SaisonPage({
                   ref={courseNameRef}
                 />
               </div>
-              <div className="modal-field">
+              <div className="modal-field modal-field--hidden" aria-hidden="true">
                 <label htmlFor="course-strava-route">
                   URL Strava Route (optionnel)
                 </label>

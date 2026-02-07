@@ -3,7 +3,7 @@
  * Une requête par position (arrondie) au plus toutes les 4 heures.
  */
 
-const CACHE_KEY_PREFIX = 'vizion:weather:'
+const CACHE_KEY_PREFIX = 'trackali:weather:'
 const TTL_MS = 4 * 60 * 60 * 1000 // 4 heures
 const COORD_PRECISION = 2 // décimales pour regrouper les positions proches
 
@@ -12,6 +12,12 @@ export type WeatherResult = {
   icon?: string
   /** true = pluie dans les dernières 24h, false = sec, undefined = inconnu */
   rainLast24h?: boolean
+  /** Vitesse du vent en km/h */
+  windSpeedKmh?: number
+  /** Direction du vent en degrés (0 = N, 90 = E, 180 = S, 270 = O) */
+  windDirDeg?: number
+  /** Direction du vent en cardinal (N, NNE, NE, etc.) */
+  windDir?: string
   fromCache: boolean
   fetchedAt: number
 }
@@ -27,13 +33,24 @@ function getCached(lat: number, lon: number): WeatherResult | null {
     const key = cacheKey(lat, lon)
     const raw = localStorage.getItem(key)
     if (!raw) return null
-    const parsed = JSON.parse(raw) as { tempC: number; fetchedAt: number; icon?: string; rainLast24h?: boolean }
+    const parsed = JSON.parse(raw) as {
+      tempC: number
+      fetchedAt: number
+      icon?: string
+      rainLast24h?: boolean
+      windSpeedKmh?: number
+      windDirDeg?: number
+      windDir?: string
+    }
     if (typeof parsed.tempC !== 'number' || typeof parsed.fetchedAt !== 'number') return null
     if (Date.now() - parsed.fetchedAt > TTL_MS) return null
     return {
       tempC: parsed.tempC,
       icon: parsed.icon,
       rainLast24h: parsed.rainLast24h,
+      windSpeedKmh: parsed.windSpeedKmh,
+      windDirDeg: parsed.windDirDeg,
+      windDir: parsed.windDir,
       fromCache: true,
       fetchedAt: parsed.fetchedAt,
     }
@@ -42,10 +59,27 @@ function getCached(lat: number, lon: number): WeatherResult | null {
   }
 }
 
-function setCache(lat: number, lon: number, tempC: number, icon?: string, rainLast24h?: boolean): void {
+function setCache(
+  lat: number,
+  lon: number,
+  tempC: number,
+  icon?: string,
+  rainLast24h?: boolean,
+  windSpeedKmh?: number,
+  windDirDeg?: number,
+  windDir?: string
+): void {
   try {
     const key = cacheKey(lat, lon)
-    const value: { tempC: number; fetchedAt: number; icon?: string; rainLast24h?: boolean } = { tempC, fetchedAt: Date.now(), icon, rainLast24h }
+    const value = {
+      tempC,
+      fetchedAt: Date.now(),
+      icon,
+      rainLast24h,
+      windSpeedKmh,
+      windDirDeg,
+      windDir,
+    }
     localStorage.setItem(key, JSON.stringify(value))
   } catch {
     // quota ou localStorage désactivé
@@ -67,16 +101,29 @@ export async function getWeather(lat: number, lon: number): Promise<WeatherResul
   try {
     const res = await fetch(url)
     if (!res.ok) return null
-    const data = (await res.json()) as { tempC?: number; icon?: string; rainLast24h?: boolean }
+    const data = (await res.json()) as {
+      tempC?: number
+      icon?: string
+      rainLast24h?: boolean
+      windSpeedKmh?: number
+      windDirDeg?: number
+      windDir?: string
+    }
     const tempC = typeof data?.tempC === 'number' ? data.tempC : null
     if (tempC == null) return null
     const icon = typeof data?.icon === 'string' ? data.icon : undefined
     const rainLast24h = typeof data?.rainLast24h === 'boolean' ? data.rainLast24h : undefined
-    setCache(lat, lon, tempC, icon, rainLast24h)
+    const windSpeedKmh = typeof data?.windSpeedKmh === 'number' ? data.windSpeedKmh : undefined
+    const windDirDeg = typeof data?.windDirDeg === 'number' && data.windDirDeg >= 0 && data.windDirDeg <= 360 ? data.windDirDeg : undefined
+    const windDir = typeof data?.windDir === 'string' && data.windDir ? data.windDir : undefined
+    setCache(lat, lon, tempC, icon, rainLast24h, windSpeedKmh, windDirDeg, windDir)
     return {
       tempC,
       icon,
       rainLast24h,
+      windSpeedKmh,
+      windDirDeg,
+      windDir,
       fromCache: false,
       fetchedAt: Date.now(),
     }
@@ -105,7 +152,7 @@ export function weatherIconType(apiIcon?: string | null, date: Date = new Date()
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/reverse'
 const NOMINATIM_TTL_MS = 4 * 60 * 60 * 1000 // 4h
-const CITY_CACHE_KEY = 'vizion:weather:city'
+const CITY_CACHE_KEY = 'trackali:weather:city'
 
 /**
  * Récupère le nom de la ville (ou lieu) pour des coordonnées (reverse geocoding).
@@ -126,7 +173,7 @@ export async function getCityFromCoords(lat: number, lon: number): Promise<strin
   try {
     const url = `${NOMINATIM_URL}?lat=${lat}&lon=${lon}&format=json&addressdetails=1`
     const res = await fetch(url, {
-      headers: { Accept: 'application/json', 'User-Agent': 'VizionApp/1.0 (trail prep app)' },
+      headers: { Accept: 'application/json', 'User-Agent': 'TrackaliApp/1.0 (trail prep app)' },
     })
     if (!res.ok) return null
     const data = (await res.json()) as { address?: { city?: string; town?: string; village?: string; municipality?: string } }

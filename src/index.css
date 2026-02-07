@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Cabin:wght@600;700&family=DM+Mono:wght@500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap');
 @import './styles/tokens.css';
+@import './styles/ModalShared.css';
 
 @tailwind base;
 @tailwind components;

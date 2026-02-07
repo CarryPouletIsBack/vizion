@@ -42,7 +42,7 @@ export default function StravaCallbackPage({ onAuthSuccess }: StravaCallbackPage
         // TODO: Stocker le token dans Supabase (table users ou sessions)
         // Pour l'instant, on stocke juste dans localStorage (temporaire)
         try {
-          localStorage.setItem('vizion:strava_token', JSON.stringify(tokenData))
+          localStorage.setItem('trackali:strava_token', JSON.stringify(tokenData))
         } catch (e) {
           console.warn('Impossible de stocker le token Strava', e)
         }

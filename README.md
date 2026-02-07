@@ -1,4 +1,4 @@
-# VIZION — Simulateur de préparation Trail (MVP)
+# TRACKALI — Simulateur de préparation Trail (MVP)
 
 Application React/Vite pour un simulateur de préparation trail basé sur l'analyse de courses, l'import GPX et l'intégration Strava. Le projet suit la maquette Figma et les règles de développement définies dans `DEV_RULES.md`.
 
@@ -28,7 +28,7 @@ L'application sera accessible sur `http://localhost:5173`
 - **Écran Saison** : Globe WebGL plein écran (côtes en lignes, mers transparentes) ; fond fixe sous la sidebar et le header ; globe **interactif** (rotation, zoom) sur cette page uniquement ; référence de positionnement pour toutes les pages (titres, padding, sidebar 200px, main 224px)
 - **Écran Événements** : Tableau avec filtres (Highcharts DataGrid)
 - **Écran Courses** : Grille de cartes de courses avec statistiques
-- **Écran Single Course** : Détails complets d'une course (GPX pleine largeur, profil, analyse) ; météo et **heure locale avec décalage UTC** (ex. Saint-Paul · 24° · 22h06 (+4h)) ; cartes alignées sur le style `course-card` (fond `--color-card-bg`, bordure, backdrop-filter)
+- **Écran Single Course** : Détails complets d'une course (GPX pleine largeur, profil, analyse) ; **météo et heure avec icônes** (lieu, soleil, horloge, vent — ex. Saint-Pierre · 24° · 01h15 (+3h) · Vent NNE 12 km/h) ; **vent sur le tracé** (grille de flèches Highcharts Vector + pastille) ; **segments numérotés** sur le tracé (étiquettes au-dessus/en dessous pour ne pas superposer) ; **segment actif** mis en évidence sur la page Segment ; **pluie** (gouttes sur les secteurs où il a plu) ; cartes alignées sur le style `course-card` (fond `--color-card-bg`, bordure, backdrop-filter)
 - **Compte utilisateur** : Accès via **icône utilisateur** dans le header (connexion / création de compte en modale ; une fois connecté, clic sur l’icône → page Mon compte) ; lien « Mon compte » retiré de la sidebar
 
 ### 📊 Intégration Strava
@@ -70,6 +70,15 @@ Le moteur compare les métriques Strava avec les exigences de la course pour dé
 - 🚨 **Priorité immédiate** : Actions critiques à effectuer rapidement
 - ⚠️ **Important mais secondaire** : Ajustements nécessaires mais non urgents
 - 🧪 **À tester** : Tests de nutrition, équipement, stratégies
+
+#### Page Ma préparation (cœur produit)
+
+- **Hero** : état de préparation (🟢/🟠/🔴), charge 6 semaines, delta vs semaine précédente, **temps estimé** mis en avant
+- **Prochaine échéance** : objectifs des 4 prochaines semaines (km/sem, D+/sem, sorties, sortie longue) en bloc dédié
+- **Tendance** : courbe d’évolution de la charge sur 6 semaines (M-6 → M-1)
+- **Ajustements recommandés** : listes en **tâches à cocher** (persistance par course dans `localStorage`)
+- **Préparation par segment** : pour chaque tronçon de la course, D+ du segment et indicateur ✓/! selon le D+ max entraîné
+- **Export** : boutons « Imprimer / PDF » et « Copier le lien » ; styles d’impression pour masquer la navigation
 
 #### Statistiques Grand Raid 2025
 
@@ -131,7 +140,7 @@ Basée sur la logique de [pacing-trail.fr](https://pacing-trail.fr/calculateur-d
 ## Structure du Projet
 
 ```
-vizion-app/
+trackali-app/
 ├── api/
 │   ├── strava/           # Routes API Vercel pour Strava
 │   │   ├── activities.ts # Récupération activités
@@ -144,7 +153,8 @@ vizion-app/
 │   └── globe/            # Globe WebGL (globe.js, texture world.jpg, Three.js)
 ├── src/
 │   ├── components/       # Composants React réutilisables
-│   │   ├── WebGlGlobe.tsx    # Globe 3D (côtes, mers transparentes)
+│   │   ├── WebGlGlobe.tsx       # Globe 3D (côtes, mers transparentes)
+│   │   ├── WindVectorChart.tsx  # Flèches vent sur tracé GPX (Highcharts Vector)
 │   │   ├── SimulationEngine.tsx
 │   │   ├── SingleCourseElevationChart.tsx
 │   │   └── ...
@@ -155,6 +165,7 @@ vizion-app/
 │   │   └── SingleCoursePage.tsx
 │   ├── lib/              # Logique métier
 │   │   ├── courseAnalysis.ts      # Moteur d'analyse
+│   │   ├── svgZoneSegmenter.ts    # Segments numérotés GPX, zoom segment, vue 3D
 │   │   ├── stravaEngine.ts        # Calcul métriques Strava
 │   │   ├── trailTimeEstimator.ts  # Estimation temps
 │   │   ├── profileTechnicity.ts   # Analyse technicité
@@ -228,7 +239,7 @@ Le bouton **« Conseils IA »** dans le Moteur de Simulation envoie la situation
   - `MISTRAL_API_KEY` : clé API Mistral ([console Mistral](https://console.mistral.ai/))
   - Optionnel : `MISTRAL_SIMULATOR_MODEL` (défaut : `mistral-small-latest`)
 
-**Note** : **mistral-vibe** est un assistant en ligne de commande (CLI) pour le code ; il ne sert pas de serveur de modèle pour Vizion. Pour améliorer le simulateur avec l’IA, il faut soit **Ollama** (local) soit l’**API Mistral** (cloud), comme ci‑dessus.
+**Note** : **mistral-vibe** est un assistant en ligne de commande (CLI) pour le code ; il ne sert pas de serveur de modèle pour Trackali. Pour améliorer le simulateur avec l’IA, il faut soit **Ollama** (local) soit l’**API Mistral** (cloud), comme ci‑dessus.
 
 #### Strava OAuth (pour les routes API Vercel)
 
@@ -240,7 +251,7 @@ Variables d'environnement Vercel :
 ### Redirect URIs
 
 - **Développement** : `http://localhost:5173/auth/strava/callback`
-- **Production** : `https://vizion-blush.vercel.app/auth/strava/callback`
+- **Production** : `https://trackali-blush.vercel.app/auth/strava/callback`
 
 ⚠️ La Redirect URI doit correspondre **exactement** à celle configurée dans Strava.
 
@@ -256,10 +267,9 @@ Variables d'environnement Vercel :
 
 - [ ] Synchronisation automatique Strava (webhooks)
 - [ ] Comparaison multi-courses
-- [ ] Export PDF du rapport de préparation
-- [ ] Intégration météo pour l'estimation de temps
-- [ ] Partage de préparation avec coach/amis
-- [ ] Historique des analyses dans le temps
+- [ ] Intégration météo pour l'estimation de temps (partiellement en place : température + vent)
+- [ ] Historique des analyses dans le temps (données réelles par semaine)
+- [ ] Notifications / rappels (objectifs 4 semaines, reprise d’activité)
 
 ## Notes
 
@@ -273,7 +283,7 @@ Variables d'environnement Vercel :
 
 ## Déploiement
 
-Le projet est déployé sur Vercel : [https://vizion-blush.vercel.app](https://vizion-blush.vercel.app)
+Le projet est déployé sur Vercel : [https://trackali-blush.vercel.app](https://trackali-blush.vercel.app)
 
 ---
 

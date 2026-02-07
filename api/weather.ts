@@ -58,6 +58,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           precipIN?: number
           precipTodayMM?: number
           precipTodayIN?: number
+          windSpeedKPH?: number
+          windDirDEG?: number
+          windDir?: string
         }
       }>
       error?: { description?: string }
@@ -76,6 +79,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const icon = ob?.icon ?? ob?.weather ?? undefined
     const precipMM = ob?.precipTodayMM ?? ob?.precipMM ?? (ob?.precipTodayIN != null ? ob.precipTodayIN * 25.4 : undefined) ?? (ob?.precipIN != null ? ob.precipIN * 25.4 : undefined)
     const rainLast24h = precipMM != null ? precipMM > 0 : undefined
+    const windSpeedKmh = ob?.windSpeedKPH ?? undefined
+    const windDirDeg = ob?.windDirDEG != null && ob.windDirDEG >= 0 && ob.windDirDEG <= 360 ? ob.windDirDEG : undefined
+    const windDir = typeof ob?.windDir === 'string' && ob.windDir ? ob.windDir : undefined
 
     if (tempC == null) {
       return res.status(502).json({
@@ -89,6 +95,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       tempC: Number(tempC),
       icon: icon ?? undefined,
       rainLast24h: rainLast24h ?? undefined,
+      windSpeedKmh: windSpeedKmh ?? undefined,
+      windDirDeg: windDirDeg ?? undefined,
+      windDir: windDir ?? undefined,
     })
   } catch (err) {
     console.error('Erreur météo', err)

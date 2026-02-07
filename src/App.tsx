@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 import WebGlGlobe from './components/WebGlGlobe'
@@ -74,13 +74,22 @@ async function prependExampleCourse(events: EventItem[]): Promise<EventItem[]> {
   return [...ex, ...events.filter((e) => !exampleIds.has(e.id))]
 }
 
-/** Course exemple avec le tracé GPX Grand Raid (public/data/grand-raid-exemple.gpx) */
+/** Course exemple : Diagonale des fous (Grand Raid). GPX : Course_à_pied_de_nuit.gpx ou grand-raid-exemple.gpx */
 async function loadExampleCourse(): Promise<EventItem[]> {
   try {
     const base = typeof window !== 'undefined' ? window.location.origin : ''
-    const res = await fetch(`${base}/data/grand-raid-exemple.gpx`)
-    if (!res.ok) return []
-    const gpxText = await res.text()
+    const gpxPaths = ['data/Course_à_pied_de_nuit.gpx', 'data/grand-raid-exemple.gpx']
+    let gpxText: string | null = null
+    let gpxName = 'grand-raid-exemple.gpx'
+    for (const path of gpxPaths) {
+      const res = await fetch(`${base}/${path}`)
+      if (res.ok) {
+        gpxText = await res.text()
+        gpxName = path.split('/').pop() || gpxName
+        break
+      }
+    }
+    if (!gpxText) return []
     const stats = computeGpxStats(gpxText)
     const startCoordinates = extractGpxStartCoordinates(gpxText) ?? undefined
     if (!stats) return []
@@ -91,11 +100,11 @@ async function loadExampleCourse(): Promise<EventItem[]> {
 
     const course: CourseItem = {
       id: 'example-grand-raid-course',
-      name: 'Grand Raid (exemple)',
+      name: 'Diagonale des fous',
       distanceKm: stats.distanceKm,
       elevationGain: stats.elevationGain,
       profile: stats.profile,
-      gpxName: 'grand-raid-exemple.gpx',
+      gpxName,
       gpxSvg,
       startCoordinates,
       weatherSamplePoints,
@@ -106,7 +115,7 @@ async function loadExampleCourse(): Promise<EventItem[]> {
       id: 'example-grand-raid-event',
       name: 'Grand Raid Réunion',
       country: 'La Réunion',
-      startLabel: 'Exemple · tracé GPX inclus',
+      startLabel: 'Diagonale des fous · tracé GPX inclus',
       courses: [course],
     }
 
@@ -301,7 +310,7 @@ function App() {
       return 'strava-callback'
     }
     try {
-      const stored = localStorage.getItem('vizion:view')
+      const stored = localStorage.getItem('trackali:view')
       return (stored as AppView) || 'saison'
     } catch {
       return 'saison'
@@ -318,14 +327,14 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(() => {
     try {
-      return localStorage.getItem('vizion:selectedEventId')
+      return localStorage.getItem('trackali:selectedEventId')
     } catch {
       return null
     }
   })
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(() => {
     try {
-      return localStorage.getItem('vizion:selectedCourseId')
+      return localStorage.getItem('trackali:selectedCourseId')
     } catch {
       return null
     }
@@ -591,7 +600,7 @@ function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('vizion:view', view)
+      localStorage.setItem('trackali:view', view)
     } catch {
       // Pas de stockage dispo
     }
@@ -600,7 +609,7 @@ function App() {
   useEffect(() => {
     try {
       if (selectedEventId) {
-        localStorage.setItem('vizion:selectedEventId', selectedEventId)
+        localStorage.setItem('trackali:selectedEventId', selectedEventId)
       }
     } catch {
       // Pas de stockage dispo
@@ -610,7 +619,7 @@ function App() {
   useEffect(() => {
     try {
       if (selectedCourseId) {
-        localStorage.setItem('vizion:selectedCourseId', selectedCourseId)
+        localStorage.setItem('trackali:selectedCourseId', selectedCourseId)
       }
     } catch {
       // Pas de stockage dispo
@@ -628,6 +637,16 @@ function App() {
     loadEvents()
   }, [])
 
+  const courseMarkersOnGlobe = useMemo<{ id: string; coordinates: [number, number] }[]>(() => {
+    return events.flatMap((e) =>
+      e.courses
+        .filter((c): c is typeof c & { startCoordinates: [number, number] } =>
+          c.startCoordinates != null && c.startCoordinates.length === 2
+        )
+        .map((c) => ({ id: c.id, coordinates: c.startCoordinates }))
+    )
+  }, [events])
+
   if (loading) {
     return (
       <div className="app-root" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -639,12 +658,17 @@ function App() {
   return (
     <div className={`app-root${view === 'saison' ? ' app-root--globe-interactive' : ''}`}>
       <div className="app-bg-globe" aria-hidden={view !== 'saison'}>
-        <WebGlGlobe />
+        <WebGlGlobe courseMarkers={courseMarkersOnGlobe} onCourseSelect={(id) => { setSelectedCourseId(id ?? null); setView('course') }} />
       </div>
+      <div className={`app-bg-dark ${view !== 'saison' ? 'app-bg-dark--visible' : ''}`} aria-hidden={view === 'saison'} />
       <div className="app-content">
       {view === 'saison' && (
         <SaisonPage
-          onCourseSelect={() => setView('course')}
+          events={events}
+          onCourseSelect={(courseId) => {
+            if (courseId) setSelectedCourseId(courseId)
+            setView('course')
+          }}
           onNavigate={handleNavigate}
           onCreateEvent={handleCreateEvent}
           onCreateCourse={handleCreateCourse}
