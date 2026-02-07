@@ -7,7 +7,7 @@ import SideNav from '../components/SideNav'
 import SingleCourseElevationChart from '../components/SingleCourseElevationChart'
 import SimulationEngine from '../components/SimulationEngine'
 import WindVectorChart from '../components/WindVectorChart'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 /** ID Strava de l'activité du 1er finisher (Diagonale des fous) pour embed + temps au km */
 const FIRST_FINISHER_ACTIVITY_ID = '16387493791'
@@ -22,11 +22,15 @@ export type CourseStepId = (typeof COURSE_STEPS)[number]['id']
 import useGpxHoverMarker from '../hooks/useGpxHoverMarker'
 import useStravaMetrics from '../hooks/useStravaMetrics'
 import { analyzeCourseReadiness } from '../lib/courseAnalysis'
+import { mergeMetricsWithFit, mergeMetricsWithFitList } from '../lib/fitMetricsMerge'
+import { getCurrentUser } from '../lib/auth'
+import { getUserFitActivities, saveUserFitActivity, type UserFitActivityRow } from '../lib/userFitActivities'
 import { grandRaidStats } from '../data/grandRaidStats'
 import { getWeather, getCityFromCoords } from '../lib/xweather'
 import { analyzeProfileZones } from '../lib/profileAnalysis'
 import { segmentSvgIntoNumberedSegments, addSvgTooltips, addSvgSegmentClickListeners, getSvgZoomedOnSegment, getSegmentSvgWithElevation, type SegmentClickPayload } from '../lib/svgZoneSegmenter'
 import { latLonToSvg, type GpxBounds } from '../lib/gpxToSvg'
+import FitParser from 'fit-file-parser'
 
 /** Extrait le viewBox d’une chaîne SVG (pour superposer les gouttes de pluie). */
 function parseViewBox(svgString: string): string | null {
@@ -36,6 +40,50 @@ function parseViewBox(svgString: string): string | null {
 
 /** Path goutte d’eau (centrée 0,0), pointe en bas */
 const DROP_PATH = 'M0 -2.2 C1.2 -2.2 2.2 -1.2 2.2 0 C2.2 1.5 0 3.5 0 3.5 S-2.2 1.5 -2.2 0 C-2.2 -1.2 -1.2 -2.2 0 -2.2 Z'
+
+/** Résumé extrait d'un fichier .fit parsé (première session) */
+export type FitActivitySummary = {
+  distanceKm: number | null
+  durationSec: number | null
+  ascentM: number | null
+  sport: string | null
+}
+
+/** Extrait un résumé lisible depuis le résultat de fit-file-parser (mode cascade). */
+function getFitSummary(data: { sessions?: Array<{ [k: string]: unknown }>; activity?: { sessions?: Array<{ [k: string]: unknown }>; laps?: Array<{ [k: string]: unknown }> }; laps?: Array<{ [k: string]: unknown }>; records?: Array<{ [k: string]: unknown }> }): FitActivitySummary | null {
+  const sessions = data.sessions ?? data.activity?.sessions
+  const session = sessions?.[0] as { [k: string]: unknown } | undefined
+  if (!session) {
+    const lap = data.laps?.[0] ?? data.activity?.laps?.[0] as { [k: string]: unknown } | undefined
+    if (lap) {
+      const rawDist = lap.total_distance as number | undefined
+      const rawTime = lap.total_elapsed_time as number | undefined
+      const rawAscent = lap.total_ascent as number | undefined
+      const distanceKm = rawDist != null ? (rawDist > 1000 ? rawDist / 1000 : rawDist) : null
+      const durationSec = rawTime != null ? (rawTime > 1e6 ? Math.round(rawTime / 1000) : rawTime) : null
+      const ascentM = rawAscent != null ? rawAscent : null
+      const sport = (lap.sport as string) ?? null
+      return { distanceKm, durationSec, ascentM, sport }
+    }
+    return null
+  }
+  const rawDist = session.total_distance as number | undefined
+  const rawTime = session.total_elapsed_time as number | undefined
+  const rawAscent = session.total_ascent as number | undefined
+  const distanceKm = rawDist != null ? (rawDist > 1000 ? rawDist / 1000 : rawDist) : null
+  const durationSec = rawTime != null ? (rawTime > 1e6 ? Math.round(rawTime / 1000) : rawTime) : null
+  const ascentM = rawAscent != null ? rawAscent : null
+  const sport = (session.sport as string) ?? null
+  return { distanceKm, durationSec, ascentM, sport }
+}
+
+/** Formate une durée en secondes en "Xh Ymin". */
+function formatDuration(sec: number): string {
+  const h = Math.floor(sec / 3600)
+  const m = Math.floor((sec % 3600) / 60)
+  if (h > 0) return `${h}h ${m}min`
+  return `${m} min`
+}
 
 /** Directions cardinales (API) → degrés (0 = N, 90 = E) */
 const WIND_DIR_DEG: Record<string, number> = {
@@ -60,12 +108,18 @@ function CourseMetaRegion({
   windSpeedKmh: number | null
 }) {
   const timeStr =
-    regionTime != null && regionOffsetHours != null
+    regionOffsetHours != null
       ? (() => {
+          const now = Date.now()
+          const regionMs = now + regionOffsetHours * 60 * 60 * 1000
+          const d = new Date(regionMs)
+          const h = d.getUTCHours()
+          const m = d.getUTCMinutes()
+          const time = `${h.toString().padStart(2, '0')}h${m.toString().padStart(2, '0')}`
           const userOffsetHours = -new Date().getTimezoneOffset() / 60
           const diffHours = Math.round((regionOffsetHours - userOffsetHours) * 100) / 100
           const diffStr = diffHours === 0 ? '0h' : `${diffHours >= 0 ? '+' : ''}${diffHours}h`
-          return `${regionTime} (${diffStr})`
+          return `${time} (${diffStr})`
         })()
       : regionTime
   const windStr =
@@ -194,10 +248,20 @@ export default function SingleCoursePage({
   const [firstFinisherError, setFirstFinisherError] = useState<string | null>(null)
   /** Ajustements recommandés cochés (persistés en localStorage par course) */
   const [preparationCheckedActions, setPreparationCheckedActions] = useState<Record<string, boolean>>({})
+  /** Fichier .fit importé sur la page Ma préparation */
+  const [fitFileName, setFitFileName] = useState<string | null>(null)
+  const [fitParsedData, setFitParsedData] = useState<FitActivitySummary | null>(null)
+  const [fitParseError, setFitParseError] = useState<string | null>(null)
+  const [fitParseLoading, setFitParseLoading] = useState(false)
+  const fitFileInputRef = useRef<HTMLInputElement | null>(null)
+  /** Utilisateur connecté (Trackali) et ses activités .fit sauvegardées */
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [userFitActivities, setUserFitActivities] = useState<UserFitActivityRow[]>([])
 
   const startCoords = (selectedCourse as { startCoordinates?: [number, number] } | undefined)?.startCoordinates
   const courseId = (selectedCourse as { id?: string } | undefined)?.id ?? ''
   const preparationStorageKey = `vizion_preparation_actions_${selectedCourseId ?? ''}`
+  const fitStorageKey = `vizion_fit_${selectedCourseId ?? ''}`
 
   useEffect(() => {
     if (!preparationStorageKey) return
@@ -213,6 +277,45 @@ export default function SingleCoursePage({
       setPreparationCheckedActions({})
     }
   }, [preparationStorageKey])
+
+  // Restaurer le dernier .fit importé pour cette course (localStorage)
+  useEffect(() => {
+    if (!fitStorageKey) return
+    try {
+      const raw = localStorage.getItem(fitStorageKey)
+      if (raw) {
+        const stored = JSON.parse(raw) as { summary: FitActivitySummary; fileName?: string }
+        if (stored.summary && typeof stored.summary === 'object') {
+          setFitParsedData(stored.summary)
+          if (stored.fileName) setFitFileName(stored.fileName)
+        }
+      } else {
+        setFitParsedData(null)
+        setFitFileName(null)
+      }
+    } catch {
+      setFitParsedData(null)
+      setFitFileName(null)
+    }
+  }, [fitStorageKey])
+
+  // Charger l'utilisateur Trackali et ses activités .fit (pour analyse sur les 5 plus longues)
+  useEffect(() => {
+    let mounted = true
+    getCurrentUser().then((user) => {
+      if (!mounted) return
+      if (user?.id) {
+        setCurrentUserId(user.id)
+        getUserFitActivities(user.id).then((rows) => {
+          if (mounted) setUserFitActivities(rows)
+        })
+      } else {
+        setCurrentUserId(null)
+        setUserFitActivities([])
+      }
+    })
+    return () => { mounted = false }
+  }, [])
 
   const togglePreparationAction = (actionText: string) => {
     setPreparationCheckedActions((prev) => {
@@ -394,8 +497,12 @@ export default function SingleCoursePage({
                             courseData.name?.toLowerCase().includes('diagonale') ||
                             (courseData.distanceKm > 150 && courseData.elevationGain > 8000)
 
-const analysis = analyzeCourseReadiness(
-    metrics,
+const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
+  const metricsForAnalysis = userFitTop5.length > 0
+    ? mergeMetricsWithFitList(metrics, userFitTop5)
+    : mergeMetricsWithFit(metrics, fitParsedData)
+  const analysis = analyzeCourseReadiness(
+    metricsForAnalysis,
     courseData,
     stravaSegments,
     useGrandRaidStats ? grandRaidStats : undefined
@@ -1012,7 +1119,102 @@ const analysis = analyzeCourseReadiness(
               <>
                 <div className="single-course-course single-course-preparation__left">
                   <div className="single-course-preparation__top">
-                    <p className="single-course-preparation__intro">Préparation en cours : M-6</p>
+                    <div className="single-course-preparation__top-title-row">
+                      <p className="single-course-preparation__intro">Préparation en cours : M-6</p>
+                      <input
+                        ref={fitFileInputRef}
+                        type="file"
+                        accept=".fit,application/fit"
+                        className="single-course-preparation__fit-input"
+                        aria-hidden
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0]
+                          e.target.value = ''
+                          if (!file) return
+                          setFitFileName(file.name)
+                          setFitParseError(null)
+                          setFitParsedData(null)
+                          setFitParseLoading(true)
+                          try {
+                            const buffer = await file.arrayBuffer()
+                            const parser = new FitParser({
+                              mode: 'cascade',
+                              lengthUnit: 'km',
+                              speedUnit: 'km/h',
+                            })
+                            const data = await parser.parseAsync(buffer)
+                            const summary = getFitSummary(data as Parameters<typeof getFitSummary>[0])
+                            setFitParsedData(summary)
+                            if (!summary) {
+                              setFitParseError('Aucune session ou tour trouvé dans ce fichier .fit')
+                            } else {
+                              setFitParseError(null)
+                              try {
+                                localStorage.setItem(
+                                  fitStorageKey,
+                                  JSON.stringify({
+                                    summary,
+                                    fileName: file.name,
+                                    importedAt: new Date().toISOString(),
+                                  })
+                                )
+                              } catch {
+                                // ignore
+                              }
+                              getCurrentUser().then((user) => {
+                                if (user?.id) {
+                                  saveUserFitActivity(user.id, file.name, summary).then(() => {
+                                    getUserFitActivities(user.id).then(setUserFitActivities)
+                                  })
+                                }
+                              })
+                            }
+                          } catch (err) {
+                            setFitParseError(err instanceof Error ? err.message : 'Erreur lecture .fit')
+                            setFitParsedData(null)
+                          } finally {
+                            setFitParseLoading(false)
+                          }
+                        }}
+                      />
+                      <div className="single-course-preparation__fit-block">
+                        <button
+                          type="button"
+                          className="single-course-preparation__export-btn single-course-preparation__fit-btn"
+                          onClick={() => fitFileInputRef.current?.click()}
+                          disabled={fitParseLoading}
+                          aria-label="Importer un fichier .fit"
+                        >
+                          {fitParseLoading ? 'Chargement…' : (fitFileName ?? 'Importer .fit')}
+                        </button>
+                        {fitParseError && (
+                          <p className="single-course-preparation__fit-error" role="alert">
+                            {fitParseError}
+                          </p>
+                        )}
+                        {fitParsedData && !fitParseLoading && (
+                          <div className="single-course-preparation__fit-summary">
+                            <span className="single-course-preparation__fit-summary-label">Activité importée :</span>
+                            {' '}
+                            {[
+                              fitParsedData.distanceKm != null && `${fitParsedData.distanceKm.toFixed(1)} km`,
+                              fitParsedData.durationSec != null && formatDuration(fitParsedData.durationSec),
+                              fitParsedData.ascentM != null && `${Math.round(fitParsedData.ascentM)} m D+`,
+                            ].filter(Boolean).join(' · ')}
+                            {fitParsedData.sport && (
+                              <span className="single-course-preparation__fit-sport"> · {fitParsedData.sport}</span>
+                            )}
+                          </div>
+                        )}
+                        {currentUserId && (
+                          <p className="single-course-preparation__fit-hint">
+                            {userFitTop5.length > 0
+                              ? 'Vos 5 sorties les plus longues (compte Trackali) sont utilisées pour l\'analyse.'
+                              : 'Ajoutez des .fit depuis Mon compte pour améliorer l\'analyse.'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                     <div className="single-course-preparation__export">
                       <button
                         type="button"
@@ -1049,11 +1251,11 @@ const analysis = analyzeCourseReadiness(
                     </div>
                     <div className="single-course-preparation__hero-metrics">
                       <div className="single-course-preparation__hero-load">
-                        <span className="single-course-preparation__hero-load-value">{metrics ? metrics.loadScore.toLocaleString('fr-FR') : '—'}</span>
+                        <span className="single-course-preparation__hero-load-value">{metricsForAnalysis ? metricsForAnalysis.loadScore.toLocaleString('fr-FR') : '—'}</span>
                         <span className="single-course-preparation__hero-load-unit">charge 6 sem.</span>
                       </div>
                       <div className="single-course-preparation__hero-delta">
-                        {metrics ? `${metrics.loadDelta > 0 ? '+' : ''}${metrics.loadDelta}%` : '—'} vs sem. précédente
+                        {metricsForAnalysis ? `${metricsForAnalysis.loadDelta > 0 ? '+' : ''}${metricsForAnalysis.loadDelta}%` : '—'} vs sem. précédente
                       </div>
                     </div>
                     {analysis.timeEstimate && (
@@ -1071,14 +1273,14 @@ const analysis = analyzeCourseReadiness(
                       </span>
                     </div>
                   )}
-                  {metrics && (
+                  {metricsForAnalysis && (
                     <div className="single-course-preparation__trend" aria-label="Évolution de la charge sur 6 semaines">
                       <p className="single-course-preparation__trend-title">Évolution de la charge (6 semaines)</p>
                       <div className="single-course-preparation__trend-chart">
                         {(() => {
                           const weeks = ['M-6', 'M-5', 'M-4', 'M-3', 'M-2', 'M-1']
-                          const coef = 1 - (metrics.loadDelta ?? 0) / 100
-                          const values = weeks.map((_, i) => Math.round(metrics.loadScore * Math.pow(coef, 5 - i)))
+                          const coef = 1 - (metricsForAnalysis.loadDelta ?? 0) / 100
+                          const values = weeks.map((_, i) => Math.round(metricsForAnalysis.loadScore * Math.pow(coef, 5 - i)))
                           const minV = Math.min(...values)
                           const maxV = Math.max(...values)
                           const range = maxV - minV || 1
@@ -1210,14 +1412,14 @@ const analysis = analyzeCourseReadiness(
                     <div className="single-course-panel__card">
                       <p className="single-course-panel__title">CHARGE &amp; RÉGULARITÉ (6 semaines)</p>
                       <ul className="single-course-panel__list">
-                        <li><span>km / semaine</span><span>{metrics ? `${metrics.kmPerWeek} km` : '...'}</span></li>
-                        <li><span>d+ / semaine</span><span>{metrics ? `${metrics.dPlusPerWeek} m` : '...'}</span></li>
-                        <li><span>longue sortie max</span><span>{metrics ? `${metrics.longRunDistanceKm} km – ${metrics.longRunDPlus} d+` : '...'}</span></li>
+                        <li><span>km / semaine</span><span>{metricsForAnalysis ? `${metricsForAnalysis.kmPerWeek} km` : '...'}</span></li>
+                        <li><span>d+ / semaine</span><span>{metricsForAnalysis ? `${metricsForAnalysis.dPlusPerWeek} m` : '...'}</span></li>
+                        <li><span>longue sortie max</span><span>{metricsForAnalysis ? `${metricsForAnalysis.longRunDistanceKm} km – ${metricsForAnalysis.longRunDPlus} d+` : '...'}</span></li>
                         <li>
                           <span>régularité</span>
                           <span className={`single-course-panel__pill${analysis.regularity === 'bonne' ? ' single-course-panel__pill--ok' : ''}${analysis.regularity === 'faible' ? ' single-course-panel__pill--warning' : ''}`} title={analysis.regularityDetails}>{analysis.regularity}</span>
                         </li>
-                        <li><span>variation charge</span><span>{metrics ? `${metrics.variation > 0 ? '+' : ''}${metrics.variation.toFixed(1)}% / semaine` : '...'}</span></li>
+                        <li><span>variation charge</span><span>{metricsForAnalysis ? `${metricsForAnalysis.variation > 0 ? '+' : ''}${metricsForAnalysis.variation.toFixed(1)}% / semaine` : '...'}</span></li>
                       </ul>
                       {analysis.timeEstimate && (
                         <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
@@ -1327,12 +1529,12 @@ const analysis = analyzeCourseReadiness(
                     <div className="single-course-panel__card">
                       <p className="single-course-panel__title">📌 Préparation par segment</p>
                       <p className="single-course-preparation__segment-intro">
-                        Ton D+ max entraîné ({metrics ? `${metrics.longRunDPlus} m` : '—'}) par rapport au D+ de chaque tronçon de la course.
+                        Ton D+ max entraîné ({metricsForAnalysis ? `${metricsForAnalysis.longRunDPlus} m` : '—'}) par rapport au D+ de chaque tronçon de la course.
                       </p>
                       <ul className="single-course-panel__list single-course-preparation__segment-list">
                         {segmentBoundsList.map((seg) => {
                           const stats = getSegmentStats(seg.startKm, seg.endKm)
-                          const covered = metrics && stats && metrics.longRunDPlus >= stats.elevationGain
+                          const covered = metricsForAnalysis && stats && metricsForAnalysis.longRunDPlus >= stats.elevationGain
                           return (
                             <li key={seg.segmentNumber} className="single-course-preparation__segment-item">
                               <span>Segment {seg.segmentNumber}</span>

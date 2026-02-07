@@ -39,43 +39,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let timeShort: string
   let offsetHours: number
 
-  try {
-    const { find } = await import('geo-tz')
-    const zones = find(latNum, lonNum)
-    if (zones && zones.length > 0) {
-      timezone = zones[0]
-    }
-  } catch (err) {
-    console.warn('geo-tz failed, using longitude fallback:', err)
-  }
-
-  try {
-    const formatter = new Intl.DateTimeFormat('fr-FR', {
-      timeZone: timezone,
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    })
-    const time = formatter.format(now)
-    timeShort = time.replace(':', 'h')
-    const utcH = now.getUTCHours()
-    const utcM = now.getUTCMinutes()
-    const utcDec = utcH + utcM / 60
-    const zoneParts = new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }).formatToParts(now)
-    const zoneH = parseInt(zoneParts.find((p) => p.type === 'hour')?.value ?? '0', 10)
-    const zoneM = parseInt(zoneParts.find((p) => p.type === 'minute')?.value ?? '0', 10)
-    offsetHours = zoneH + zoneM / 60 - utcDec
-    if (offsetHours > 12) offsetHours -= 24
-    if (offsetHours < -12) offsetHours += 24
-    offsetHours = Math.round(offsetHours * 100) / 100
-  } catch {
-    offsetHours = getOffsetFromLon(lonNum)
+  // La Réunion (ex. Diagonale des fous) : forcer Indian/Reunion en prod où Intl peut varier
+  const isReunion = latNum >= -21.5 && latNum <= -20.3 && lonNum >= 55.2 && lonNum <= 55.9
+  if (isReunion) {
+    timezone = 'Indian/Reunion'
+    offsetHours = 4
     timeShort = formatTimeInOffset(offsetHours)
+  } else {
+    try {
+      const { find } = await import('geo-tz')
+      const zones = find(latNum, lonNum)
+      if (zones && zones.length > 0) {
+        timezone = zones[0]
+      }
+    } catch (err) {
+      console.warn('geo-tz failed, using longitude fallback:', err)
+    }
+
+    try {
+      const formatter = new Intl.DateTimeFormat('fr-FR', {
+        timeZone: timezone,
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })
+      const time = formatter.format(now)
+      timeShort = time.replace(':', 'h')
+      const utcH = now.getUTCHours()
+      const utcM = now.getUTCMinutes()
+      const utcDec = utcH + utcM / 60
+      const zoneParts = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).formatToParts(now)
+      const zoneH = parseInt(zoneParts.find((p) => p.type === 'hour')?.value ?? '0', 10)
+      const zoneM = parseInt(zoneParts.find((p) => p.type === 'minute')?.value ?? '0', 10)
+      offsetHours = zoneH + zoneM / 60 - utcDec
+      if (offsetHours > 12) offsetHours -= 24
+      if (offsetHours < -12) offsetHours += 24
+      offsetHours = Math.round(offsetHours * 100) / 100
+    } catch {
+      offsetHours = getOffsetFromLon(lonNum)
+      timeShort = formatTimeInOffset(offsetHours)
+    }
   }
 
   res.setHeader('Cache-Control', 'public, max-age=60')

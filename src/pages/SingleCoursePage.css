@@ -411,10 +411,67 @@
   margin-bottom: var(--spacing-6, 12px);
 }
 
+.single-course-preparation__top-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-4, 8px);
+}
+
 .single-course-preparation__intro {
   margin: 0;
   font-size: var(--font-body-sm-size, 14px);
   color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-preparation__fit-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.single-course-preparation__fit-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.single-course-preparation__fit-btn {
+  color: var(--color-accent, #bfc900);
+  border-color: rgba(191, 201, 0, 0.4);
+}
+
+.single-course-preparation__fit-btn:hover {
+  border-color: var(--color-accent, #bfc900);
+  background: rgba(191, 201, 0, 0.1);
+}
+
+.single-course-preparation__fit-error {
+  margin: var(--spacing-2, 4px) 0 0;
+  font-size: var(--font-size-sm, 12px);
+  color: var(--color-error, #e57373);
+}
+
+.single-course-preparation__fit-summary {
+  margin-top: var(--spacing-2, 4px);
+  font-size: var(--font-size-sm, 12px);
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.75));
+}
+
+.single-course-preparation__fit-summary-label {
+  font-weight: 500;
+}
+
+.single-course-preparation__fit-sport {
+  font-style: italic;
+}
+
+.single-course-preparation__fit-hint {
+  margin-top: var(--spacing-2, 4px);
+  font-size: 11px;
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.6));
 }
 
 .single-course-preparation__export {

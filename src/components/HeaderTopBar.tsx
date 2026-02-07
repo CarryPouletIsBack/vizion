@@ -62,8 +62,9 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
 
   // Écouter l'événement personnalisé pour ouvrir la modale de connexion
   useEffect(() => {
-    const handleOpenLoginModal = () => {
-      setLoginModalMode('login')
+    const handleOpenLoginModal = (e: Event) => {
+      const mode = (e as CustomEvent<{ mode?: 'login' | 'signup' }>)?.detail?.mode ?? 'login'
+      setLoginModalMode(mode)
       setIsLoginModalOpen(true)
     }
     window.addEventListener('openLoginModal', handleOpenLoginModal as EventListener)
@@ -124,10 +125,11 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
     return () => { cancelled = true }
   }, [isLocal])
 
-  // Écouter l'événement personnalisé pour ouvrir la modale de connexion
+  // Écouter l'événement personnalisé pour ouvrir la modale de connexion (dupliqué plus bas)
   useEffect(() => {
-    const handleOpenLoginModal = () => {
-      setLoginModalMode('login')
+    const handleOpenLoginModal = (e: Event) => {
+      const mode = (e as CustomEvent<{ mode?: 'login' | 'signup' }>)?.detail?.mode ?? 'login'
+      setLoginModalMode(mode)
       setIsLoginModalOpen(true)
     }
     window.addEventListener('openLoginModal', handleOpenLoginModal as EventListener)

@@ -21,6 +21,7 @@
     "@types/three": "^0.182.0",
     "d3": "^7.9.0",
     "d3-tile": "^1.0.0",
+    "fit-file-parser": "^2.3.2",
     "geo-tz": "^8.1.5",
     "highcharts": "^12.1.0",
     "highcharts-react-official": "^3.2.3",

@@ -31,7 +31,15 @@ L'application sera accessible sur `http://localhost:5173`
 - **Écran Single Course** : Détails complets d'une course (GPX pleine largeur, profil, analyse) ; **météo et heure avec icônes** (lieu, soleil, horloge, vent — ex. Saint-Pierre · 24° · 01h15 (+3h) · Vent NNE 12 km/h) ; **vent sur le tracé** (grille de flèches Highcharts Vector + pastille) ; **segments numérotés** sur le tracé (étiquettes au-dessus/en dessous pour ne pas superposer) ; **segment actif** mis en évidence sur la page Segment ; **pluie** (gouttes sur les secteurs où il a plu) ; cartes alignées sur le style `course-card` (fond `--color-card-bg`, bordure, backdrop-filter)
 - **Compte utilisateur** : Accès via **icône utilisateur** dans le header (connexion / création de compte en modale ; une fois connecté, clic sur l’icône → page Mon compte) ; lien « Mon compte » retiré de la sidebar
 
-### 📊 Intégration Strava
+### 📁 Compte Trackali et import .fit
+
+- **Compte Trackali** : Création de compte (email / mot de passe) via la modale ; Strava devient **optionnel** pour l’analyse.
+- **Import .fit** : Sur la page **Ma préparation** (bouton « Importer .fit ») et dans **Mon compte** (section « Vos 5 sorties les plus longues »). Les fichiers .fit sont parsés (lib `fit-file-parser`) ; résumé : distance, durée, D+, sport.
+- **Sauvegarde avec l’utilisateur** : Si l’utilisateur est connecté (Trackali), chaque .fit importé est enregistré en base (table `user_fit_activities`, Supabase).
+- **5 sorties les plus longues** : En **Mon compte**, l’utilisateur peut ajouter plusieurs .fit ; la liste est triée par « longueur » (distance + D+). Les **5 meilleures** sont utilisées pour l’analyse de préparation (métriques fusionnées avec Strava si connecté, ou 100 % .fit sinon).
+- **Analyse** : Charge, longue sortie max, recommandations et niveau de préparation (🟢/🟠/🔴) sont calculés à partir des métriques Strava (si connecté) et/ou des 5 .fit (voir `src/lib/fitMetricsMerge.ts`, `userFitActivities.ts`, `parseFitFile.ts`).
+
+### 📊 Intégration Strava (optionnelle)
 
 #### Connexion OAuth
 
@@ -77,6 +85,7 @@ Le moteur compare les métriques Strava avec les exigences de la course pour dé
 - **Prochaine échéance** : objectifs des 4 prochaines semaines (km/sem, D+/sem, sorties, sortie longue) en bloc dédié
 - **Tendance** : courbe d’évolution de la charge sur 6 semaines (M-6 → M-1)
 - **Ajustements recommandés** : listes en **tâches à cocher** (persistance par course dans `localStorage`)
+- **Import .fit** : bouton « Importer .fit » ; résumé (km, durée, D+) ; si compte Trackali, enregistrement en base et prise en compte dans les 5 sorties les plus longues
 - **Préparation par segment** : pour chaque tronçon de la course, D+ du segment et indicateur ✓/! selon le D+ max entraîné
 - **Export** : boutons « Imprimer / PDF » et « Copier le lien » ; styles d’impression pour masquer la navigation
 
@@ -146,7 +155,7 @@ trackali-app/
 │   │   ├── activities.ts # Récupération activités
 │   │   └── athlete.ts    # Récupération profil athlète
 │   ├── weather.ts        # Proxy météo (Xweather)
-│   ├── timezone.ts       # Fuseau horaire (heure locale + offsetHours UTC)
+│   ├── timezone.ts       # Fuseau horaire (offsetHours ; fallback La Réunion UTC+4 en prod)
 │   └── simulator/
 │       └── refine.ts    # Conseils IA (Mistral API) pour le simulateur
 ├── public/
@@ -169,6 +178,9 @@ trackali-app/
 │   │   ├── stravaEngine.ts        # Calcul métriques Strava
 │   │   ├── trailTimeEstimator.ts  # Estimation temps
 │   │   ├── profileTechnicity.ts   # Analyse technicité
+│   │   ├── fitMetricsMerge.ts     # Fusion métriques Strava + .fit (5 sorties longues)
+│   │   ├── userFitActivities.ts   # CRUD activités .fit (Supabase)
+│   │   ├── parseFitFile.ts        # Parsing .fit → résumé (distance, D+, durée)
 │   │   └── ...
 │   ├── types/            # Types TypeScript
 │   │   └── strava.ts
@@ -181,9 +193,10 @@ trackali-app/
 
 ## Persistance des Données (Supabase)
 
-- **Tables** : `events`, `courses`, `users`
-- **Chargement automatique** au démarrage
-- **Création automatique** d'events si nécessaire
+- **Tables** : `events`, `courses`, `user_fit_activities` (activités .fit par utilisateur)
+- **Auth** : Compte Trackali (email/mot de passe) ; pas de table `users` dédiée, auth via Supabase Auth
+- **Chargement automatique** des events/courses au démarrage
+- **user_fit_activities** : `user_id`, `file_name`, `summary` (JSON), `imported_at` ; RLS par `auth.uid()`
 - **Stockage** : Images et SVG en base64 dans la base
 - **Row Level Security (RLS)** : Accès sécurisé par utilisateur
 
@@ -271,6 +284,8 @@ Variables d'environnement Vercel :
 - [ ] Historique des analyses dans le temps (données réelles par semaine)
 - [ ] Notifications / rappels (objectifs 4 semaines, reprise d’activité)
 
+- [ ] Option : limiter à 5 .fit « officiels » par utilisateur
+
 ## Notes
 
 - Les icônes utilisent `react-icons` (remplacement des emojis)
@@ -279,7 +294,8 @@ Variables d'environnement Vercel :
 - L'analyse est basée sur les 6-12 dernières semaines d'activités Strava
 - **Cartes** : Fond commun `--color-card-bg` (noir 30 %) dans `tokens.css` ; style de référence = `.course-card` (bordure, backdrop-filter, border-radius)
 - **Scrollbar** : Style global (index.css) aligné sur le portfolio (WebKit + Firefox, fin, arrondi, semi-transparent)
-- **Note temporaire** : La fonctionnalité "Événements" est masquée dans la navigation. Les courses sont indépendantes pour le moment et ne nécessitent pas d'être regroupées dans un événement parent.
+- **Note temporaire** : La fonctionnalité "Événements" est masquée dans la navigation. Les courses sont indépendantes pour le moment.
+- **Heure de la course** : Affichée côté client à partir de l’offset fuseau renvoyé par `/api/timezone` ; pour La Réunion, l’API force `Indian/Reunion` (UTC+4) en prod pour éviter les écarts liés à l’environnement.
 
 ## Déploiement
 

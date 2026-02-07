@@ -4,6 +4,8 @@ import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 import { redirectToStravaAuth } from '../lib/stravaAuth'
 import { getCurrentUser, signOut, updateProfile } from '../lib/auth'
+import { getUserFitActivities, saveUserFitActivity, deleteUserFitActivity, type UserFitActivityRow } from '../lib/userFitActivities'
+import { parseFitFile } from '../lib/parseFitFile'
 
 type UserAccountPageProps = {
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
@@ -39,6 +41,10 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
   const [uploadFileName, setUploadFileName] = useState<string>('')
   const [uploadLoading, setUploadLoading] = useState(false)
   const uploadFileRef = useRef<HTMLInputElement | null>(null)
+  /** ID utilisateur Supabase (pour enregistrer les .fit) — null si seulement Strava */
+  const [supabaseUserId, setSupabaseUserId] = useState<string | null>(null)
+  const [fitActivities, setFitActivities] = useState<UserFitActivityRow[]>([])
+  const [fitActivitiesLoading, setFitActivitiesLoading] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -53,6 +59,8 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
         if (!mounted) return
 
         if (supabaseUser?.id) {
+          setSupabaseUserId(supabaseUser.id)
+          getUserFitActivities(supabaseUser.id).then((rows) => setFitActivities(rows))
           const tokenData = localStorage.getItem('trackali:strava_token')
           let stravaData = null
           if (tokenData) {
@@ -82,6 +90,8 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
             birthdate: userData.birthdate ?? '',
           })
         } else {
+          setSupabaseUserId(null)
+          setFitActivities([])
           const tokenData = localStorage.getItem('trackali:strava_token')
           if (tokenData) {
             try {
@@ -109,6 +119,8 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
             }
           }
           setUser(null)
+          setSupabaseUserId(null)
+          setFitActivities([])
         }
       } catch (error) {
         if (!mounted) return
@@ -319,52 +331,65 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
+    event.target.value = ''
     if (file) {
       const extension = file.name.split('.').pop()?.toLowerCase()
-      if (extension === 'gpx' || extension === 'fit' || extension === 'tcx') {
+      if (extension === 'fit') {
         setUploadFile(file)
         setUploadFileName(file.name)
       } else {
-        alert('Format de fichier non supporté. Veuillez sélectionner un fichier GPX, FIT ou TCX.')
-        if (uploadFileRef.current) {
-          uploadFileRef.current.value = ''
-        }
+        alert('Pour vos 5 sorties les plus longues, utilisez un fichier .fit (Garmin, Strava export, etc.).')
       }
     }
   }
 
   const handleFileUpload = async () => {
-    if (!uploadFile) return
+    if (!uploadFile || !supabaseUserId) return
 
     setUploadLoading(true)
     try {
-      const extension = uploadFile.name.split('.').pop()?.toLowerCase()
-      
-      // Pour l'instant, on affiche juste un message de succès
-      // TODO: Parser le fichier (GPX/FIT/TCX) et l'intégrer avec les données Strava ou les stocker
-      console.log('Fichier importé:', {
-        name: uploadFile.name,
-        type: extension,
-        size: uploadFile.size,
-      })
-
-      // Simuler un traitement
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      alert(`Fichier ${uploadFile.name} importé avec succès !\n\nNote: L'intégration avec les données d'entraînement sera disponible prochainement.`)
-      
-      // Réinitialiser
-      setUploadFile(null)
-      setUploadFileName('')
-      if (uploadFileRef.current) {
-        uploadFileRef.current.value = ''
+      const buffer = await uploadFile.arrayBuffer()
+      const summary = await parseFitFile(buffer)
+      if (!summary) {
+        alert('Aucune session ou tour trouvé dans ce fichier .fit.')
+        setUploadLoading(false)
+        return
+      }
+      const saved = await saveUserFitActivity(supabaseUserId, uploadFile.name, summary)
+      if (saved) {
+        const rows = await getUserFitActivities(supabaseUserId)
+        setFitActivities(rows)
+        setUploadFile(null)
+        setUploadFileName('')
+        if (uploadFileRef.current) uploadFileRef.current.value = ''
+      } else {
+        alert('Impossible d\'enregistrer le fichier. Réessayez.')
       }
     } catch (error) {
       console.error('Erreur lors de l\'import du fichier:', error)
-      alert(error instanceof Error ? error.message : 'Erreur lors de l\'import du fichier')
+      alert(error instanceof Error ? error.message : 'Erreur lors de l\'import du fichier .fit')
     } finally {
       setUploadLoading(false)
     }
+  }
+
+  const handleDeleteFit = async (id: string) => {
+    if (!supabaseUserId) return
+    if (!window.confirm('Supprimer cette sortie de la liste ?')) return
+    setFitActivitiesLoading(true)
+    try {
+      const ok = await deleteUserFitActivity(supabaseUserId, id)
+      if (ok) setFitActivities((prev) => prev.filter((r) => r.id !== id))
+    } finally {
+      setFitActivitiesLoading(false)
+    }
+  }
+
+  function formatDuration(sec: number): string {
+    const h = Math.floor(sec / 3600)
+    const m = Math.floor((sec % 3600) / 60)
+    if (h > 0) return `${h}h ${m}min`
+    return `${m} min`
   }
 
   const handleFileCancel = () => {
@@ -575,61 +600,110 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
 
             {/* Statistiques et Import en deux colonnes */}
             <div className="user-account-cards-grid">
-              {/* Import de sortie */}
-              <div className="user-account-card">
-                <div className="user-account-card__header">
-                  <h2 className="user-account-card__title">Importer une sortie</h2>
-                </div>
-                <div className="user-account-card__body">
-                  <div className="user-account-upload">
-                    <div className="user-account-upload__zone">
-                      <input
-                        type="file"
-                        id="activity-upload"
-                        ref={uploadFileRef}
-                        onChange={handleFileSelect}
-                        accept=".gpx,.fit,.tcx,application/gpx+xml,application/xml,text/xml"
-                        style={{ display: 'none' }}
-                      />
-                      <label htmlFor="activity-upload" className="user-account-upload__label">
-                        <div className="user-account-upload__icon">
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                            <polyline points="17 8 12 3 7 8" />
-                            <line x1="12" y1="3" x2="12" y2="15" />
-                          </svg>
-                        </div>
-                        <span className="user-account-upload__text">
-                          {uploadFileName || 'Cliquez pour sélectionner un fichier'}
-                        </span>
-                        <span className="user-account-upload__formats">
-                          Formats supportés : GPX, FIT, TCX
-                        </span>
-                      </label>
-                    </div>
-                    {uploadFile && (
-                      <div className="user-account-upload__actions">
-                        <button
-                          type="button"
-                          className="btn btn--ghost"
-                          onClick={handleFileCancel}
-                          disabled={uploadLoading}
-                        >
-                          Annuler
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn--primary"
-                          onClick={handleFileUpload}
-                          disabled={uploadLoading}
-                        >
-                          {uploadLoading ? 'Import en cours...' : 'Importer'}
-                        </button>
+              {/* Vos 5 sorties les plus longues (.fit) — visible uniquement avec compte Trackali */}
+              {supabaseUserId ? (
+                <div className="user-account-card">
+                  <div className="user-account-card__header">
+                    <h2 className="user-account-card__title">Vos 5 sorties les plus longues (.fit)</h2>
+                  </div>
+                  <div className="user-account-card__body">
+                    <p className="user-account-fit-intro">
+                      Ajoutez les fichiers .fit de vos sorties les plus longues. Les 5 meilleures sont utilisées pour analyser votre préparation sur chaque course.
+                    </p>
+                    <div className="user-account-upload">
+                      <div className="user-account-upload__zone">
+                        <input
+                          type="file"
+                          id="activity-upload"
+                          ref={uploadFileRef}
+                          onChange={handleFileSelect}
+                          accept=".fit,application/fit"
+                          style={{ display: 'none' }}
+                        />
+                        <label htmlFor="activity-upload" className="user-account-upload__label">
+                          <div className="user-account-upload__icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                              <polyline points="17 8 12 3 7 8" />
+                              <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                          </div>
+                          <span className="user-account-upload__text">
+                            {uploadFileName || 'Ajouter un fichier .fit'}
+                          </span>
+                          <span className="user-account-upload__formats">
+                            Format .fit (Garmin, Strava, etc.)
+                          </span>
+                        </label>
                       </div>
-                    )}
+                      {uploadFile && (
+                        <div className="user-account-upload__actions">
+                          <button
+                            type="button"
+                            className="btn btn--ghost"
+                            onClick={handleFileCancel}
+                            disabled={uploadLoading}
+                          >
+                            Annuler
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn--primary"
+                            onClick={handleFileUpload}
+                            disabled={uploadLoading}
+                          >
+                            {uploadLoading ? 'Import...' : 'Enregistrer'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {fitActivitiesLoading && fitActivities.length === 0 ? (
+                      <p className="user-account-fit-loading">Chargement...</p>
+                    ) : fitActivities.length > 0 ? (
+                      <ul className="user-account-fit-list" aria-label="Sorties .fit enregistrées">
+                        {fitActivities.map((row, index) => (
+                          <li key={row.id} className="user-account-fit-item">
+                            <span className="user-account-fit-item__rank">#{index + 1}</span>
+                            <span className="user-account-fit-item__name">{row.file_name}</span>
+                            <span className="user-account-fit-item__stats">
+                              {row.summary.distanceKm != null && `${row.summary.distanceKm.toFixed(1)} km`}
+                              {row.summary.durationSec != null && ` · ${formatDuration(row.summary.durationSec)}`}
+                              {row.summary.ascentM != null && ` · ${Math.round(row.summary.ascentM)} m D+`}
+                            </span>
+                            <button
+                              type="button"
+                              className="btn btn--ghost btn--small user-account-fit-item__delete"
+                              onClick={() => handleDeleteFit(row.id)}
+                              disabled={fitActivitiesLoading}
+                              aria-label={`Supprimer ${row.file_name}`}
+                            >
+                              Supprimer
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="user-account-card">
+                  <div className="user-account-card__header">
+                    <h2 className="user-account-card__title">Vos sorties .fit</h2>
+                  </div>
+                  <div className="user-account-card__body">
+                    <p className="user-account-fit-intro">
+                      Créez un compte Trackali (email / mot de passe) pour enregistrer vos fichiers .fit et utiliser vos 5 sorties les plus longues dans l&apos;analyse de préparation.
+                    </p>
+                    <button
+                      type="button"
+                      className="btn btn--primary"
+                      onClick={() => window.dispatchEvent(new CustomEvent('openLoginModal', { detail: { mode: 'signup' } }))}
+                    >
+                      Créer un compte Trackali
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Statistiques */}
               {isStravaConnected && (
