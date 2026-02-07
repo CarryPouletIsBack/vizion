@@ -25,3 +25,8 @@ dist-ssr
 
 # Fichiers temporaires / brouillons
 tmp/
+
+# Variables d'environnement (ne pas committer les secrets)
+.env
+.env.local
+.env.*.local

@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Configuration Supabase
-const supabaseUrl = 'https://bzltfvqzquqkvfnwcmmr.supabase.co'
-const supabaseAnonKey = 'sb_publishable_uU3vmqDdKuULADE7bGzRow_aEsu4F2N'
+// Configuration Supabase (variables d'environnement recommandées pour la prod)
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? 'https://bzltfvqzquqkvfnwcmmr.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? 'sb_publishable_uU3vmqDdKuULADE7bGzRow_aEsu4F2N'
 
 // Client Supabase avec gestion des erreurs CORS
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {

@@ -60,7 +60,15 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
 
         if (supabaseUser?.id) {
           setSupabaseUserId(supabaseUser.id)
-          getUserFitActivities(supabaseUser.id).then((rows) => setFitActivities(rows))
+          getUserFitActivities(supabaseUser.id).then((rows) => {
+            setFitActivities(rows)
+            try {
+              const top5 = rows.slice(0, 5).map((r) => r.summary)
+              if (top5.length > 0) localStorage.setItem('vizion_user_fit_top5', JSON.stringify(top5))
+            } catch {
+              // ignore
+            }
+          })
           const tokenData = localStorage.getItem('trackali:strava_token')
           let stravaData = null
           if (tokenData) {
@@ -359,6 +367,12 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
       if (saved) {
         const rows = await getUserFitActivities(supabaseUserId)
         setFitActivities(rows)
+        try {
+          const top5 = rows.slice(0, 5).map((r) => r.summary)
+          if (top5.length > 0) localStorage.setItem('vizion_user_fit_top5', JSON.stringify(top5))
+        } catch {
+          // ignore
+        }
         setUploadFile(null)
         setUploadFileName('')
         if (uploadFileRef.current) uploadFileRef.current.value = ''
@@ -379,7 +393,19 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
     setFitActivitiesLoading(true)
     try {
       const ok = await deleteUserFitActivity(supabaseUserId, id)
-      if (ok) setFitActivities((prev) => prev.filter((r) => r.id !== id))
+      if (ok) {
+        setFitActivities((prev) => {
+          const next = prev.filter((r) => r.id !== id)
+          try {
+            const top5 = next.slice(0, 5).map((r) => r.summary)
+            if (top5.length > 0) localStorage.setItem('vizion_user_fit_top5', JSON.stringify(top5))
+            else localStorage.removeItem('vizion_user_fit_top5')
+          } catch {
+            // ignore
+          }
+          return next
+        })
+      }
     } finally {
       setFitActivitiesLoading(false)
     }

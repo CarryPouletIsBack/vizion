@@ -300,6 +300,7 @@ export default function SingleCoursePage({
   }, [fitStorageKey])
 
   // Charger l'utilisateur Trackali et ses activités .fit (pour analyse sur les 5 plus longues)
+  const FIT_TOP5_STORAGE_KEY = 'vizion_user_fit_top5'
   useEffect(() => {
     let mounted = true
     getCurrentUser().then((user) => {
@@ -307,7 +308,16 @@ export default function SingleCoursePage({
       if (user?.id) {
         setCurrentUserId(user.id)
         getUserFitActivities(user.id).then((rows) => {
-          if (mounted) setUserFitActivities(rows)
+          if (!mounted) return
+          setUserFitActivities(rows)
+          try {
+            const top5 = rows.slice(0, 5).map((r) => r.summary)
+            if (top5.length > 0) {
+              localStorage.setItem(FIT_TOP5_STORAGE_KEY, JSON.stringify(top5))
+            }
+          } catch {
+            // ignore
+          }
         })
       } else {
         setCurrentUserId(null)
@@ -498,8 +508,20 @@ export default function SingleCoursePage({
                             (courseData.distanceKm > 150 && courseData.elevationGain > 8000)
 
 const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
-  const metricsForAnalysis = userFitTop5.length > 0
-    ? mergeMetricsWithFitList(metrics, userFitTop5)
+  const fitTop5FromStorage = ((): FitActivitySummary[] => {
+    if (userFitTop5.length > 0) return []
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('vizion_user_fit_top5') : null
+      if (!raw) return []
+      const parsed = JSON.parse(raw) as FitActivitySummary[]
+      return Array.isArray(parsed) ? parsed.slice(0, 5) : []
+    } catch {
+      return []
+    }
+  })()
+  const effectiveFitTop5 = userFitTop5.length > 0 ? userFitTop5 : fitTop5FromStorage
+  const metricsForAnalysis = effectiveFitTop5.length > 0
+    ? mergeMetricsWithFitList(metrics, effectiveFitTop5)
     : mergeMetricsWithFit(metrics, fitParsedData)
   const analysis = analyzeCourseReadiness(
     metricsForAnalysis,
@@ -1164,7 +1186,17 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                               getCurrentUser().then((user) => {
                                 if (user?.id) {
                                   saveUserFitActivity(user.id, file.name, summary).then(() => {
-                                    getUserFitActivities(user.id).then(setUserFitActivities)
+                                    getUserFitActivities(user.id).then((rows) => {
+                                      setUserFitActivities(rows)
+                                      try {
+                                        const top5 = rows.slice(0, 5).map((r) => r.summary)
+                                        if (top5.length > 0) {
+                                          localStorage.setItem('vizion_user_fit_top5', JSON.stringify(top5))
+                                        }
+                                      } catch {
+                                        // ignore
+                                      }
+                                    })
                                   })
                                 }
                               })
@@ -1208,7 +1240,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                         )}
                         {currentUserId && (
                           <p className="single-course-preparation__fit-hint">
-                            {userFitTop5.length > 0
+                            {effectiveFitTop5.length > 0
                               ? 'Vos 5 sorties les plus longues (compte Trackali) sont utilisées pour l\'analyse.'
                               : 'Ajoutez des .fit depuis Mon compte pour améliorer l\'analyse.'}
                           </p>

@@ -120,10 +120,13 @@ export function analyzeCourseReadiness(
   // === ANALYSE VOLUME HEBDOMADAIRE ===
   const weeklyDistanceKm = metrics.kmPerWeek
   const weeklyElevationGain = metrics.dPlusPerWeek
-  const courseWeeklyEquivalent = course.distanceKm / 6 // Distance à faire par semaine pour être prêt en 6 semaines
+  const courseWeeklyEquivalent = course.distanceKm / 6
+  const minWeeklyKm = course.distanceKm < 15
+    ? Math.max(course.distanceKm * 0.3, 1)
+    : courseWeeklyEquivalent * 0.5
 
-  if (weeklyDistanceKm < courseWeeklyEquivalent * 0.5) {
-    issues.push(`Volume hebdo faible (${weeklyDistanceKm} km/sem) vs objectif (~${Math.round(courseWeeklyEquivalent)} km/sem)`)
+  if (weeklyDistanceKm < minWeeklyKm) {
+    issues.push(`Volume hebdo faible (${weeklyDistanceKm} km/sem) vs objectif (~${Math.round(Math.max(minWeeklyKm, courseWeeklyEquivalent * 0.7))} km/sem)`)
     recommendations.push(`Augmenter le volume progressivement : objectif ${Math.round(courseWeeklyEquivalent * 0.7)} km/semaine`)
   } else if (weeklyDistanceKm < courseWeeklyEquivalent * 0.8) {
     recommendations.push(`Continuer à augmenter le volume : viser ${Math.round(courseWeeklyEquivalent)} km/semaine`)
@@ -262,29 +265,46 @@ export function analyzeCourseReadiness(
     }
   }
 
-  // === RECOMMANDATIONS GÉNÉRALES ===
-  if (metrics.longRunDistanceKm < 20) {
+  // === RECOMMANDATIONS GÉNÉRALES (adaptées à la longueur de la course) ===
+  const isShortCourse = course.distanceKm < 20
+  const longRunCoversCourse = metrics.longRunDistanceKm >= course.distanceKm * 1.05
+  if (!isShortCourse && metrics.longRunDistanceKm < 20) {
     recommendations.push('Ajouter 2 sorties > 4h dans les prochaines semaines')
   }
-  if (weeklyElevationGain < 2000) {
+  if (weeklyElevationGain < 2000 && course.elevationGain > 500) {
     recommendations.push('Augmenter le travail en descente et en terrain technique')
   }
-  recommendations.push('Tester la nutrition sur effort long (>3h)')
+  if (course.distanceKm >= 15) {
+    recommendations.push('Tester la nutrition sur effort long (>3h)')
+  }
 
   // === DÉTERMINATION DU STATUT ===
   let readiness: 'ready' | 'needs_work' | 'risk'
   let readinessLabel: 'Prêt' | 'À renforcer' | 'Risque'
 
   const criticalIssues = issues.filter((issue) => {
-    return (
-      issue.includes('> 120%') ||
-      issue.includes('> D+ max') ||
-      issue.includes('Volume hebdo faible') ||
-      issue.includes('Régularité faible')
-    )
+    if (issue.includes('> 120%') || issue.includes('> D+ max') || issue.includes('Régularité faible')) return true
+    if (issue.includes('Volume hebdo faible')) {
+      if (isShortCourse && weeklyDistanceKm >= course.distanceKm) return false
+      return true
+    }
+    return false
   })
 
-  if (criticalIssues.length >= 2) {
+  // Pour les courses courtes : si la sortie longue couvre la course (et D+ idem), ne pas mettre "risque"
+  const dPlusCoversCourse = course.elevationGain <= metrics.longRunDPlus * 1.1
+  if (isShortCourse && longRunCoversCourse && dPlusCoversCourse && criticalIssues.length < 2) {
+    if (criticalIssues.length >= 1) {
+      readiness = 'needs_work'
+      readinessLabel = 'À renforcer'
+    } else if (issues.length > 0 || recommendations.length > 3) {
+      readiness = 'needs_work'
+      readinessLabel = 'À renforcer'
+    } else {
+      readiness = 'ready'
+      readinessLabel = 'Prêt'
+    }
+  } else if (criticalIssues.length >= 2) {
     readiness = 'risk'
     readinessLabel = 'Risque'
   } else if (issues.length > 0 || recommendations.length > 3) {
