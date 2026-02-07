@@ -67,11 +67,12 @@ Le moteur compare les métriques Strava avec les exigences de la course pour dé
 
 #### Calcul de couverture
 
-- **Distance hebdomadaire** : Minimum 40 km/semaine (objectif idéal : 70% de l'exigence finale)
-- **D+ hebdomadaire** : Minimum 1500 m/semaine (objectif idéal : 70% de l'exigence finale)
-- **Sortie longue** : Minimum 70 km (objectif idéal : 60% de la distance de course)
-- **D+ max en une sortie** : Minimum 6000 m (objectif idéal : 70% du D+ de course)
+- **Distance hebdomadaire** : Seuils proportionnés à la course (ex. course 9 km → objectif réaliste ~5–11 km/sem)
+- **D+ hebdomadaire** : Proportionnel au D+ de la course (courses courtes &lt; 500 m D+ : objectifs adaptés)
+- **Sortie longue** : Court (&lt; 20 km) : 70 % de la distance ; long : 40 % min (objectif idéal 60 %)
+- **D+ max en une sortie** : Proportionnel (courses &lt; 500 m D+ : 50 % du D+ course)
 - **Régularité** : Fréquence des sorties (bonne/moyenne/faible)
+- **Courses très courtes** (≤ 12 km, &lt; 600 m D+) : si la longue sortie couvre la distance, le statut n’est pas « Risque » uniquement pour D+ manquant ; recommandation dénivelé sans bloquer.
 
 #### Recommandations catégorisées
 
@@ -84,8 +85,10 @@ Le moteur compare les métriques Strava avec les exigences de la course pour dé
 - **Hero** : état de préparation (🟢/🟠/🔴), charge 6 semaines, delta vs semaine précédente, **temps estimé** mis en avant
 - **Prochaine échéance** : objectifs des 4 prochaines semaines (km/sem, D+/sem, sorties, sortie longue) en bloc dédié
 - **Tendance** : courbe d’évolution de la charge sur 6 semaines (M-6 → M-1)
+- **Textes générés par l’IA** : résumé, verdict du coach, objectifs, recommandations (priorité immédiate / secondaire), projection (« Si tu continues ainsi » / « Si tu suis les objectifs ») et intro segments sont générés par l’IA (Mistral) à partir des sorties .fit et de la course. **Génération une seule fois** par contexte (course + .fit), **mise en cache 7 jours** ; bouton « Rafraîchir » pour forcer une nouvelle génération. Voir `api/preparation/content.ts` et variable `MISTRAL_API_KEY`.
 - **Ajustements recommandés** : listes en **tâches à cocher** (persistance par course dans `localStorage`)
 - **Import .fit** : bouton « Importer .fit » ; résumé (km, durée, D+) ; si compte Trackali, enregistrement en base et prise en compte dans les 5 sorties les plus longues
+- **Fusion métriques** : si Strava est connecté mais sans activité (0 km/sem, 0 D+), les volumes et la régularité issus des 5 .fit sont utilisés pour l’analyse afin d’éviter un statut « Risque » à tort (`fitMetricsMerge.ts`).
 - **Préparation par segment** : pour chaque tronçon de la course, D+ du segment et indicateur ✓/! selon le D+ max entraîné
 - **Export** : boutons « Imprimer / PDF » et « Copier le lien » ; styles d’impression pour masquer la navigation
 
@@ -154,10 +157,13 @@ trackali-app/
 │   ├── strava/           # Routes API Vercel pour Strava
 │   │   ├── activities.ts # Récupération activités
 │   │   └── athlete.ts    # Récupération profil athlète
+│   ├── preparation/      # Ma préparation – contenu IA
+│   │   ├── advice.ts     # Conseils personnalisés (paragraphe) – optionnel
+│   │   └── content.ts    # Contenu complet Ma préparation (résumé, verdict, recommandations, projection) – cache 7j côté client
 │   ├── weather.ts        # Proxy météo (Xweather)
 │   ├── timezone.ts       # Fuseau horaire (offsetHours ; fallback La Réunion UTC+4 en prod)
 │   └── simulator/
-│       └── refine.ts    # Conseils IA (Mistral API) pour le simulateur
+│       └── refine.ts     # Affinage temps simulateur (Mistral API)
 ├── public/
 │   └── globe/            # Globe WebGL (globe.js, texture world.jpg, Three.js)
 ├── src/
@@ -238,21 +244,19 @@ En production (Vercel), définir :
 
 Si les requêtes vers `*.supabase.co` échouent avec **ERR_NAME_NOT_RESOLVED**, vérifier que l’URL est correcte et que le projet Supabase n’est pas en pause (dashboard Supabase).
 
-#### IA pour le simulateur (Conseils IA – optionnel)
+#### IA (Mistral – optionnel)
 
-Le bouton **« Conseils IA »** dans le Moteur de Simulation envoie la situation (course, métriques, estimation) à un modèle de langage pour obtenir une fourchette de temps et des conseils jour J.
+Deux usages de l’IA (Mistral) dans l’app :
 
-- **En local (développement)** : le serveur Vite appelle **Ollama** sur ta machine. Lance Ollama et un modèle Mistral :
-  ```bash
-  ollama run mistral
-  ```
-  L’app tourne sur `http://localhost:5173` ; le middleware appelle `http://localhost:11434` par défaut. Optionnel : `OLLAMA_URL`, `OLLAMA_SIMULATOR_MODEL` (défaut `mistral`).
+1. **Simulateur – « Affiner avec l’IA »**  
+   Le bouton envoie la situation (course, métriques, estimation) au modèle pour une fourchette de temps affinée. En local : **Ollama** (`ollama run mistral`, `OLLAMA_URL`, `OLLAMA_SIMULATOR_MODEL`). En prod (Vercel) : **API Mistral** (`MISTRAL_API_KEY`, optionnel `MISTRAL_SIMULATOR_MODEL`).
 
-- **En production (Vercel)** : utilise l’**API Mistral**. Dans Vercel, définis :
-  - `MISTRAL_API_KEY` : clé API Mistral ([console Mistral](https://console.mistral.ai/))
-  - Optionnel : `MISTRAL_SIMULATOR_MODEL` (défaut : `mistral-small-latest`)
+2. **Ma préparation – textes générés par l’IA**  
+   Les textes de la section Ma préparation (résumé, verdict du coach, objectifs, recommandations, projection) sont générés par l’IA à partir de la course et des sorties .fit. **Une seule génération** par contexte (course + .fit), **mise en cache 7 jours** côté client ; bouton « Rafraîchir » pour régénérer. En production (Vercel), définir :
+   - `MISTRAL_API_KEY` : clé API Mistral ([console Mistral](https://console.mistral.ai/))
+   - Optionnel : `MISTRAL_SIMULATOR_MODEL` (défaut : `mistral-small-latest`)
 
-**Note** : **mistral-vibe** est un assistant en ligne de commande (CLI) pour le code ; il ne sert pas de serveur de modèle pour Trackali. Pour améliorer le simulateur avec l’IA, il faut soit **Ollama** (local) soit l’**API Mistral** (cloud), comme ci‑dessus.
+Sans `MISTRAL_API_KEY`, les textes Ma préparation restent ceux du moteur d’analyse (règles fixes) et le bouton « Affiner avec l’IA » du simulateur est indisponible.
 
 #### Strava OAuth (pour les routes API Vercel)
 

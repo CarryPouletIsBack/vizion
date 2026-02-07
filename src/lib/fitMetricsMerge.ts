@@ -99,6 +99,7 @@ export function syntheticMetricsFromFitList(fitList: (FitSummaryInput | unknown)
 /**
  * Fusionne métriques Strava avec la liste des 5 sorties .fit les plus longues.
  * Si pas de Strava, utilise uniquement les FITs.
+ * Si Strava a des volumes à 0 (compte vide), on utilise les volumes et la régularité des .fit pour ne pas afficher "Risque" à tort.
  */
 export function mergeMetricsWithFitList(
   metrics: StravaMetrics | null,
@@ -107,9 +108,14 @@ export function mergeMetricsWithFitList(
   const fromFit = syntheticMetricsFromFitList(fitList)
   if (!fromFit) return metrics
   if (!metrics) return fromFit
+  const useFitForWeekly = metrics.kmPerWeek === 0 && metrics.dPlusPerWeek === 0
   return {
     ...metrics,
     longRunDistanceKm: Math.max(metrics.longRunDistanceKm, fromFit.longRunDistanceKm),
     longRunDPlus: Math.max(metrics.longRunDPlus, fromFit.longRunDPlus),
+    kmPerWeek: useFitForWeekly ? fromFit.kmPerWeek : Math.max(metrics.kmPerWeek, fromFit.kmPerWeek),
+    dPlusPerWeek: useFitForWeekly ? fromFit.dPlusPerWeek : Math.max(metrics.dPlusPerWeek, fromFit.dPlusPerWeek),
+    regularity: useFitForWeekly ? fromFit.regularity : metrics.regularity,
+    loadScore: useFitForWeekly ? fromFit.loadScore : Math.max(metrics.loadScore, fromFit.loadScore),
   }
 }

@@ -257,10 +257,21 @@ export default function SingleCoursePage({
   /** Utilisateur connecté (Trackali) et ses activités .fit sauvegardées */
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [userFitActivities, setUserFitActivities] = useState<UserFitActivityRow[]>([])
-  /** Conseils personnalisés par l'IA (basés sur les .fit renseignés) */
-  const [aiAdvice, setAiAdvice] = useState<string | null>(null)
-  const [aiAdviceLoading, setAiAdviceLoading] = useState(false)
-  const [aiAdviceError, setAiAdviceError] = useState<string | null>(null)
+  /** Contenu Ma préparation généré par l'IA (une fois, cache 7 jours) */
+  const [aiContent, setAiContent] = useState<{
+    summary: string
+    coachVerdict: string
+    stateSublabel: string
+    next4WeeksSummary: string
+    immediateActions: string[]
+    secondaryActions: string[]
+    projectionIfContinues: string
+    projectionIfFollows: string
+    segmentIntro?: string
+  } | null>(null)
+  const [aiContentLoading, setAiContentLoading] = useState(false)
+  const [aiContentError, setAiContentError] = useState<string | null>(null)
+  const [aiContentGeneratedAt, setAiContentGeneratedAt] = useState<number | null>(null)
 
   const startCoords = (selectedCourse as { startCoordinates?: [number, number] } | undefined)?.startCoordinates
   const courseId = (selectedCourse as { id?: string } | undefined)?.id ?? ''
@@ -349,42 +360,6 @@ export default function SingleCoursePage({
     })
   }
 
-  const fetchAiPreparationAdvice = () => {
-    if (!courseData) return
-    setAiAdviceError(null)
-    setAiAdviceLoading(true)
-    const fitPayload = effectiveFitTop5.map((s, i) => ({
-      distanceKm: s.distanceKm ?? null,
-      durationSec: s.durationSec ?? null,
-      ascentM: s.ascentM ?? null,
-      fileName: userFitActivities[i]?.file_name ?? null,
-    }))
-    const base = typeof window !== 'undefined' ? window.location.origin : ''
-    fetch(`${base}/api/preparation/advice`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        course: { distanceKm: courseData.distanceKm, elevationGain: courseData.elevationGain, name: courseData.name },
-        fitActivities: fitPayload,
-        analysisSummary: analysis?.summary ?? null,
-      }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.error) {
-          setAiAdviceError(data.message || data.error)
-          setAiAdvice(null)
-        } else {
-          setAiAdvice(data.advice ?? null)
-          setAiAdviceError(null)
-        }
-      })
-      .catch((err) => {
-        setAiAdviceError(err?.message ?? 'Erreur réseau')
-        setAiAdvice(null)
-      })
-      .finally(() => setAiAdviceLoading(false))
-  }
   const isReunionCourse =
     courseId === 'example-grand-raid-course' ||
     /grand raid|réunion|reunion|diagonale/i.test(courseEventName)
@@ -576,6 +551,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
     }
   })()
   const effectiveFitTop5 = userFitTop5.length > 0 ? userFitTop5 : fitTop5FromStorage
+  const fitSignature = effectiveFitTop5.map((s) => `${s.distanceKm ?? 0}_${s.ascentM ?? 0}`).join('|').slice(0, 80)
   const metricsForAnalysis = effectiveFitTop5.length > 0
     ? mergeMetricsWithFitList(metrics, effectiveFitTop5)
     : mergeMetricsWithFit(metrics, fitParsedData)
@@ -595,6 +571,91 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
   useEffect(() => {
     setSelectedSegment(null)
   }, [selectedCourseId])
+
+  const AI_CONTENT_CACHE_PREFIX = 'vizion_prep_ai_'
+  const AI_CONTENT_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 jours
+
+  // Charger le contenu Ma préparation par l'IA (une fois, cache 7 jours)
+  useEffect(() => {
+    if (currentStep !== 'ma-preparation' || !courseData) return
+    const cacheKey = `${AI_CONTENT_CACHE_PREFIX}${courseId}_${courseData.distanceKm}_${courseData.elevationGain}_${effectiveFitTop5.length}_${fitSignature}`
+    const cached = (() => {
+      try {
+        const raw = typeof window !== 'undefined' ? localStorage.getItem(cacheKey) : null
+        if (!raw) return null
+        const { generatedAt, content } = JSON.parse(raw) as { generatedAt: number; content: typeof aiContent }
+        if (Date.now() - generatedAt < AI_CONTENT_TTL_MS && content) return { content, generatedAt }
+        return null
+      } catch {
+        return null
+      }
+    })()
+    if (cached) {
+      setAiContent(cached.content)
+      setAiContentGeneratedAt(cached.generatedAt)
+      setAiContentError(null)
+      return
+    }
+    let cancelled = false
+    setAiContentLoading(true)
+    setAiContentError(null)
+    const fitPayload = effectiveFitTop5.map((s, i) => ({
+      distanceKm: s.distanceKm ?? null,
+      durationSec: s.durationSec ?? null,
+      ascentM: s.ascentM ?? null,
+      fileName: userFitActivities[i]?.file_name ?? null,
+    }))
+    const base = typeof window !== 'undefined' ? window.location.origin : ''
+    fetch(`${base}/api/preparation/content`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        course: { distanceKm: courseData.distanceKm, elevationGain: courseData.elevationGain, name: courseData.name },
+        fitActivities: fitPayload,
+        metricsSummary: analysis?.summary ?? null,
+        readiness: analysis?.readiness ?? null,
+        next4WeeksGoals: analysis?.next4WeeksGoals ?? null,
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return
+        if (data.error) {
+          setAiContentError(data.message || data.error)
+          setAiContent(null)
+        } else {
+          const content = {
+            summary: data.summary ?? '',
+            coachVerdict: data.coachVerdict ?? '',
+            stateSublabel: data.stateSublabel ?? '',
+            next4WeeksSummary: data.next4WeeksSummary ?? '',
+            immediateActions: Array.isArray(data.immediateActions) ? data.immediateActions : [],
+            secondaryActions: Array.isArray(data.secondaryActions) ? data.secondaryActions : [],
+            projectionIfContinues: data.projectionIfContinues ?? '',
+            projectionIfFollows: data.projectionIfFollows ?? '',
+            segmentIntro: data.segmentIntro,
+          }
+          setAiContent(content)
+          setAiContentGeneratedAt(Date.now())
+          setAiContentError(null)
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify({ generatedAt: Date.now(), content }))
+          } catch {
+            // ignore
+          }
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setAiContentError(err?.message ?? 'Erreur réseau')
+          setAiContent(null)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setAiContentLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [currentStep, courseId, courseData?.distanceKm, courseData?.elevationGain, courseData?.name, effectiveFitTop5.length, fitSignature])
 
   // Segmenter le SVG : segments numérotés (1, 2, 3...) + clic pour sélectionner
   useEffect(() => {
@@ -1333,7 +1394,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                       <div>
                         <p className="single-course-preparation__hero-label">{analysis.readinessLabel}</p>
                         <p className="single-course-preparation__hero-sublabel">
-                          {analysis.readiness === 'ready' ? 'Niveau prêt pour la course' : analysis.readiness === 'needs_work' ? 'Quelques ajustements recommandés' : 'Préparation à renforcer'}
+                          {aiContent?.stateSublabel || (analysis.readiness === 'ready' ? 'Niveau prêt pour la course' : analysis.readiness === 'needs_work' ? 'Quelques ajustements recommandés' : 'Préparation à renforcer')}
                         </p>
                       </div>
                     </div>
@@ -1357,7 +1418,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                     <div className="single-course-preparation__next-deadline">
                       <span className="single-course-preparation__next-deadline-label">Prochaine échéance (4 semaines)</span>
                       <span className="single-course-preparation__next-deadline-text">
-                        Vise {analysis.next4WeeksGoals.volumeKm.min}–{analysis.next4WeeksGoals.volumeKm.max} km/sem, {analysis.next4WeeksGoals.dPlus.min}–{analysis.next4WeeksGoals.dPlus.max} m D+/sem, {analysis.next4WeeksGoals.frequency} sorties/sem, 1 sortie &gt; {analysis.next4WeeksGoals.longRunHours} h.
+                        {aiContent?.next4WeeksSummary || `Vise ${analysis.next4WeeksGoals.volumeKm.min}–${analysis.next4WeeksGoals.volumeKm.max} km/sem, ${analysis.next4WeeksGoals.dPlus.min}–${analysis.next4WeeksGoals.dPlus.max} m D+/sem, ${analysis.next4WeeksGoals.frequency} sorties/sem, 1 sortie > ${analysis.next4WeeksGoals.longRunHours} h.`}
                       </span>
                     </div>
                   )}
@@ -1444,23 +1505,19 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                         <div>
                           <p style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>{analysis.readinessLabel}</p>
                           <p style={{ margin: '4px 0 0', fontSize: '12px', opacity: 0.8 }}>
-                            {analysis.readiness === 'ready'
-                              ? 'Vous êtes prêt pour cette course'
-                              : analysis.readiness === 'needs_work'
-                                ? 'Quelques ajustements nécessaires'
-                                : 'Attention : préparation insuffisante'}
+                            {aiContent?.stateSublabel || (analysis.readiness === 'ready' ? 'Vous êtes prêt pour cette course' : analysis.readiness === 'needs_work' ? 'Quelques ajustements nécessaires' : 'Attention : préparation insuffisante')}
                           </p>
                         </div>
                       </div>
-                      {analysis.summary && (
+                      {(aiContent?.summary ?? analysis.summary) && (
                         <p style={{ marginTop: '16px', fontSize: '14px', lineHeight: '1.5', color: 'var(--color-text-primary, #e5e7eb)' }}>
-                          {analysis.summary}
+                          {aiContent?.summary ?? analysis.summary}
                         </p>
                       )}
-                      {analysis.coachVerdict && (
+                      {(aiContent?.coachVerdict || analysis.coachVerdict) && (
                         <div style={{ marginTop: '16px', padding: '12px', borderRadius: '8px', background: 'rgba(191, 201, 0, 0.1)', border: '1px solid rgba(191, 201, 0, 0.3)' }}>
                           <p style={{ margin: 0, fontSize: '13px', lineHeight: '1.6', color: 'var(--color-text-primary, #e5e7eb)', fontStyle: 'italic' }}>
-                            💬 <strong>Verdict du Coach :</strong> {analysis.coachVerdict}
+                            💬 <strong>Verdict du Coach :</strong> {aiContent?.coachVerdict ?? analysis.coachVerdict}
                           </p>
                         </div>
                       )}
@@ -1489,9 +1546,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                             </li>
                           </ul>
                           <p style={{ marginTop: '12px', fontSize: '12px', color: 'var(--color-text-secondary, #9ca3af)', fontStyle: 'italic' }}>
-                            Si ces objectifs sont atteints, ton état de préparation passera de{' '}
-                            {analysis.readiness === 'risk' ? '🔴 Risque' : analysis.readiness === 'needs_work' ? '🟠 À renforcer' : '🟢 Prêt'} à{' '}
-                            {analysis.projection.ifFollowsGoals.m3 === 'ready' ? '🟢 Prêt' : analysis.projection.ifFollowsGoals.m3 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}.
+                            {aiContent?.next4WeeksSummary || `Si ces objectifs sont atteints, ton état de préparation passera de ${analysis.readiness === 'risk' ? '🔴 Risque' : analysis.readiness === 'needs_work' ? '🟠 À renforcer' : '🟢 Prêt'} à ${analysis.projection.ifFollowsGoals.m3 === 'ready' ? '🟢 Prêt' : analysis.projection.ifFollowsGoals.m3 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}.`}
                           </p>
                         </div>
                       )}
@@ -1531,13 +1586,13 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                 </div>
 
                 <div className="single-course-right single-course-preparation__right">
-                  <div className="single-course-panel__card">
+                    <div className="single-course-panel__card">
                     <p className="single-course-panel__title">AJUSTEMENTS RECOMMANDÉS</p>
-                      {analysis.immediateActions && analysis.immediateActions.length > 0 && (
+                      {(aiContent?.immediateActions?.length ? aiContent.immediateActions : analysis.immediateActions)?.map && (
                         <div style={{ marginTop: '12px', marginBottom: '16px' }}>
                           <p style={{ fontSize: '13px', color: '#ef4444', marginBottom: '8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}><FiAlertCircle style={{ width: '24px', height: '24px', flexShrink: 0 }} /> Priorité immédiate</p>
                           <ul className="single-course-panel__list single-course-preparation__action-list">
-                            {analysis.immediateActions.map((action, idx) => (
+                            {(aiContent?.immediateActions?.length ? aiContent.immediateActions : analysis.immediateActions || []).map((action, idx) => (
                               <li key={idx} className="single-course-preparation__action-item">
                                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer', fontSize: '12px' }}>
                                   <input
@@ -1553,11 +1608,11 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                           </ul>
                         </div>
                       )}
-                      {analysis.secondaryActions && analysis.secondaryActions.length > 0 && (
+                      {((aiContent?.secondaryActions?.length ? aiContent.secondaryActions : analysis.secondaryActions) || []).length > 0 && (
                         <div style={{ marginBottom: '16px' }}>
                           <p style={{ fontSize: '13px', color: '#fbbf24', marginBottom: '8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}><FiAlertCircle style={{ width: '24px', height: '24px', flexShrink: 0 }} /> Important mais secondaire</p>
                           <ul className="single-course-panel__list single-course-preparation__action-list">
-                            {analysis.secondaryActions.map((action, idx) => (
+                            {(aiContent?.secondaryActions?.length ? aiContent.secondaryActions : analysis.secondaryActions || []).map((action, idx) => (
                               <li key={idx} className="single-course-preparation__action-item">
                                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer', fontSize: '12px' }}>
                                   <input
@@ -1594,74 +1649,110 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                         </div>
                       )}
                   </div>
-                  <div className="single-course-panel__card">
-                    <p className="single-course-panel__title">🤖 Conseils personnalisés par l&apos;IA</p>
-                    <p className="single-course-preparation__segment-intro" style={{ marginBottom: '12px' }}>
-                      L&apos;IA s&apos;appuie sur les sorties .fit que tu as renseignées pour te donner des conseils adaptés à cette course.
+                  {aiContentError && (
+                    <p className="single-course-preparation__fit-error" role="alert" style={{ marginBottom: '12px' }}>
+                      {aiContentError}
                     </p>
-                    <button
-                      type="button"
-                      className="single-course-preparation__export-btn"
-                      onClick={fetchAiPreparationAdvice}
-                      disabled={aiAdviceLoading}
-                      aria-label="Obtenir les conseils de l'IA"
-                    >
-                      {aiAdviceLoading ? (
-                        <>Chargement…</>
-                      ) : (
-                        <>
-                          <FiRefreshCw style={{ marginRight: '6px', verticalAlign: 'middle' }} aria-hidden />
-                          {aiAdvice ? 'Actualiser les conseils' : 'Obtenir les conseils de l\'IA'}
-                        </>
-                      )}
-                    </button>
-                    {aiAdviceError && (
-                      <p className="single-course-preparation__fit-error" role="alert" style={{ marginTop: '12px' }}>
-                        {aiAdviceError}
-                      </p>
-                    )}
-                    {aiAdvice && !aiAdviceLoading && (
-                      <div
-                        className="single-course-preparation__ai-advice"
-                        style={{
-                          marginTop: '16px',
-                          padding: '14px',
-                          background: 'rgba(191, 201, 0, 0.08)',
-                          borderRadius: '8px',
-                          border: '1px solid rgba(191, 201, 0, 0.25)',
-                          fontSize: '14px',
-                          lineHeight: 1.5,
-                          whiteSpace: 'pre-wrap',
-                        }}
-                      >
-                        {aiAdvice}
-                      </div>
-                    )}
-                  </div>
-                  <div className="single-course-panel__card">
+                  )}
+                  {aiContentLoading && !aiContent && (
+                    <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '12px' }}>
+                      Génération des textes par l&apos;IA…
+                    </p>
+                  )}
+                  <div className="single-course-panel__card" style={{ marginTop: '8px' }}>
                     <p className="single-course-panel__title">🧠 PROJECTION</p>
                       <div style={{ marginTop: '12px' }}>
                         <div style={{ marginBottom: '16px' }}>
                           <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '8px', fontWeight: 500 }}>Si tu continues ainsi</p>
-                          <ul className="single-course-panel__list" style={{ fontSize: '12px' }}>
-                            <li><span>État prévu à M-3</span><span>{analysis.projection.ifContinues.m3 === 'ready' ? '🟢 Prêt' : analysis.projection.ifContinues.m3 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}</span></li>
-                            <li><span>État prévu à M-1</span><span>{analysis.projection.ifContinues.m1 === 'ready' ? '🟢 Prêt' : analysis.projection.ifContinues.m1 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}</span></li>
-                          </ul>
+                          {aiContent?.projectionIfContinues ? (
+                            <p style={{ fontSize: '13px', lineHeight: 1.5 }}>{aiContent.projectionIfContinues}</p>
+                          ) : (
+                            <ul className="single-course-panel__list" style={{ fontSize: '12px' }}>
+                              <li><span>État prévu à M-3</span><span>{analysis.projection.ifContinues.m3 === 'ready' ? '🟢 Prêt' : analysis.projection.ifContinues.m3 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}</span></li>
+                              <li><span>État prévu à M-1</span><span>{analysis.projection.ifContinues.m1 === 'ready' ? '🟢 Prêt' : analysis.projection.ifContinues.m1 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}</span></li>
+                            </ul>
+                          )}
                         </div>
                         <div>
                           <p style={{ fontSize: '12px', color: '#22c55e', marginBottom: '8px', fontWeight: 500 }}>Si tu suis les objectifs recommandés</p>
-                          <ul className="single-course-panel__list" style={{ fontSize: '12px' }}>
-                            <li><span>État prévu à M-3</span><span>{analysis.projection.ifFollowsGoals.m3 === 'ready' ? '🟢 Prêt' : analysis.projection.ifFollowsGoals.m3 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}</span></li>
-                            <li><span>État prévu à M-1</span><span>{analysis.projection.ifFollowsGoals.m1 === 'ready' ? '🟢 Prêt (partiellement)' : analysis.projection.ifFollowsGoals.m1 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}</span></li>
-                          </ul>
+                          {aiContent?.projectionIfFollows ? (
+                            <p style={{ fontSize: '13px', lineHeight: 1.5 }}>{aiContent.projectionIfFollows}</p>
+                          ) : (
+                            <ul className="single-course-panel__list" style={{ fontSize: '12px' }}>
+                              <li><span>État prévu à M-3</span><span>{analysis.projection.ifFollowsGoals.m3 === 'ready' ? '🟢 Prêt' : analysis.projection.ifFollowsGoals.m3 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}</span></li>
+                              <li><span>État prévu à M-1</span><span>{analysis.projection.ifFollowsGoals.m1 === 'ready' ? '🟢 Prêt (partiellement)' : analysis.projection.ifFollowsGoals.m1 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}</span></li>
+                            </ul>
+                          )}
                         </div>
                       </div>
+                    <p style={{ marginTop: '12px', fontSize: '11px', color: 'var(--color-text-secondary, #9ca3af)' }}>
+                      Textes générés par l&apos;IA à partir de tes .fit · mis à jour chaque semaine.
+                      {' '}
+                      <button
+                        type="button"
+                        className="single-course-preparation__export-btn"
+                        style={{ padding: '2px 8px', fontSize: '11px' }}
+                        onClick={() => {
+                          if (!courseData) return
+                          const key = `${AI_CONTENT_CACHE_PREFIX}${courseId}_${courseData.distanceKm}_${courseData.elevationGain}_${effectiveFitTop5.length}_${fitSignature}`
+                          try { localStorage.removeItem(key) } catch {}
+                          setAiContent(null)
+                          setAiContentGeneratedAt(null)
+                          setAiContentLoading(true)
+                          setAiContentError(null)
+                          const fitPayload = effectiveFitTop5.map((s, i) => ({
+                            distanceKm: s.distanceKm ?? null,
+                            durationSec: s.durationSec ?? null,
+                            ascentM: s.ascentM ?? null,
+                            fileName: userFitActivities[i]?.file_name ?? null,
+                          }))
+                          const base = typeof window !== 'undefined' ? window.location.origin : ''
+                          fetch(`${base}/api/preparation/content`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              course: { distanceKm: courseData.distanceKm, elevationGain: courseData.elevationGain, name: courseData.name },
+                              fitActivities: fitPayload,
+                              metricsSummary: analysis?.summary ?? null,
+                              readiness: analysis?.readiness ?? null,
+                              next4WeeksGoals: analysis?.next4WeeksGoals ?? null,
+                            }),
+                          })
+                            .then((r) => r.json())
+                            .then((data) => {
+                              if (data.error) {
+                                setAiContentError(data.message || data.error)
+                                setAiContent(null)
+                              } else {
+                                setAiContent({
+                                  summary: data.summary ?? '',
+                                  coachVerdict: data.coachVerdict ?? '',
+                                  stateSublabel: data.stateSublabel ?? '',
+                                  next4WeeksSummary: data.next4WeeksSummary ?? '',
+                                  immediateActions: Array.isArray(data.immediateActions) ? data.immediateActions : [],
+                                  secondaryActions: Array.isArray(data.secondaryActions) ? data.secondaryActions : [],
+                                  projectionIfContinues: data.projectionIfContinues ?? '',
+                                  projectionIfFollows: data.projectionIfFollows ?? '',
+                                  segmentIntro: data.segmentIntro,
+                                })
+                                setAiContentGeneratedAt(Date.now())
+                                try { localStorage.setItem(key, JSON.stringify({ generatedAt: Date.now(), content: { summary: data.summary, coachVerdict: data.coachVerdict, stateSublabel: data.stateSublabel, next4WeeksSummary: data.next4WeeksSummary, immediateActions: data.immediateActions, secondaryActions: data.secondaryActions, projectionIfContinues: data.projectionIfContinues, projectionIfFollows: data.projectionIfFollows, segmentIntro: data.segmentIntro } })) } catch {}
+                              }
+                            })
+                            .catch((err) => { setAiContentError(err?.message ?? 'Erreur réseau'); setAiContent(null) })
+                            .finally(() => setAiContentLoading(false))
+                        }}
+                        aria-label="Rafraîchir les textes IA"
+                      >
+                        Rafraîchir
+                      </button>
+                    </p>
                   </div>
                   {segmentBoundsList.length > 0 && (
                     <div className="single-course-panel__card">
                       <p className="single-course-panel__title">📌 Préparation par segment</p>
                       <p className="single-course-preparation__segment-intro">
-                        Ton D+ max entraîné ({metricsForAnalysis ? `${metricsForAnalysis.longRunDPlus} m` : '—'}) par rapport au D+ de chaque tronçon de la course.
+                        {aiContent?.segmentIntro || `Ton D+ max entraîné (${metricsForAnalysis ? `${metricsForAnalysis.longRunDPlus} m` : '—'}) par rapport au D+ de chaque tronçon de la course.`}
                       </p>
                       <ul className="single-course-panel__list single-course-preparation__segment-list">
                         {segmentBoundsList.map((seg) => {
