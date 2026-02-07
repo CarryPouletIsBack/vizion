@@ -58,12 +58,13 @@ export default function WindVectorChart({ viewBox, windDir, windSpeedKmh }: Wind
       }
     }
 
-    const chart = Highcharts.chart(containerRef.current, {
+    const el = containerRef.current
+    const chart = Highcharts.chart(el as HTMLElement, {
       chart: {
         type: 'vector',
         backgroundColor: 'transparent',
         margin: 0,
-        spacing: 0,
+        spacing: [0, 0, 0, 0],
       },
       title: { text: undefined },
       legend: { enabled: false },
@@ -94,7 +95,7 @@ export default function WindVectorChart({ viewBox, windDir, windSpeedKmh }: Wind
         data: vectorData,
         color: '#bfc900',
       }],
-    })
+    } as any)
 
     return () => {
       chart.destroy()

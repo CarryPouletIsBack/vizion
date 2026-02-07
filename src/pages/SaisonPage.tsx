@@ -38,7 +38,7 @@ type CreateModalView = 'select' | 'event' | 'course'
 
 export default function SaisonPage({
   events = [],
-  onCourseSelect,
+  onCourseSelect: _onCourseSelect,
   onNavigate,
   onCreateEvent,
   onCreateCourse,

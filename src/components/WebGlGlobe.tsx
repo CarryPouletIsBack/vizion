@@ -204,18 +204,9 @@ export default function WebGlGlobe(props: WebGlGlobeProps) {
     if (!THREE?.Mesh || !THREE?.BoxGeometry || !THREE?.MeshBasicMaterial) return
 
     const GLOBE_RADIUS = 200
-    const Raycaster = THREE.Raycaster as new (a?: unknown, b?: unknown) => {
-      set: (origin: unknown, direction: unknown) => void
-      intersectObject: (o: unknown) => { faceIndex?: number; face?: unknown }[]
-    }
-    const Vector2 = THREE.Vector2 as new () => { set: (x: number, y: number) => void }
-    const Vector3 = THREE.Vector3 as new () => {
-      set: (x: number, y: number, z: number) => unknown
-      unproject: (camera: unknown) => unknown
-      subVectors: (a: unknown, b: unknown) => unknown
-      normalize: () => unknown
-      copy: (a: unknown) => unknown
-    }
+    const Raycaster = THREE.Raycaster as any
+    const Vector2 = THREE.Vector2 as any
+    const Vector3 = THREE.Vector3 as any
     const raycaster = new Raycaster()
     const mouse = new Vector2()
     const origin = new Vector3()
@@ -223,7 +214,7 @@ export default function WebGlGlobe(props: WebGlGlobeProps) {
     const unprojectPoint = new Vector3()
 
     /** Position monde d’un point à partir de lat/lng (même formule que globe.js) */
-    function pointWorldPosition(lat: number, lng: number, out: ReturnType<typeof Vector3>) {
+    function pointWorldPosition(lat: number, lng: number, out: any) {
       const phi = ((90 - lat) * Math.PI) / 180
       const theta = ((180 - lng) * Math.PI) / 180
       out.set(
@@ -239,16 +230,14 @@ export default function WebGlGlobe(props: WebGlGlobeProps) {
       const globeInst = globeRef.current
       if (!globeInst?.points || !globeInst.camera || !globeInst.renderer?.domElement) return -1
       const canvas = globeInst.renderer.domElement
-      const cam = globeInst.camera as { getWorldPosition: (v: unknown) => unknown }
-      globeInst.points.updateMatrixWorld(true)
+      const cam = globeInst.camera as any
+      const points = globeInst.points as any
+      points.updateMatrixWorld(true)
       const rect = canvas.getBoundingClientRect()
-      mouse.set(
-        ((e.clientX - rect.left) / rect.width) * 2 - 1,
-        -((e.clientY - rect.top) / rect.height) * 2 + 1
-      )
+      mouse.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1)
       cam.getWorldPosition(origin)
       unprojectPoint.set(mouse.x, mouse.y, 1)
-      ;(unprojectPoint as { unproject: (c: unknown) => unknown }).unproject(cam)
+      unprojectPoint.unproject(cam)
       direction.subVectors(unprojectPoint, origin).normalize()
       raycaster.set(origin, direction)
       const hits = raycaster.intersectObject(globeInst.points)
@@ -274,25 +263,15 @@ export default function WebGlGlobe(props: WebGlGlobeProps) {
     // Mesh de survol : même forme que les points mais plus grand (×1.5)
     const pointBaseSize = 0.015 * GLOBE_RADIUS // 3
     const hoverScale = pointBaseSize * 1.5 // 4.5
-    const boxGeo = new (THREE.BoxGeometry as new (a: number, b: number, c: number) => unknown)(0.75, 0.75, 1) as {
-      dispose?: () => void
-    }
-    const boxMat = new (THREE.MeshBasicMaterial as new (o: unknown) => unknown)({
-      color: 0xffffff,
-      vertexColors: THREE.FaceColors,
-    }) as { dispose?: () => void }
-    const highlightMesh = new (THREE.Mesh as new (g: unknown, m: unknown) => {
-      position: { set: (x: number, y: number, z: number) => void }
-      scale: { set: (x: number, y: number, z: number) => void }
-      lookAt: (v: unknown) => void
-      visible: boolean
-    })(boxGeo, boxMat)
+    const boxGeo = new (THREE.BoxGeometry as any)(0.75, 0.75, 1)
+    const boxMat = new (THREE.MeshBasicMaterial as any)({ color: 0xffffff, vertexColors: THREE.FaceColors })
+    const highlightMesh = new (THREE.Mesh as any)(boxGeo, boxMat)
     highlightMesh.scale.set(hoverScale, hoverScale, hoverScale)
     highlightMesh.visible = false
     const center = new Vector3()
     center.set(0, 0, 0)
-    ;(highlightMesh as { lookAt: (v: unknown) => void }).lookAt(center)
-    ;(globe.scene as { add: (o: unknown) => void }).add(highlightMesh)
+    highlightMesh.lookAt(center)
+    ;(globe.scene as any).add(highlightMesh)
 
     const onGlobeMouseMove = (e: MouseEvent) => {
       const globeInst = globeRef.current
@@ -307,12 +286,8 @@ export default function WebGlGlobe(props: WebGlGlobeProps) {
       if (!coords) return
       const [lat, lng] = coords
       pointWorldPosition(lat, lng, origin)
-      highlightMesh.position.set(
-        (origin as { x: number; y: number; z: number }).x,
-        (origin as { x: number; y: number; z: number }).y,
-        (origin as { x: number; y: number; z: number }).z
-      )
-      ;(highlightMesh as { lookAt: (v: unknown) => void }).lookAt(center)
+      highlightMesh.position.set(origin.x, origin.y, origin.z)
+      highlightMesh.lookAt(center)
       highlightMesh.visible = true
     }
 
@@ -331,7 +306,7 @@ export default function WebGlGlobe(props: WebGlGlobeProps) {
         canvas.removeEventListener('click', onGlobeClick)
         canvas.removeEventListener('mousemove', onGlobeMouseMove)
         canvas.removeEventListener('mouseleave', onGlobeMouseLeave)
-        ;(globe.scene as { remove: (o: unknown) => void }).remove(highlightMesh)
+        ;(globe.scene as any).remove(highlightMesh)
         boxGeo.dispose?.()
         boxMat.dispose?.()
       }

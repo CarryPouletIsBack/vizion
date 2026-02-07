@@ -24,7 +24,7 @@ import useStravaMetrics from '../hooks/useStravaMetrics'
 import { analyzeCourseReadiness } from '../lib/courseAnalysis'
 import { grandRaidStats } from '../data/grandRaidStats'
 import { getWeather, getCityFromCoords } from '../lib/xweather'
-import { calculateElevationStats, analyzeProfileZones } from '../lib/profileAnalysis'
+import { analyzeProfileZones } from '../lib/profileAnalysis'
 import { segmentSvgIntoNumberedSegments, addSvgTooltips, addSvgSegmentClickListeners, getSvgZoomedOnSegment, getSegmentSvgWithElevation, type SegmentClickPayload } from '../lib/svgZoneSegmenter'
 import { latLonToSvg, type GpxBounds } from '../lib/gpxToSvg'
 
@@ -94,7 +94,7 @@ function CourseMetaRegion({
 /** Pastille vent affichée sur le tracé GPX (direction + vitesse) */
 function WindBadge({ windDir, windSpeedKmh }: { windDir: string | null; windSpeedKmh: number | null }) {
   if (windDir == null && windSpeedKmh == null) return null
-  const deg = WIND_DIR_DEG[windDir] ?? 0
+  const deg = (windDir != null ? WIND_DIR_DEG[windDir] : undefined) ?? 0
   const label = [windDir, windSpeedKmh != null ? `${Math.round(windSpeedKmh)} km/h` : null].filter(Boolean).join(' ')
   return (
     <div className="single-course-course__gpx-wind-badge" aria-label={`Vent ${label}`}>
@@ -244,8 +244,6 @@ export default function SingleCoursePage({
       return
     }
     let cancelled = false
-    const isExampleCourse = (selectedCourse as { id?: string } | undefined)?.id === 'example-grand-raid-course'
-
     Promise.all(
       points.map(([lat, lon]) =>
         getWeather(lat, lon).then((w) => ({ lat, lon, rain: w?.rainLast24h === true }))
@@ -402,12 +400,6 @@ const analysis = analyzeCourseReadiness(
     stravaSegments,
     useGrandRaidStats ? grandRaidStats : undefined
   )
-
-  // Calculer les stats d'élévation depuis le profil
-  const elevationStats = profileData ? calculateElevationStats(profileData) : {
-    elevationGain: courseData.elevationGain,
-    elevationLoss: 0,
-  }
 
   // Analyser les zones du profil
   const profileZones = profileData && metrics
