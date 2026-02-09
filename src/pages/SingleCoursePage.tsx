@@ -29,6 +29,8 @@ import { getWeather, getCityFromCoords, formatWeatherCircuitMessage } from '../l
 import { analyzeProfileZones } from '../lib/profileAnalysis'
 import { segmentSvgIntoNumberedSegments, addSvgTooltips, addSvgSegmentClickListeners, getSvgZoomedOnSegment, getSegmentPathPoints, type SegmentClickPayload } from '../lib/svgZoneSegmenter'
 import { latLonToSvg, svgPointToLatLon, getBoundsFromSvg, type GpxBounds } from '../lib/gpxToSvg'
+import { fetchWaysForBounds, computeSurfaceBreakdownFromWays, type GpxSurfaceBreakdown, type OverpassWay } from '../lib/surfaceFromOsm'
+import Skeleton, { SkeletonLines } from '../components/Skeleton'
 import SegmentMapLeaflet from '../components/SegmentMapLeaflet'
 
 const SegmentMapMapbox3D = lazy(() => import('../components/SegmentMapMapbox3D'))
@@ -214,31 +216,42 @@ export default function SingleCoursePage({
 
   const courseTitle = selectedCourse?.name ?? 'Course'
   const courseEventName = (selectedCourse as { eventName?: string } | undefined)?.eventName ?? 'Grand Raid'
+
+  useEffect(() => {
+    const name =
+      selectedCourseId && selectedCourse?.id === selectedCourseId ? selectedCourse.name : null
+    if (name) {
+      const prev = document.title
+      document.title = name
+      return () => { document.title = prev }
+    }
+    document.title = 'trackali-app'
+    return () => { document.title = 'trackali-app' }
+  }, [selectedCourseId, selectedCourse?.id, selectedCourse?.name])
+
   const courseStats =
     selectedCourse?.distanceKm && selectedCourse?.elevationGain
       ? `${selectedCourse.distanceKm.toFixed(0)} km · ${Math.round(selectedCourse.elevationGain)} D+`
       : '175 km · 10 150 D+ · Août 2026'
   const courseHeading = `${courseEventName.toUpperCase()} – ${courseTitle}`
   const rawProfile = (selectedCourse as { profile?: Array<[number, number]> | string } | undefined)?.profile
-  // Parser le profile si c'est une string JSON, sinon utiliser directement
-  let profileData: Array<[number, number]> | undefined = undefined
-  if (rawProfile) {
+  /** Profil stabilisé (même référence tant que la course ne change pas) pour éviter recalculs en chaîne et freeze */
+  const profileData = useMemo((): Array<[number, number]> | undefined => {
+    if (!rawProfile) return undefined
     if (typeof rawProfile === 'string') {
       try {
-        // Le profile peut être une string JSON double-encodée
         const parsed = JSON.parse(rawProfile)
         if (typeof parsed === 'string') {
-          profileData = JSON.parse(parsed)
-        } else if (Array.isArray(parsed)) {
-          profileData = parsed
+          return JSON.parse(parsed) as Array<[number, number]>
         }
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed as Array<[number, number]>
       } catch {
-        profileData = undefined
+        return undefined
       }
-    } else if (Array.isArray(rawProfile) && rawProfile.length > 0) {
-      profileData = rawProfile
     }
-  }
+    if (Array.isArray(rawProfile) && rawProfile.length > 0) return rawProfile
+    return undefined
+  }, [selectedCourseId, rawProfile])
   const gpxSvg = selectedCourse?.gpxSvg
   const maxDistance = profileData?.length ? profileData[profileData.length - 1][0] : undefined
   const { metrics } = useStravaMetrics()
@@ -273,6 +286,12 @@ export default function SingleCoursePage({
   const [regionOffsetHours, setRegionOffsetHours] = useState<number | null>(null)
   /** Pluie par point échantillon le long du tracé (pour afficher les gouttes sur le GPX) */
   const [rainAlongRoute, setRainAlongRoute] = useState<Array<{ lat: number; lon: number; rain: boolean }> | null>(null)
+  /** Type de sentier (surface) le long du tracé, calculé via OSM */
+  const [surfaceBreakdown, setSurfaceBreakdown] = useState<GpxSurfaceBreakdown | null>(null)
+  const [surfaceBreakdownLoading, setSurfaceBreakdownLoading] = useState(false)
+  const [surfaceBreakdownError, setSurfaceBreakdownError] = useState<string | null>(null)
+  /** Ways OSM pour le breakdown global (type de terrain sous la carte) */
+  const [osmWays, setOsmWays] = useState<OverpassWay[] | null>(null)
   /** Temps au km du 1er finisher (activité Strava) — pour la Diagonale des fous */
   const [firstFinisherSplits, setFirstFinisherSplits] = useState<Array<{ km: number; movingTimeSec: number; elapsedTimeSec: number; paceMinPerKm?: number }> | null>(null)
   const [firstFinisherLoading, setFirstFinisherLoading] = useState(false)
@@ -416,6 +435,82 @@ export default function SingleCoursePage({
   /** Coordonnées utilisées pour météo/ville/heure : secteur en vue Segment, sinon départ de la course */
   const displayCoords = (currentStep === 'segment' && segmentCenterCoords) ? segmentCenterCoords : regionCoords
   const displayCoordsKey = displayCoords ? `${displayCoords[0]},${displayCoords[1]}` : ''
+
+  // Type de sentier (surface) via OSM : fetch ways une fois, puis breakdown global + par segment
+  const boundsForSurface = gpxBounds ?? (regionCoords && gpxSvg && totalKmForRegion > 0 ? getBoundsFromSvg(gpxSvg, regionCoords, totalKmForRegion) : null)
+  const boundsForSurfaceKey = boundsForSurface
+    ? `${boundsForSurface.minLat},${boundsForSurface.maxLat},${boundsForSurface.minLon},${boundsForSurface.maxLon}`
+    : ''
+
+  // Chargement OSM différé pour que la page (carte, profil, secteurs) s’affiche en premier
+  const SURFACE_FETCH_DELAY_MS = 400
+  useEffect(() => {
+    if (!boundsForSurface) {
+      setOsmWays(null)
+      setSurfaceBreakdown(null)
+      setSurfaceBreakdownError(null)
+      return
+    }
+    let cancelled = false
+    setSurfaceBreakdownError(null)
+    const slowMessageId = window.setTimeout(() => {
+      if (cancelled) return
+      setSurfaceBreakdownError('Chargement long (type de terrain)…')
+    }, 20000)
+    const startFetchId = window.setTimeout(() => {
+      if (cancelled) return
+      setSurfaceBreakdownLoading(true)
+      fetchWaysForBounds(boundsForSurface)
+        .then((ways) => {
+          if (cancelled) return
+          setOsmWays(ways)
+          setSurfaceBreakdownError(null)
+          if (ways.length === 0) {
+            setSurfaceBreakdown(null)
+            setSurfaceBreakdownError('Aucune donnée surface dans la zone')
+          }
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            setOsmWays(null)
+            setSurfaceBreakdown(null)
+            setSurfaceBreakdownError(err?.message ?? 'Erreur chargement type de terrain')
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            clearTimeout(slowMessageId)
+            setSurfaceBreakdownLoading(false)
+          }
+        })
+    }, SURFACE_FETCH_DELAY_MS)
+    return () => {
+      cancelled = true
+      clearTimeout(slowMessageId)
+      clearTimeout(startFetchId)
+    }
+  }, [selectedCourseId, boundsForSurfaceKey])
+
+  useEffect(() => {
+    if (!osmWays?.length || !gpxSvg || !boundsForSurface || totalKmForRegion <= 0) {
+      if (!osmWays?.length) setSurfaceBreakdown(null)
+      return
+    }
+    let cancelled = false
+    const ways = osmWays
+    const bounds = boundsForSurface
+    const run = () => {
+      const pathPoints = getSegmentPathPoints(gpxSvg, 0, totalKmForRegion, totalKmForRegion)
+      const points: Array<[number, number]> = pathPoints.map(([x, y]) => svgPointToLatLon(x, y, bounds))
+      const result = computeSurfaceBreakdownFromWays(points, ways)
+      if (!cancelled) setSurfaceBreakdown(result ?? null)
+    }
+    const t = window.setTimeout(run, 0)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+    }
+  }, [osmWays, gpxSvg, boundsForSurfaceKey, totalKmForRegion])
 
   // Météo par point le long du tracé (pour gouttes sur le GPX)
   useEffect(() => {
@@ -607,10 +702,14 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
     useGrandRaidStats ? grandRaidStats : undefined
   )
 
-  // Analyser les zones du profil
-  const profileZones = profileData && metrics
-    ? analyzeProfileZones(profileData, metrics, courseData.distanceKm, courseData.elevationGain)
-    : []
+  // Analyser les zones du profil (mémoïsé pour éviter re-renders en chaîne)
+  const profileZones = useMemo(
+    () =>
+      profileData && metrics
+        ? analyzeProfileZones(profileData, metrics, courseData.distanceKm, courseData.elevationGain)
+        : [],
+    [profileData, metrics, courseData.distanceKm, courseData.elevationGain]
+  )
 
   // Réinitialiser le segment sélectionné quand on change de course
   useEffect(() => {
@@ -763,7 +862,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
   })()
 
   /** Liste des segments (même découpage que le tracé) pour les cartes segment */
-  const segmentBoundsList = (() => {
+  const segmentBoundsList = useMemo(() => {
     if (!profileData || profileData.length === 0) return []
     const totalKm = profileData[profileData.length - 1]?.[0] ?? 0
     const numSegments = Math.max(5, Math.min(15, Math.round(totalKm / 15)))
@@ -776,7 +875,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
       })
     }
     return list
-  })()
+  }, [profileData])
 
   /** Extrait le profil pour un segment (distance rebasée à 0) pour le graphique */
   function getSegmentProfile(startKm: number, endKm: number): Array<[number, number]> {
@@ -866,7 +965,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
 
           <section className="single-course-heading">
             <div>
-              <p className="single-course-title">COURSE</p>
+              <p className="single-course-title">{courseTitle}</p>
             </div>
           </section>
 
@@ -931,6 +1030,21 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                   <img src={gpxIcon} alt="GPX" />
                 )}
               </div>
+              {surfaceBreakdownLoading && (
+                <p className="single-course-course__surface-below-map" aria-live="polite">
+                  <Skeleton width="100%" height={18} block className="skeleton-inline" style={{ maxWidth: 320 }} />
+                </p>
+              )}
+              {!surfaceBreakdownLoading && surfaceBreakdown && surfaceBreakdown.length > 0 && (
+                <p className="single-course-course__surface-below-map" aria-label="Répartition du type de terrain">
+                  Type de terrain : {surfaceBreakdown.map(({ surface, percent }) => `${surface} ${percent} %`).join(' · ')}
+                </p>
+              )}
+              {!surfaceBreakdownLoading && surfaceBreakdownError && (
+                <p className="single-course-course__surface-below-map single-course-course__surface-below-map--muted" aria-live="polite">
+                  {surfaceBreakdownError}
+                </p>
+              )}
               {selectedSegment != null && (
                 <p className="single-course-course__segment-selected" aria-live="polite">
                   Segment {selectedSegment.segmentNumber} sélectionné — {selectedSegment.startKm.toFixed(1)} – {selectedSegment.endKm.toFixed(1)} km
@@ -960,7 +1074,30 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                   {(firstFinisherLoading || firstFinisherSplits || firstFinisherError) && (
                     <div className="single-course-course__first-finisher-splits">
                       <p className="single-course-course__first-finisher-splits-title">Temps au km (activité Strava)</p>
-                      {firstFinisherLoading && <p className="single-course-course__first-finisher-splits-loading">Chargement…</p>}
+                      {firstFinisherLoading && (
+                        <div className="single-course-course__first-finisher-splits-loading" aria-busy>
+                          <div className="single-course-course__splits-table-wrap">
+                            <table className="single-course-course__splits-table">
+                              <thead>
+                                <tr>
+                                  <th>Km</th>
+                                  <th>Temps (m:s)</th>
+                                  <th>Allure (min/km)</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {[1, 2, 3, 4, 5].map((i) => (
+                                  <tr key={i}>
+                                    <td><Skeleton width={28} height={14} /></td>
+                                    <td><Skeleton width={48} height={14} /></td>
+                                    <td><Skeleton width={40} height={14} /></td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
                       {firstFinisherError && !firstFinisherLoading && <p className="single-course-course__first-finisher-splits-error">{firstFinisherError}</p>}
                       {firstFinisherSplits && firstFinisherSplits.length > 0 && !firstFinisherLoading && (
                         <div className="single-course-course__splits-table-wrap">
@@ -1149,7 +1286,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                         {(fullTrackPositions.length > 0 || segmentPositions.length > 0) ? (
                           segmentView3D ? (
                             <div className="single-course-course__gpx-map single-course-course__gpx-map--osm">
-                              <Suspense fallback={<div className="segment-map-mapbox3d-loading" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 14 }}>Chargement carte 3D…</div>}>
+                              <Suspense fallback={<div className="segment-map-mapbox3d-loading" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexDirection: 'column' }}><Skeleton width={160} height={24} /><Skeleton width={120} height={16} /></div>}>
                                 <SegmentMapMapbox3D
                                   key={`segment-3d-${selectedSegment.segmentNumber}`}
                                   fullTrackPositions={fullTrackPositions.length > 0 ? fullTrackPositions : undefined}
@@ -1211,13 +1348,34 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                           <img src={gpxIcon} alt="GPX" />
                         )}
                       </div>
-                      <p className="single-course-course__segment-selected" aria-live="polite">
-                        Segment {selectedSegment.segmentNumber} — {selectedSegment.startKm.toFixed(1)} – {selectedSegment.endKm.toFixed(1)} km
-                      </p>
                     </div>
                     <div className="single-course-right">
                       <div className="single-course-chart-block single-course-segment-page__stats-card">
-                        <p className="single-course-panel__title">Secteur {selectedSegment.segmentNumber}</p>
+                        <div className="single-course-segment-page__stats-card-header">
+                          <p className="single-course-panel__title">Secteur {selectedSegment.segmentNumber}</p>
+                          <div className="single-course-segment-page__sector-slider" role="tablist" aria-label="Choisir un secteur">
+                            {segmentBoundsList.map((seg) => (
+                              <button
+                                key={seg.segmentNumber}
+                                type="button"
+                                role="tab"
+                                aria-selected={selectedSegment.segmentNumber === seg.segmentNumber}
+                                aria-label={`Secteur ${seg.segmentNumber}`}
+                                className={`single-course-segment-page__sector-pill ${selectedSegment.segmentNumber === seg.segmentNumber ? 'single-course-segment-page__sector-pill--selected' : ''}`}
+                                onClick={() =>
+                                  setSelectedSegment({
+                                    segmentIndex: seg.segmentNumber - 1,
+                                    segmentNumber: seg.segmentNumber,
+                                    startKm: seg.startKm,
+                                    endKm: seg.endKm,
+                                  })
+                                }
+                              >
+                                Secteur {seg.segmentNumber}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                         <div className="single-course-segment-page__chart">
                           <SingleCourseElevationChart data={segmentProfile} metrics={undefined} />
                         </div>
@@ -1364,6 +1522,11 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                           <p className="single-course-preparation__fit-error" role="alert">
                             {fitParseError}
                           </p>
+                        )}
+                        {fitParseLoading && (
+                          <div className="single-course-preparation__fit-summary">
+                            <Skeleton width={240} height={16} />
+                          </div>
                         )}
                         {fitParsedData && !fitParseLoading && (
                           <div className="single-course-preparation__fit-summary">
@@ -1684,9 +1847,9 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                     </p>
                   )}
                   {aiContentLoading && !aiContent && (
-                    <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '12px' }}>
-                      Génération des textes par l&apos;IA…
-                    </p>
+                    <div style={{ marginBottom: '12px' }}>
+                      <SkeletonLines lines={4} lastLineWidth="70%" />
+                    </div>
                   )}
                   <div className="single-course-panel__card" style={{ marginTop: '8px' }}>
                     <p className="single-course-panel__title">🧠 PROJECTION</p>

@@ -6,6 +6,7 @@ import { redirectToStravaAuth } from '../lib/stravaAuth'
 import { getCurrentUser, signOut, updateProfile } from '../lib/auth'
 import { getUserFitActivities, saveUserFitActivity, deleteUserFitActivity, type UserFitActivityRow } from '../lib/userFitActivities'
 import { parseFitFile } from '../lib/parseFitFile'
+import Skeleton, { SkeletonLines } from '../components/Skeleton'
 
 type UserAccountPageProps = {
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
@@ -45,6 +46,7 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
   const [supabaseUserId, setSupabaseUserId] = useState<string | null>(null)
   const [fitActivities, setFitActivities] = useState<UserFitActivityRow[]>([])
   const [fitActivitiesLoading, setFitActivitiesLoading] = useState(false)
+  const [userLoading, setUserLoading] = useState(true)
 
   useEffect(() => {
     let mounted = true
@@ -57,6 +59,7 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
       try {
         const supabaseUser = await getCurrentUser()
         if (!mounted) return
+        setUserLoading(false)
 
         if (supabaseUser?.id) {
           setSupabaseUserId(supabaseUser.id)
@@ -133,7 +136,7 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
       } catch (error) {
         if (!mounted) return
         console.warn('Impossible de charger l\'utilisateur:', error)
-        // Ne pas rediriger immédiatement pour éviter le sursaut
+        setUserLoading(false)
       }
     }
 
@@ -483,7 +486,15 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
                 )}
               </div>
               <div className="user-account-card__body">
-                {user ? (
+                {userLoading ? (
+                  <div className="user-account-profile user-account-profile--skeleton">
+                    <Skeleton width={64} height={64} borderRadius="50%" className="user-account-profile__avatar-skeleton" />
+                    <div className="user-account-profile__info">
+                      <Skeleton width={160} height={20} style={{ marginBottom: 8 }} />
+                      <Skeleton width={200} height={14} />
+                    </div>
+                  </div>
+                ) : user ? (
                   isEditing ? (
                     <form className="user-account-form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
                       <div className="user-account-form__field">
@@ -684,7 +695,15 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
                       )}
                     </div>
                     {fitActivitiesLoading && fitActivities.length === 0 ? (
-                      <p className="user-account-fit-loading">Chargement...</p>
+                      <ul className="user-account-fit-list" aria-hidden>
+                        {[1, 2, 3, 4, 5].map((i) => (
+                          <li key={i} className="user-account-fit-item user-account-fit-item--skeleton">
+                            <Skeleton width={24} height={14} />
+                            <Skeleton width={120} height={14} />
+                            <Skeleton width={140} height={14} />
+                          </li>
+                        ))}
+                      </ul>
                     ) : fitActivities.length > 0 ? (
                       <ul className="user-account-fit-list" aria-label="Sorties .fit enregistrées">
                         {fitActivities.map((row, index) => (
@@ -742,19 +761,19 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
                       <div className="user-account-stats__item">
                         <span className="user-account-stats__label">Activités synchronisées</span>
                         <span className="user-account-stats__value">
-                          {statsLoading ? '...' : stravaStats.activityCount > 0 ? stravaStats.activityCount : '-'}
+                          {statsLoading ? <Skeleton width={32} height={18} className="skeleton-inline" /> : (stravaStats.activityCount > 0 ? stravaStats.activityCount : '-')}
                         </span>
                       </div>
                       <div className="user-account-stats__item">
                         <span className="user-account-stats__label">Distance totale</span>
                         <span className="user-account-stats__value">
-                          {statsLoading ? '...' : stravaStats.totalDistance > 0 ? `${(stravaStats.totalDistance / 1000).toFixed(0)} km` : '-'}
+                          {statsLoading ? <Skeleton width={48} height={18} className="skeleton-inline" /> : (stravaStats.totalDistance > 0 ? `${(stravaStats.totalDistance / 1000).toFixed(0)} km` : '-')}
                         </span>
                       </div>
                       <div className="user-account-stats__item">
                         <span className="user-account-stats__label">Dénivelé total</span>
                         <span className="user-account-stats__value">
-                          {statsLoading ? '...' : stravaStats.totalElevationGain > 0 ? `${Math.round(stravaStats.totalElevationGain)} m` : '-'}
+                          {statsLoading ? <Skeleton width={40} height={18} className="skeleton-inline" /> : (stravaStats.totalElevationGain > 0 ? `${Math.round(stravaStats.totalElevationGain)} m` : '-')}
                         </span>
                       </div>
                     </div>

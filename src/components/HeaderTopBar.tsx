@@ -4,6 +4,7 @@ import { FiSun, FiCloud, FiCloudRain, FiMoon, FiUser } from 'react-icons/fi'
 import './HeaderTopBar.css'
 
 import logoVision from '../assets/c5c94aad0b681f3e62439f66f02703ba7c8b5826.svg'
+import Skeleton from './Skeleton'
 import { redirectToStravaAuth } from '../lib/stravaAuth'
 import { getWeather, getCityFromCoords, weatherIconType, type WeatherIconType } from '../lib/xweather'
 import { signIn, signUp, onAuthStateChange, getCurrentUser } from '../lib/auth'
@@ -323,7 +324,11 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
               : `— · ${currentTime}`}
           </span>
         </div>
-        {user === 'loading' ? null : user ? (
+        {user === 'loading' ? (
+        <span className="saison-topbar__user-trigger saison-topbar__user-trigger--skeleton" aria-hidden>
+          <Skeleton width={40} height={40} borderRadius="50%" />
+        </span>
+      ) : user ? (
         <button
           className="saison-topbar__user-trigger"
           type="button"

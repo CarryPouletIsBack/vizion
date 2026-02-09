@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import './App.css'
+import Skeleton, { SkeletonLines } from './components/Skeleton'
 import WebGlGlobe from './components/WebGlGlobe'
 import CoursesPage from './pages/CoursesPage'
 import EventsPage from './pages/EventsPage'
@@ -769,8 +770,9 @@ function App() {
 
   if (loading) {
     return (
-      <div className="app-root" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <p>Chargement...</p>
+      <div className="app-root app-loading" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', gap: 24 }}>
+        <Skeleton width={120} height={32} borderRadius={8} />
+        <SkeletonLines lines={3} lastLineWidth="40%" className="app-loading__lines" />
       </div>
     )
   }

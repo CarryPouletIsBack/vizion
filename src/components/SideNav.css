@@ -42,9 +42,12 @@
     max-width: calc(100% - var(--spacing-8, 16px) * 2);
     flex-shrink: 0;
     margin: 0;
-    border-radius: 0;
+    border-radius: 24px;
     border-top: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
-    padding: var(--spacing-4, 8px) var(--spacing-2, 4px);
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: var(--spacing-4, 8px);
+    padding-bottom: var(--spacing-4, 8px);
   }
 
   .side-nav__item {

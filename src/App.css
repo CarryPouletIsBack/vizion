@@ -5,6 +5,13 @@
   background-color: transparent;
 }
 
+.app-loading.app-root {
+  background-color: var(--app-bg, #0f172a);
+}
+.app-loading__lines {
+  max-width: 280px;
+}
+
 /* Globe en fond sur toutes les pages (sous header/sidebar et contenu) */
 .app-bg-globe {
   position: fixed;

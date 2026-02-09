@@ -189,6 +189,10 @@
   margin: var(--spacing-2, 4px) 0 0 0;
 }
 
+.user-account-profile--skeleton .user-account-profile__info {
+  flex: 1;
+}
+
 .user-account-form {
   display: flex;
   flex-direction: column;
@@ -587,4 +591,11 @@
 
 .user-account-fit-item__delete {
   margin-left: auto;
+}
+
+.user-account-fit-item--skeleton {
+  gap: var(--spacing-3, 12px);
+}
+.user-account-fit-item--skeleton .skeleton {
+  flex-shrink: 0;
 }

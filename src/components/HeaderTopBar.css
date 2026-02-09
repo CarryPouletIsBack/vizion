@@ -152,6 +152,11 @@
   color: var(--color-accent, #bfc900);
 }
 
+.saison-topbar__user-trigger--skeleton {
+  cursor: default;
+  pointer-events: none;
+}
+
 .saison-topbar__user-trigger svg {
   width: var(--spacing-12, 24px);
   height: var(--spacing-12, 24px);

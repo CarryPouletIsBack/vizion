@@ -8,6 +8,7 @@ import reunionFlag from '../assets/5375c6ef182ea756eeb23fb723865d5c353eb10b.png'
 import grandRaidLogo from '../assets/da2a1ce5e69564e56a29b5912fd151a8f515e136.png'
 import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import { supabase, type CourseRow } from '../lib/supabase'
+import Skeleton from './Skeleton'
 import './WorldMapGoogle.css'
 
 type WorldMapGoogleProps = {
@@ -168,7 +169,9 @@ const WorldMapGoogle = memo(function WorldMapGoogle({ onCourseSelect }: WorldMap
   if (!isLoaded) {
     return (
       <div className="world-map-google">
-        <div className="map-loading">Chargement de la carte...</div>
+        <div className="map-loading">
+          <Skeleton width="100%" height={200} block style={{ maxWidth: 400, margin: '0 auto' }} />
+        </div>
       </div>
     )
   }

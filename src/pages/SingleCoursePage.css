@@ -10,10 +10,11 @@
 }
 
 .single-course-side {
-  position: fixed;
+  position: sticky;
   top: calc(var(--topbar-height, 56px) + var(--spacing-8, 16px));
-  left: var(--spacing-6, 12px);
-  width: 200px;
+  width: max-content;
+  max-width: 200px;
+  flex-shrink: 0;
   z-index: 90;
   padding-bottom: var(--spacing-8, 16px);
   transition: var(--transition-smooth);
@@ -21,6 +22,9 @@
 
 .single-course-body {
   position: relative;
+  display: flex;
+  gap: var(--spacing-6, 12px);
+  align-items: flex-start;
 }
 
 .single-course-nav {
@@ -61,8 +65,8 @@
   flex-direction: column;
   gap: var(--spacing-20, 40px);
   row-gap: var(--spacing-4, 8px);
-  margin-left: 224px;
-  width: calc(100% - 224px);
+  flex: 1;
+  min-width: 0;
   transition: var(--transition-smooth);
 }
 
@@ -282,6 +286,13 @@
   column-gap: var(--spacing-4, 8px);
 }
 
+.single-course-segment-card__surface {
+  margin: var(--spacing-3, 6px) 0 0;
+  font-size: var(--font-size-sm, 12px);
+  line-height: var(--line-height-normal, 1.5);
+  color: var(--color-text-secondary, #9ca3af);
+}
+
 .single-course-segment-card__stat {
   display: flex;
   justify-content: space-between;
@@ -314,6 +325,52 @@
   margin: 0;
 }
 
+.single-course-segment-page__stats-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3, 6px);
+}
+
+.single-course-segment-page__sector-slider {
+  display: flex;
+  gap: var(--spacing-2, 4px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: var(--spacing-2, 4px);
+  margin: 0 calc(-1 * var(--spacing-2, 4px));
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.single-course-segment-page__sector-slider::-webkit-scrollbar {
+  height: 6px;
+}
+
+.single-course-segment-page__sector-pill {
+  flex-shrink: 0;
+  padding: var(--spacing-2, 4px) var(--spacing-4, 8px);
+  border-radius: var(--spacing-4, 8px);
+  font-size: var(--font-size-sm, 12px);
+  font-weight: 500;
+  color: var(--color-text-secondary, #9ca3af);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--color-border-default, #2a3038);
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.single-course-segment-page__sector-pill:hover {
+  color: var(--color-text-primary, #e5e7eb);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.single-course-segment-page__sector-pill--selected {
+  color: var(--color-accent, #bfc900);
+  background: rgba(191, 201, 0, 0.12);
+  border-color: var(--color-accent, #bfc900);
+}
+
 .single-course-segment-page__stats {
   margin: 0;
   display: grid;
@@ -338,6 +395,13 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--color-text-primary, #e5e7eb);
+}
+
+.single-course-segment-page__surface {
+  margin: var(--spacing-3, 6px) 0 0;
+  font-size: var(--font-size-sm, 12px);
+  line-height: var(--line-height-normal, 1.5);
+  color: var(--color-text-secondary, #9ca3af);
 }
 
 .single-course-segment-page__advice {
@@ -752,11 +816,27 @@
 }
 
 .single-course-course__meta-stats,
-.single-course-course__meta-prep {
+.single-course-course__meta-prep,
+.single-course-course__meta-surface {
   margin: 0;
   font-size: var(--font-size-sm, 12px);
   line-height: var(--line-height-normal, 1.5);
   color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-course__meta-surface--muted {
+  opacity: 0.8;
+}
+
+.single-course-course__surface-below-map {
+  margin: var(--spacing-3, 6px) 0 0;
+  font-size: var(--font-size-sm, 12px);
+  line-height: var(--line-height-normal, 1.5);
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.single-course-course__surface-below-map--muted {
+  opacity: 0.8;
 }
 
 /* Référence taille : même bloc pour Description et Segment (carte GPX) */

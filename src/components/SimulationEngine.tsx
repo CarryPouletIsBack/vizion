@@ -4,6 +4,7 @@ import { IoMdStar } from 'react-icons/io'
 import { FaTrophy, FaMedal, FaWalking, FaRunning } from 'react-icons/fa'
 import { GiTurtle } from 'react-icons/gi'
 import './SimulationEngine.css'
+import Skeleton from './Skeleton'
 import { estimateTrailTime, type TimeEstimate } from '../lib/trailTimeEstimator'
 import { estimateTimeWithPhysics, type WeatherData } from '../lib/physicsEngine'
 import type { StravaMetrics } from '../types/strava'
@@ -355,7 +356,12 @@ export default function SimulationEngine({
             {aiLoading ? 'Calcul...' : 'Affiner avec l\'IA'}
           </button>
           {aiError && <p className="simulation-engine__ai-error">{aiError}</p>}
-          {aiRefined && (
+          {aiLoading && (
+            <p className="simulation-engine__ai-refined" aria-busy>
+              <span className="skeleton-inline"><Skeleton width={220} height={18} /></span>
+            </p>
+          )}
+          {aiRefined && !aiLoading && (
             <p className="simulation-engine__ai-refined">
               Estimation affinée (IA) : {formatMinutesToTime(aiRefined.suggestedMinMinutes)} – {formatMinutesToTime(aiRefined.suggestedMaxMinutes)}
             </p>

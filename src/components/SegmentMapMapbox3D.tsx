@@ -160,11 +160,10 @@ export default function SegmentMapMapbox3D({
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="segment-map-mapbox3d"
-      style={{ height }}
-      aria-label="Carte 3D Mapbox avec relief et tracé sur le terrain"
-    />
+    <div className="segment-map-mapbox3d" style={{ height }} aria-label="Carte 3D Mapbox avec relief et tracé sur le terrain">
+      <div className="segment-map-mapbox3d__map-layer" aria-hidden>
+        <div ref={containerRef} className="segment-map-mapbox3d__map-inner" />
+      </div>
+    </div>
   )
 }

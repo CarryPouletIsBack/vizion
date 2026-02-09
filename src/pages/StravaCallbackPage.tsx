@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import './StravaCallbackPage.css'
+import Skeleton, { SkeletonLines } from '../components/Skeleton'
 
 type StravaCallbackPageProps = {
   onAuthSuccess?: () => void
@@ -67,8 +68,8 @@ export default function StravaCallbackPage({ onAuthSuccess }: StravaCallbackPage
     <div className="strava-callback-page">
       {status === 'loading' && (
         <div className="strava-callback__content">
-          <h1>Connexion à Strava...</h1>
-          <p>Veuillez patienter pendant que nous finalisons votre connexion.</p>
+          <Skeleton width={280} height={32} style={{ marginBottom: 16 }} />
+          <SkeletonLines lines={2} lastLineWidth="80%" />
         </div>
       )}
 
