@@ -33,11 +33,13 @@ export default function SegmentMapMapbox3D({
     mapboxgl.accessToken = token
     const map = new mapboxgl.Map({
       container,
-      style: 'mapbox://styles/mapbox/outdoors-v12',
+      style: 'mapbox://styles/mapbox/light-v11',
       center: [center[0], center[1]],
       zoom: 12,
       pitch: 65,
       bearing: 0,
+      minZoom: 8,
+      maxZoom: 15,
       maxPitch: 85,
     })
 
@@ -48,7 +50,7 @@ export default function SegmentMapMapbox3D({
         type: 'raster-dem',
         url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
         tileSize: 512,
-        maxzoom: 14,
+        maxzoom: 12,
       })
       map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.2 })
 
@@ -67,7 +69,7 @@ export default function SegmentMapMapbox3D({
           type: 'line',
           source: 'fullTrack',
           layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: { 'line-color': '#6b7280', 'line-width': 3, 'line-opacity': 0.7 },
+          paint: { 'line-color': '#525252', 'line-width': 3, 'line-opacity': 0.8 },
         })
       }
 
@@ -80,11 +82,18 @@ export default function SegmentMapMapbox3D({
         },
       })
       map.addLayer({
+        id: 'segment-outline',
+        type: 'line',
+        source: 'segment',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#1f2937', 'line-width': 7 },
+      })
+      map.addLayer({
         id: 'segment',
         type: 'line',
         source: 'segment',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': '#bfc900', 'line-width': 5 },
+        paint: { 'line-color': '#ffffff', 'line-width': 5 },
       })
 
       const bounds = new mapboxgl.LngLatBounds()

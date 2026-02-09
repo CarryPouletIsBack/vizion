@@ -1,0 +1,11 @@
+# Fichiers exclus du contexte de build Vercel (allège l’étape après le clone)
+.git
+.cursor
+.vscode
+.idea
+*.log
+DEV_RULES.md
+SECURITY.md
+STRAVA_RATE_LIMITS.md
+STRAVA_SETUP.md
+supabase/migrations/README.md

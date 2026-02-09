@@ -6,7 +6,7 @@ import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 import SingleCourseElevationChart from '../components/SingleCourseElevationChart'
 import SimulationEngine from '../components/SimulationEngine'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, lazy, Suspense } from 'react'
 
 /** ID Strava de l'activité du 1er finisher (Diagonale des fous) pour embed + temps au km */
 const FIRST_FINISHER_ACTIVITY_ID = '16387493791'
@@ -30,7 +30,8 @@ import { analyzeProfileZones } from '../lib/profileAnalysis'
 import { segmentSvgIntoNumberedSegments, addSvgTooltips, addSvgSegmentClickListeners, getSvgZoomedOnSegment, getSegmentPathPoints, type SegmentClickPayload } from '../lib/svgZoneSegmenter'
 import { latLonToSvg, svgPointToLatLon, getBoundsFromSvg, type GpxBounds } from '../lib/gpxToSvg'
 import SegmentMapLeaflet from '../components/SegmentMapLeaflet'
-import SegmentMapMapbox3D from '../components/SegmentMapMapbox3D'
+
+const SegmentMapMapbox3D = lazy(() => import('../components/SegmentMapMapbox3D'))
 import { construireDateDepart, formatPreparationMonthsLabel } from '../lib/dateUtils'
 import FitParser from 'fit-file-parser'
 
@@ -1099,12 +1100,14 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                         {(fullTrackPositions.length > 0 || segmentPositions.length > 0) ? (
                           segmentView3D ? (
                             <div className="single-course-course__gpx-map single-course-course__gpx-map--osm">
-                              <SegmentMapMapbox3D
-                                key={`segment-3d-${selectedSegment.segmentNumber}`}
-                                fullTrackPositions={fullTrackPositions.length > 0 ? fullTrackPositions : undefined}
-                                segmentPositions={segmentPositions}
-                                height="100%"
-                              />
+                              <Suspense fallback={<div className="segment-map-mapbox3d-loading" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 14 }}>Chargement carte 3D…</div>}>
+                                <SegmentMapMapbox3D
+                                  key={`segment-3d-${selectedSegment.segmentNumber}`}
+                                  fullTrackPositions={fullTrackPositions.length > 0 ? fullTrackPositions : undefined}
+                                  segmentPositions={segmentPositions}
+                                  height="100%"
+                                />
+                              </Suspense>
                             </div>
                           ) : (
                             <div className="single-course-course__gpx-map single-course-course__gpx-map--osm">

@@ -9,6 +9,11 @@
   height: 100%;
 }
 
+/* Carte en monochrome ; le tracé GPX reste en évidence (ligne blanche + contour) */
+.segment-map-mapbox3d .mapboxgl-canvas-container {
+  filter: grayscale(1);
+}
+
 .segment-map-mapbox3d .mapboxgl-ctrl-group {
   background: rgba(11, 14, 17, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.1);
