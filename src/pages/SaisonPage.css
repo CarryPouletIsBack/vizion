@@ -399,14 +399,16 @@
     right: 0;
     width: 100%;
     z-index: 90;
+    display: flex;
+    justify-content: center;
   }
 
   .side-nav {
     flex-direction: row;
-    justify-content: space-around;
-    border-radius: 0;
+    justify-content: center;
+    border-radius: var(--spacing-4, 8px);
     border-top: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
-    padding: var(--spacing-6, 12px) var(--spacing-4, 8px);
+    padding: var(--spacing-6, 12px) var(--spacing-6, 12px);
   }
 
   .side-nav__item {

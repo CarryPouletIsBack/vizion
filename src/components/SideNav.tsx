@@ -13,7 +13,7 @@ export default function SideNav({ activeItem = 'saison', onNavigate }: SideNavPr
         type="button"
         onClick={() => onNavigate?.('saison')}
       >
-        Saison
+        Accueil
       </button>
       {/* Événements masqué temporairement - les courses sont indépendantes pour le moment */}
       <button

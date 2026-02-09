@@ -235,6 +235,18 @@ export default function SingleCoursePage({
   const [selectedSegment, setSelectedSegment] = useState<SegmentClickPayload | null>(null)
   /** Vue 3D : carte Mapbox avec relief (nécessite VITE_MAPBOX_ACCESS_TOKEN) */
   const [segmentView3D, setSegmentView3D] = useState(false)
+  /** Carte GPX en plein écran (sur mobile : map en paysage, le site reste en vertical) */
+  const [gpxMapFullscreen, setGpxMapFullscreen] = useState(false)
+
+  useEffect(() => {
+    if (!gpxMapFullscreen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setGpxMapFullscreen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [gpxMapFullscreen])
+
   const segmentStartKm =
     currentStep === 'segment' && selectedSegment != null ? selectedSegment.startKm : undefined
   useGpxHoverMarker('gpx-inline-svg', maxDistance, segmentStartKm)
@@ -1084,7 +1096,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                           </p>
                         )}
                       </div>
-                      <div className="single-course-course__gpx single-course-course__gpx--with-overlay">
+                      <div className={`single-course-course__gpx single-course-course__gpx--with-overlay${gpxMapFullscreen ? ' single-course-course__gpx--fullscreen' : ''}`}>
                         <div className="single-course-course__gpx-toolbar">
                           <button
                             type="button"
@@ -1094,6 +1106,15 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                             aria-label={segmentView3D ? 'Passer en vue 2D' : 'Passer en vue 3D'}
                           >
                             {segmentView3D ? 'Vue 2D' : 'Vue 3D'}
+                          </button>
+                          <button
+                            type="button"
+                            className="single-course-course__gpx-view-toggle"
+                            onClick={() => setGpxMapFullscreen((v) => !v)}
+                            aria-pressed={gpxMapFullscreen}
+                            aria-label={gpxMapFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
+                          >
+                            {gpxMapFullscreen ? 'Réduire' : 'Plein écran'}
                           </button>
                         </div>
                         <WindBadge windDir={windDir} windSpeedKmh={windSpeedKmh} />

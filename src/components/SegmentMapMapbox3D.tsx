@@ -106,6 +106,8 @@ export default function SegmentMapMapbox3D({
           geometry: { type: 'LineString', coordinates: lonLatSegment },
         },
       })
+      /* Même couleur accent (jaune) que la vue OSM Leaflet pour le segment actif */
+      const segmentColor = '#bfc900'
       map.addLayer({
         id: 'segment-outline',
         type: 'line',
@@ -118,7 +120,7 @@ export default function SegmentMapMapbox3D({
         type: 'line',
         source: 'segment',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': '#ffffff', 'line-width': 5 },
+        paint: { 'line-color': segmentColor, 'line-width': 5 },
       })
 
       const bounds = new mapboxgl.LngLatBounds()

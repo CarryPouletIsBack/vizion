@@ -441,6 +441,8 @@
     width: 100%;
     height: auto;
     z-index: 90;
+    display: flex;
+    justify-content: center;
   }
 
   .courses-nav {
