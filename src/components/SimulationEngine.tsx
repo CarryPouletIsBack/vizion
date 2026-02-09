@@ -5,6 +5,7 @@ import { FaTrophy, FaMedal, FaWalking, FaRunning } from 'react-icons/fa'
 import { GiTurtle } from 'react-icons/gi'
 import './SimulationEngine.css'
 import { estimateTrailTime, type TimeEstimate } from '../lib/trailTimeEstimator'
+import { estimateTimeWithPhysics, type WeatherData } from '../lib/physicsEngine'
 import type { StravaMetrics } from '../types/strava'
 import { grandRaidStats } from '../data/grandRaidStats'
 
@@ -15,6 +16,12 @@ type SimulationEngineProps = {
   baseTimeEstimate?: TimeEstimate
   /** Température en °C (optionnel, ex. API météo) */
   temperature?: number
+  /** Profil [distanceKm, altitudeM] pour le moteur physique (terrain + météo + fatigue) */
+  profileData?: Array<[number, number]>
+  /** Météo détaillée (quand l'API renvoie weatherData) pour boue, froid, chaleur */
+  weatherData?: WeatherData | null
+  /** Heure de départ pour la simulation physique (défaut: 8h ce matin) */
+  heureDepart?: Date
 }
 
 type BarrierInfo = {
@@ -32,6 +39,9 @@ export default function SimulationEngine({
   metrics,
   baseTimeEstimate,
   temperature,
+  profileData,
+  weatherData = null,
+  heureDepart,
 }: SimulationEngineProps) {
   const [fitnessLevel, setFitnessLevel] = useState(100) // 50-120%
   const [refuelTimePerStop, setRefuelTimePerStop] = useState(10) // minutes
@@ -97,6 +107,18 @@ export default function SimulationEngine({
       .sort((a, b) => a.distanceKm - b.distanceKm)
       .slice(0, 5) // Limiter à 5 barrières les plus critiques
   }, [timeEstimate, distanceKm])
+
+  // Prédiction moteur physique (terrain + météo + fatigue) quand on a le profil
+  const physicsResult = useMemo(() => {
+    if (!profileData?.length || !baseTimeEstimate) return null
+    const vitessePlatKmH = 60 / baseTimeEstimate.basePace
+    const depart = heureDepart ?? (() => {
+      const d = new Date()
+      d.setHours(8, 0, 0, 0)
+      return d
+    })()
+    return estimateTimeWithPhysics(profileData, weatherData ?? null, vitessePlatKmH, depart)
+  }, [profileData, weatherData, baseTimeEstimate, heureDepart])
 
   const formatTime = (hours: number): string => {
     const h = Math.floor(hours)
@@ -172,6 +194,27 @@ export default function SimulationEngine({
         </h3>
         <p className="simulation-engine__subtitle">Ajuste les paramètres pour affiner ton estimation</p>
       </div>
+
+      {/* Prédiction détaillée (moteur physique : terrain + météo + fatigue) */}
+      {physicsResult != null && (
+        <div className="simulation-engine__physics-block">
+          <p className="simulation-engine__physics-title">
+            <FiZap style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+            Prédiction moteur physique
+          </p>
+          <p className="simulation-engine__physics-time">{physicsResult.tempsTotalFormatted}</p>
+          <p className="simulation-engine__physics-arrival">
+            Arrivée estimée : {physicsResult.heureArriveeEstimee.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+          </p>
+          {physicsResult.details.messages.length > 0 && (
+            <ul className="simulation-engine__physics-messages" aria-label="Risques et contexte">
+              {physicsResult.details.messages.map((msg, i) => (
+                <li key={i} className="simulation-engine__physics-message">{msg}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* Slider État de forme */}
       <div className="simulation-engine__control">
