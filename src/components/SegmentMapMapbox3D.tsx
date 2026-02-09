@@ -33,7 +33,7 @@ export default function SegmentMapMapbox3D({
     mapboxgl.accessToken = token
     const map = new mapboxgl.Map({
       container,
-      style: 'mapbox://styles/mapbox/light-v11',
+      style: 'mapbox://styles/mapbox/dark-v11',
       center: [center[0], center[1]],
       zoom: 12,
       pitch: 65,
@@ -53,6 +53,31 @@ export default function SegmentMapMapbox3D({
         maxzoom: 12,
       })
       map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.2 })
+
+      if (typeof map.setFog === 'function') {
+        map.setFog({
+          color: '#0a0e14',
+          'high-color': '#060a10',
+          'space-color': '#020408',
+          'horizon-blend': 0.2,
+        })
+      }
+
+      map.addSource('contours', {
+        type: 'vector',
+        url: 'mapbox://mapbox.mapbox-terrain-v2',
+      })
+      map.addLayer({
+        id: 'contour-lines',
+        type: 'line',
+        source: 'contours',
+        'source-layer': 'contour',
+        paint: {
+          'line-color': '#5ee7f7',
+          'line-width': 0.8,
+          'line-opacity': 0.85,
+        },
+      })
 
       if (fullTrackPositions && fullTrackPositions.length > 0) {
         const lonLatFull = toLonLat(fullTrackPositions)
