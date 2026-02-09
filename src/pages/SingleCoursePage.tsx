@@ -26,7 +26,7 @@ import { mergeMetricsWithFit, mergeMetricsWithFitList } from '../lib/fitMetricsM
 import { getCurrentUser } from '../lib/auth'
 import { getUserFitActivities, saveUserFitActivity, type UserFitActivityRow } from '../lib/userFitActivities'
 import { grandRaidStats } from '../data/grandRaidStats'
-import { getWeather, getCityFromCoords } from '../lib/xweather'
+import { getWeather, getCityFromCoords, formatWeatherCircuitMessage } from '../lib/xweather'
 import { analyzeProfileZones } from '../lib/profileAnalysis'
 import { segmentSvgIntoNumberedSegments, addSvgTooltips, addSvgSegmentClickListeners, getSvgZoomedOnSegment, getSegmentSvgWithElevation, type SegmentClickPayload } from '../lib/svgZoneSegmenter'
 import { latLonToSvg, type GpxBounds } from '../lib/gpxToSvg'
@@ -238,6 +238,8 @@ export default function SingleCoursePage({
   useGpxHoverMarker('gpx-inline-svg', maxDistance, segmentStartKm)
   const [weatherTemp, setWeatherTemp] = useState<number | null>(null)
   const [rainLast24h, setRainLast24h] = useState<boolean | null>(null)
+  /** Météo complète de la région du circuit (pour message pluie/boue). undefined = pas encore chargé. */
+  const [circuitWeather, setCircuitWeather] = useState<Awaited<ReturnType<typeof getWeather>> | undefined>(undefined)
   const [windSpeedKmh, setWindSpeedKmh] = useState<number | null>(null)
   const [windDir, setWindDir] = useState<string | null>(null)
   const [regionCity, setRegionCity] = useState<string | null>(null)
@@ -405,6 +407,7 @@ export default function SingleCoursePage({
     if (!regionCoords || regionCoords.length < 2) {
       setWeatherTemp(null)
       setRainLast24h(null)
+      setCircuitWeather(undefined)
       setWindSpeedKmh(null)
       setWindDir(null)
       setRegionCity(null)
@@ -424,6 +427,7 @@ export default function SingleCoursePage({
         if (cancelled) return
         setWeatherTemp(weather?.tempC ?? null)
         setRainLast24h(weather?.rainLast24h ?? true)
+        setCircuitWeather(weather ?? null)
         const hasRealWind = weather?.windDir != null || weather?.windSpeedKmh != null
         setWindSpeedKmh(weather?.windSpeedKmh ?? (hasRealWind ? null : 12))
         setWindDir(weather?.windDir ?? (hasRealWind ? null : 'NNE'))
@@ -435,6 +439,7 @@ export default function SingleCoursePage({
         if (!cancelled) {
           setWeatherTemp(null)
           setRainLast24h(true)
+          setCircuitWeather(null)
           setWindSpeedKmh(12)
           setWindDir('NNE')
         }
@@ -843,11 +848,9 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                   windSpeedKmh={windSpeedKmh}
                 />
                 <p className="single-course-course__meta-stats">{courseStats}</p>
-                {rainLast24h !== null && (
-                  <p className="single-course-course__meta-prep" aria-label="État du circuit (pluie 24h)">
-                    {rainLast24h
-                      ? 'Il a plu dans les dernières 24h sur le circuit.'
-                      : 'Circuit sec — pas de pluie dans les dernières 24h.'}
+                {circuitWeather !== undefined && (
+                  <p className="single-course-course__meta-prep" aria-label="État du circuit (météo)">
+                    {formatWeatherCircuitMessage(circuitWeather)}
                   </p>
                 )}
               </div>
@@ -1060,11 +1063,9 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                         <p className="single-course-course__meta-stats">
                           {selectedSegment.startKm.toFixed(1)} – {selectedSegment.endKm.toFixed(1)} km
                         </p>
-                        {rainLast24h !== null && (
-                          <p className="single-course-course__meta-prep" aria-label="État du circuit (pluie 24h)">
-                            {rainLast24h
-                              ? 'Il a plu dans les dernières 24h sur le circuit.'
-                              : 'Circuit sec — pas de pluie dans les dernières 24h.'}
+                        {circuitWeather !== undefined && (
+                          <p className="single-course-course__meta-prep" aria-label="État du circuit (météo)">
+                            {formatWeatherCircuitMessage(circuitWeather)}
                           </p>
                         )}
                       </div>

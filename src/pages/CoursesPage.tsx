@@ -13,7 +13,26 @@ import useStravaMetrics from '../hooks/useStravaMetrics'
 import { gpxToSvg, extractGpxStartCoordinates, extractGpxWaypoints } from '../lib/gpxToSvg'
 import { extractRouteIdFromUrl } from '../lib/stravaRouteParser'
 import { formatCountdownLabel } from '../lib/dateUtils'
+import { getWeather, formatWeatherCircuitMessage } from '../lib/xweather'
 import { supabase } from '../lib/supabase'
+
+/** Affiche le message météo circuit (pluie actuelle, 24h, boue) pour une position. */
+function CourseCardWeather({ lat, lon }: { lat: number; lon: number }) {
+  const [weather, setWeather] = useState<Awaited<ReturnType<typeof getWeather>> | undefined>(undefined)
+  useEffect(() => {
+    let cancelled = false
+    getWeather(lat, lon).then((w) => {
+      if (!cancelled) setWeather(w ?? null)
+    })
+    return () => { cancelled = true }
+  }, [lat, lon])
+  if (weather === undefined) return null
+  return (
+    <p className="course-card__weather" aria-label="Météo du circuit">
+      {formatWeatherCircuitMessage(weather)}
+    </p>
+  )
+}
 
 type CoursesPageProps = {
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
@@ -35,6 +54,7 @@ type CoursesPageProps = {
       profile?: Array<[number, number]>
       date?: string
       startTime?: string
+      startCoordinates?: [number, number]
     }>
   }>
   selectedEventId: string | null
@@ -248,6 +268,9 @@ export default function CoursesPage({
               }
             }
 
+            const startCoords = course.start_coordinates && Array.isArray(course.start_coordinates) && course.start_coordinates.length === 2
+              ? [course.start_coordinates[0], course.start_coordinates[1]] as [number, number]
+              : undefined
             return {
               id: course.id,
               name: course.name,
@@ -259,6 +282,7 @@ export default function CoursesPage({
               profile,
               date: course.date ?? undefined,
               startTime: course.start_time ?? undefined,
+              startCoordinates: startCoords,
             }
           })
           setDirectCourses(formattedCourses)
@@ -817,6 +841,9 @@ export default function CoursesPage({
                     <p className="course-card__countdown">{card.countdown}</p>
                   </div>
                 </footer>
+                {card.courseRaw?.startCoordinates && card.courseRaw.startCoordinates.length === 2 && (
+                  <CourseCardWeather lat={card.courseRaw.startCoordinates[0]} lon={card.courseRaw.startCoordinates[1]} />
+                )}
               </article>
             ))}
           </section>

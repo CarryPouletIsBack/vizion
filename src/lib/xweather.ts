@@ -13,6 +13,8 @@ export type WeatherResult = {
   icon?: string
   /** true = pluie dans les dernières 24h, false = sec, undefined = inconnu */
   rainLast24h?: boolean
+  /** Précipitation actuelle en mm (0 = sec, > 0 = il pleut) */
+  precipitationNow?: number
   /** Vitesse du vent en km/h */
   windSpeedKmh?: number
   /** Direction du vent en degrés (0 = N, 90 = E, 180 = S, 270 = O) */
@@ -39,6 +41,7 @@ function getCached(lat: number, lon: number): WeatherResult | null {
       fetchedAt: number
       icon?: string
       rainLast24h?: boolean
+      precipitationNow?: number
       windSpeedKmh?: number
       windDirDeg?: number
       windDir?: string
@@ -49,6 +52,7 @@ function getCached(lat: number, lon: number): WeatherResult | null {
       tempC: parsed.tempC,
       icon: parsed.icon,
       rainLast24h: parsed.rainLast24h,
+      precipitationNow: parsed.precipitationNow,
       windSpeedKmh: parsed.windSpeedKmh,
       windDirDeg: parsed.windDirDeg,
       windDir: parsed.windDir,
@@ -66,6 +70,7 @@ function setCache(
   tempC: number,
   icon?: string,
   rainLast24h?: boolean,
+  precipitationNow?: number,
   windSpeedKmh?: number,
   windDirDeg?: number,
   windDir?: string
@@ -77,6 +82,7 @@ function setCache(
       fetchedAt: Date.now(),
       icon,
       rainLast24h,
+      precipitationNow,
       windSpeedKmh,
       windDirDeg,
       windDir,
@@ -106,6 +112,7 @@ export async function getWeather(lat: number, lon: number): Promise<WeatherResul
       tempC?: number
       icon?: string
       rainLast24h?: boolean
+      precipitationNow?: number
       windSpeedKmh?: number
       windDirDeg?: number
       windDir?: string
@@ -114,14 +121,16 @@ export async function getWeather(lat: number, lon: number): Promise<WeatherResul
     if (tempC == null) return null
     const icon = typeof data?.icon === 'string' ? data.icon : undefined
     const rainLast24h = typeof data?.rainLast24h === 'boolean' ? data.rainLast24h : undefined
+    const precipitationNow = typeof data?.precipitationNow === 'number' && data.precipitationNow >= 0 ? data.precipitationNow : undefined
     const windSpeedKmh = typeof data?.windSpeedKmh === 'number' ? data.windSpeedKmh : undefined
     const windDirDeg = typeof data?.windDirDeg === 'number' && data.windDirDeg >= 0 && data.windDirDeg <= 360 ? data.windDirDeg : undefined
     const windDir = typeof data?.windDir === 'string' && data.windDir ? data.windDir : undefined
-    setCache(lat, lon, tempC, icon, rainLast24h, windSpeedKmh, windDirDeg, windDir)
+    setCache(lat, lon, tempC, icon, rainLast24h, precipitationNow, windSpeedKmh, windDirDeg, windDir)
     return {
       tempC,
       icon,
       rainLast24h,
+      precipitationNow,
       windSpeedKmh,
       windDirDeg,
       windDir,
@@ -131,6 +140,20 @@ export async function getWeather(lat: number, lon: number): Promise<WeatherResul
   } catch {
     return null
   }
+}
+
+/**
+ * Retourne un message court sur l'état du circuit (pluie actuelle, 24h, boue).
+ * À utiliser sur la page Description, Segment et les cartes course.
+ */
+export function formatWeatherCircuitMessage(weather: WeatherResult | null): string {
+  if (!weather) return 'Météo du circuit non disponible.'
+  const rainNow = (weather.precipitationNow ?? 0) > 0.1
+  const rain24h = weather.rainLast24h === true
+  if (rainNow) return 'Il pleut actuellement sur le circuit.'
+  if (rain24h) return 'Il a plu dans les dernières 24h — risque de boue possible.'
+  if (weather.rainLast24h === false) return 'Circuit sec — pas de pluie dans les dernières 24h.'
+  return 'Météo du circuit non disponible.'
 }
 
 /** Icônes météo affichables : soleil, nuage, pluie, lune */

@@ -416,6 +416,16 @@
   text-align: center;
 }
 
+.course-card__weather {
+  font-family: 'Inter', sans-serif;
+  font-size: var(--font-size-xs, 11px);
+  line-height: var(--line-height-normal, 1.5);
+  color: var(--color-text-secondary, #9ca3af);
+  margin: var(--spacing-2, 4px) var(--spacing-4, 8px) 0;
+  padding-top: var(--spacing-2, 4px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 /* Mobile : sidebar en bas de l'écran */
 @media (max-width: 768px) {
   .courses-page {

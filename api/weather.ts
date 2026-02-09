@@ -145,6 +145,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const windSpeedKmh = typeof windSpeed10m === 'number' && windSpeed10m >= 0 ? windSpeed10m : undefined
     const windDirDeg = typeof windDir10m === 'number' && windDir10m >= 0 && windDir10m <= 360 ? windDir10m : undefined
     const windDir = windDirDeg != null ? windDegToCardinal(windDirDeg) : undefined
+    const precipitationNow = current.variables(3)?.value()
+    const precipitationNowMm = typeof precipitationNow === 'number' && precipitationNow >= 0 ? precipitationNow : undefined
 
     // Données structurées pour la simulation (ordre hourly = celui des params)
     const hourlyTime = range(Number(hourly.time()), Number(hourly.timeEnd()), hourly.interval()).map(
@@ -185,6 +187,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       tempC: Number(tempC),
       icon: icon ?? undefined,
       rainLast24h: rainLast24h ?? undefined,
+      /** Précipitation actuelle en mm (0 = sec, > 0 = il pleut) */
+      precipitationNow: precipitationNowMm ?? undefined,
       windSpeedKmh: windSpeedKmh ?? undefined,
       windDirDeg: windDirDeg ?? undefined,
       windDir: windDir ?? undefined,
