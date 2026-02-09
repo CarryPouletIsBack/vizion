@@ -621,8 +621,8 @@ function App() {
       elevationGain?: number
       profile?: Array<[number, number]>
       startCoordinates?: [number, number]
-      date?: string
-      startTime?: string
+      date?: string | null
+      startTime?: string | null
     }
   ) => {
     const cleanName = payload.name?.trim()
