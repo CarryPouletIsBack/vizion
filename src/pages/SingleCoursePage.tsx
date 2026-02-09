@@ -30,7 +30,7 @@ import { getWeather, getCityFromCoords } from '../lib/xweather'
 import { analyzeProfileZones } from '../lib/profileAnalysis'
 import { segmentSvgIntoNumberedSegments, addSvgTooltips, addSvgSegmentClickListeners, getSvgZoomedOnSegment, getSegmentSvgWithElevation, type SegmentClickPayload } from '../lib/svgZoneSegmenter'
 import { latLonToSvg, type GpxBounds } from '../lib/gpxToSvg'
-import { construireDateDepart } from '../lib/dateUtils'
+import { construireDateDepart, formatPreparationMonthsLabel } from '../lib/dateUtils'
 import FitParser from 'fit-file-parser'
 
 /** Extrait le viewBox d’une chaîne SVG (pour superposer les gouttes de pluie). */
@@ -180,6 +180,8 @@ type SingleCoursePageProps = {
       startCoordinates?: [number, number]
       weatherSamplePoints?: Array<[number, number]>
       gpxBounds?: GpxBounds
+      date?: string
+      startTime?: string
     }>
   }>
   selectedCourseId: string | null
@@ -1257,7 +1259,9 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                 <div className="single-course-course single-course-preparation__left">
                   <div className="single-course-preparation__top">
                     <div className="single-course-preparation__top-title-row">
-                      <p className="single-course-preparation__intro">Préparation en cours : M-6</p>
+                      <p className="single-course-preparation__intro">
+                        {formatPreparationMonthsLabel((selectedCourse as { date?: string } | undefined)?.date)}
+                      </p>
                       <input
                         ref={fitFileInputRef}
                         type="file"

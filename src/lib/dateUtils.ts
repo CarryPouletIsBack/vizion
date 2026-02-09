@@ -45,3 +45,27 @@ export function formatCountdownLabel(dateStr: string | undefined | null, startTi
   const years = Math.round(diffDays / 365)
   return years <= 1 ? 'Dans 1 an' : `Dans ${years} ans`
 }
+
+/**
+ * Retourne un libellé "M-X" pour la page Ma préparation (X = nombre de mois avant la course).
+ * @param dateStr Format YYYY-MM-DD (ex: "2024-08-30")
+ * @returns "Préparation en cours : M-6", "Course passée", ou "Date non renseignée"
+ */
+export function formatPreparationMonthsLabel(dateStr: string | undefined | null): string {
+  if (!dateStr || !dateStr.trim()) return 'Date non renseignée'
+  const courseDate = new Date(dateStr + 'T12:00:00')
+  if (Number.isNaN(courseDate.getTime())) return 'Date non renseignée'
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  const target = new Date(courseDate)
+  target.setHours(0, 0, 0, 0)
+  const diffMs = target.getTime() - now.getTime()
+  const diffDays = Math.round(diffMs / (24 * 60 * 60 * 1000))
+  if (diffDays < 0) return 'Course passée'
+  if (diffDays <= 31) {
+    const weeks = Math.round(diffDays / 7)
+    return weeks <= 1 ? 'Préparation en cours : J-7' : `Préparation en cours : J-${Math.min(diffDays, 99)}`
+  }
+  const months = Math.round(diffDays / 30)
+  return `Préparation en cours : M-${Math.min(months, 24)}`
+}
