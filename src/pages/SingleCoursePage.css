@@ -1445,6 +1445,17 @@
   }
 }
 
+/* Mobile : hauteur de la carte augmentée pour une meilleure lisibilité */
+@media (max-width: 768px) {
+  .single-course-course__gpx {
+    min-height: 360px;
+  }
+
+  .single-course-course__gpx-map--osm {
+    min-height: 360px;
+  }
+}
+
 /* Très petit écran (description lisible sans scroll horizontal) */
 @media (max-width: 480px) {
   .single-course-page {
@@ -1458,7 +1469,11 @@
   }
 
   .single-course-course__gpx {
-    min-height: 160px;
+    min-height: 320px;
+  }
+
+  .single-course-course__gpx-map--osm {
+    min-height: 320px;
   }
 
   .single-course-segment-card__chart {

@@ -127,7 +127,14 @@ export default function SegmentMapMapbox3D({
     })
 
     mapRef.current = map
+
+    const ro = new ResizeObserver(() => {
+      map.resize()
+    })
+    ro.observe(container)
+
     return () => {
+      ro.disconnect()
       map.remove()
       mapRef.current = null
     }
