@@ -247,14 +247,39 @@ export function getBoundsFromGpx(gpxText: string): GpxBounds | null {
  * quand on n’a pas le GPX (ex. course chargée depuis Supabase sans gpxBounds).
  * Utilise le path du SVG pour déduire scale et ranges (cohérent avec svgPointToLatLon).
  */
+/**
+ * Normalise un point [a, b] en [lat, lon]. Si a ∉ [-90,90] et b ∈ [-90,90], on suppose [lon, lat] et on swap.
+ */
+function normalizeCenterToLatLon(center: [number, number] | undefined | null): [number, number] {
+  if (!center || center.length < 2) return [0, 0]
+  const a = center[0]
+  const b = center[1]
+  if (Math.abs(a) <= 90 && Math.abs(b) <= 180) return [a, b]
+  if (Math.abs(a) <= 180 && Math.abs(b) <= 90) return [b, a]
+  return [a, b]
+}
+
+const GPX_BOUNDS_COMMENT_REGEX = /<!--\s*gpx-bounds:([\d.-]+),([\d.-]+),([\d.-]+),([\d.-]+)\s*-->/
+
 export function getBoundsFromSvg(
   svgContent: string,
   center?: [number, number] | null,
   totalKm?: number
 ): GpxBounds | null {
   if (!svgContent || typeof svgContent !== 'string') return null
-  const lat0 = center?.[0] ?? 0
-  const lon0 = center?.[1] ?? 0
+
+  const embedded = svgContent.match(GPX_BOUNDS_COMMENT_REGEX)
+  if (embedded) {
+    const minLat = parseFloat(embedded[1])
+    const maxLat = parseFloat(embedded[2])
+    const minLon = parseFloat(embedded[3])
+    const maxLon = parseFloat(embedded[4])
+    if (!Number.isNaN(minLat) && !Number.isNaN(maxLat) && !Number.isNaN(minLon) && !Number.isNaN(maxLon)) {
+      return { minLat, maxLat, minLon, maxLon }
+    }
+  }
+
+  const [lat0, lon0] = normalizeCenterToLatLon(center)
 
   const pathBbox = getPathBboxFromSvg(svgContent)
   if (pathBbox && totalKm != null && totalKm > 0) {
@@ -264,16 +289,18 @@ export function getBoundsFromSvg(
       const widthLimiting = pathWidth / pathHeight >= SVG_DRAW_WIDTH / SVG_DRAW_HEIGHT
       const pathCenterX = (pathBbox.minX + pathBbox.maxX) / 2
       const pathCenterY = (pathBbox.minY + pathBbox.maxY) / 2
+      // Facteur > 1 pour resserrer les bounds (éviter que le tracé soit trop étiré / dépasse la côte)
+      const extentFactor = 1.45
       let scale: number
       let lonRange: number
       let latRange: number
       if (widthLimiting) {
-        scale = (SVG_DRAW_WIDTH + pathHeight) * 111 / totalKm
+        scale = ((SVG_DRAW_WIDTH + pathHeight) * 111) / (totalKm * extentFactor)
         scale = Math.max(0.1, Math.min(10000, scale))
         lonRange = SVG_DRAW_WIDTH / scale
         latRange = pathHeight / scale
       } else {
-        scale = (pathWidth + SVG_DRAW_HEIGHT) * 111 / totalKm
+        scale = ((pathWidth + SVG_DRAW_HEIGHT) * 111) / (totalKm * extentFactor)
         scale = Math.max(0.1, Math.min(10000, scale))
         latRange = SVG_DRAW_HEIGHT / scale
         lonRange = pathWidth / scale
@@ -300,7 +327,7 @@ export function getBoundsFromSvg(
   const ratio = vbW / vbH
   let latRange: number
   if (totalKm != null && totalKm > 0) {
-    const spanDeg = (totalKm / 111) * 0.6
+    const spanDeg = (totalKm / 111) * 0.45
     latRange = Math.max(0.005, Math.min(0.5, spanDeg))
   } else {
     latRange = 0.04
@@ -474,7 +501,8 @@ function normalizeCoordinates(points: PointWithElevation[]): {
 }
 
 /**
- * Convertit un GPX en SVG (côté client)
+ * Convertit un GPX en SVG (côté client).
+ * Injecte les bounds exactes en commentaire pour que getBoundsFromSvg les relise à l'affichage (alignement carte garanti).
  */
 export function gpxToSvg(gpxText: string): string {
   const points = parseGpxPoints(gpxText)
@@ -482,10 +510,19 @@ export function gpxToSvg(gpxText: string): string {
     return '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><text x="50" y="50" text-anchor="middle" fill="#888">Aucun tracé GPX</text></svg>'
   }
 
+  const lats = points.map((p) => p[0])
+  const lons = points.map((p) => p[1])
+  const minLat = Math.min(...lats)
+  const maxLat = Math.max(...lats)
+  const minLon = Math.min(...lons)
+  const maxLon = Math.max(...lons)
+
   const { normalized, viewBox } = normalizeCoordinates(points)
   const pathData = 'M ' + normalized.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(' L ')
 
-  return `<svg viewBox="${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+  const boundsComment = `<!-- gpx-bounds:${minLat},${maxLat},${minLon},${maxLon} -->\n`
+  const svg = `<svg viewBox="${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
   <path d="${pathData}" fill="none" stroke="#b2aaaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
 </svg>`
+  return boundsComment + svg
 }

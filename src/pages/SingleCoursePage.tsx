@@ -1046,6 +1046,12 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                   (gpxSvg && regionCoords
                     ? getBoundsFromSvg(gpxSvg, regionCoords, totalKm)
                     : null)
+                const fullTrackPositions: Array<[number, number]> =
+                  boundsForMap && gpxSvg && totalKm > 0
+                    ? getSegmentPathPoints(gpxSvg, 0, totalKm, totalKm).map(([x, y]) =>
+                        svgPointToLatLon(x, y, boundsForMap)
+                      )
+                    : []
                 const segmentPositions: Array<[number, number]> =
                   boundsForMap && gpxSvg && totalKm > 0
                     ? getSegmentPathPoints(gpxSvg, selectedSegment.startKm, selectedSegment.endKm, totalKm).map(
@@ -1150,10 +1156,11 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                               <img src={gpxIcon} alt="GPX" />
                             )
                           })()
-                        ) : segmentPositions.length > 0 ? (
+                        ) : fullTrackPositions.length > 0 || segmentPositions.length > 0 ? (
                           <div className="single-course-course__gpx-map single-course-course__gpx-map--osm">
                             <SegmentMapLeaflet
                               key={`segment-${selectedSegment.segmentNumber}`}
+                              fullTrackPositions={fullTrackPositions.length > 0 ? fullTrackPositions : undefined}
                               segmentPositions={segmentPositions}
                               height="100%"
                             />
