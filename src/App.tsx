@@ -637,25 +637,31 @@ function App() {
     const elevationGainRounded = payload.elevationGain != null
       ? Number(payload.elevationGain.toFixed(2))
       : null
-    const updatePayload = {
+    // Construire l'objet d'update sans undefined (certains clients les omettent en JSON)
+    const updatePayload: Record<string, unknown> = {
       name: cleanName,
-      image_url: imageUrl ?? undefined,
-      gpx_name: payload.gpxName ?? undefined,
-      gpx_svg: payload.gpxSvg ?? undefined,
-      distance_km: payload.distanceKm ?? undefined,
-      elevation_gain: elevationGainRounded ?? undefined,
-      profile: payload.profile ? JSON.stringify(payload.profile) : undefined,
-      start_coordinates: payload.startCoordinates ?? undefined,
       date: payload.date ?? null,
       start_time: payload.startTime ?? null,
     }
+    if (imageUrl != null) updatePayload.image_url = imageUrl
+    if (payload.gpxName != null) updatePayload.gpx_name = payload.gpxName
+    if (payload.gpxSvg != null) updatePayload.gpx_svg = payload.gpxSvg
+    if (payload.distanceKm != null) updatePayload.distance_km = payload.distanceKm
+    if (elevationGainRounded != null) updatePayload.elevation_gain = elevationGainRounded
+    if (payload.profile != null) updatePayload.profile = JSON.stringify(payload.profile)
+    if (payload.startCoordinates != null) updatePayload.start_coordinates = payload.startCoordinates
     if (import.meta.env.DEV) {
-      console.log('[App] handleUpdateCourse payload envoyé à Supabase:', { courseId, date: updatePayload.date, start_time: updatePayload.start_time })
+      console.log('[App] handleUpdateCourse payload:', { courseId, date: updatePayload.date, start_time: updatePayload.start_time })
     }
-    const { error } = await supabase
+    const { data: updatedRow, error } = await supabase
       .from('courses')
       .update(updatePayload)
       .eq('id', courseId)
+      .select('id, date, start_time')
+      .single()
+    if (import.meta.env.DEV && updatedRow) {
+      console.log('[App] Ligne mise à jour (retour Supabase):', updatedRow)
+    }
     if (error) {
       console.error('Erreur lors de la mise à jour de la course:', error)
       const msg = error.message || ''
