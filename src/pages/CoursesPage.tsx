@@ -280,8 +280,9 @@ export default function CoursesPage({
     if (courseOptionsOpenId == null) return
     const close = (e: MouseEvent) => {
       const target = e.target as Node
-      const wrap = document.querySelector('.course-card__options-wrap')
-      if (wrap && !wrap.contains(target)) setCourseOptionsOpenId(null)
+      const wraps = document.querySelectorAll('.course-card__options-wrap')
+      const clickedInsideAnyOptions = Array.from(wraps).some((wrap) => wrap.contains(target))
+      if (!clickedInsideAnyOptions) setCourseOptionsOpenId(null)
     }
     document.addEventListener('click', close, { capture: true })
     return () => document.removeEventListener('click', close, { capture: true })
