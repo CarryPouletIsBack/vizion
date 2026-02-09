@@ -32,7 +32,7 @@
   letter-spacing: 0;
 }
 
-/* Mobile : sidebar en bas de l'écran, largeur au contenu + marges */
+/* Mobile : référence page single course — barre en bas, largeur = contenu (pas toute la largeur) */
 @media (max-width: 768px) {
   .side-nav {
     flex-direction: row;
@@ -40,23 +40,23 @@
     gap: var(--spacing-6, 12px);
     width: max-content;
     max-width: calc(100% - var(--spacing-8, 16px) * 2);
-    margin-left: var(--spacing-8, 16px);
-    margin-right: var(--spacing-8, 16px);
-    border-radius: var(--spacing-4, 8px);
+    flex-shrink: 0;
+    margin: 0;
+    border-radius: 0;
     border-top: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
-    padding: var(--spacing-6, 12px) var(--spacing-6, 12px);
+    padding: var(--spacing-4, 8px) var(--spacing-2, 4px);
   }
 
   .side-nav__item {
     text-align: center;
-    font-size: var(--font-body-sm-size, 14px);
+    font-size: var(--font-size-sm, 12px);
     line-height: var(--font-body-sm-line-height, 1.5);
-    letter-spacing: var(--spacing-1, 2px);
-    padding: var(--spacing-4, 8px) var(--spacing-2, 4px);
+    letter-spacing: 0;
+    padding: var(--spacing-3, 6px) var(--spacing-2, 4px);
   }
 
   .side-nav__item--active {
-    font-size: var(--font-body-size, 16px);
+    font-size: var(--font-size-md, 14px);
     line-height: var(--font-body-line-height, 1.5);
   }
 }

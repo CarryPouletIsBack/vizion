@@ -2,12 +2,18 @@
   width: 100%;
   position: relative;
   overflow: hidden;
-  background: #0a0e14;
+  background-color: #0a0e14;
+  /* Grille en quadrillage tout au fond */
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 .segment-map-mapbox3d .mapboxgl-map {
   width: 100%;
   height: 100%;
+  opacity: 0.85;
 }
 
 .segment-map-mapbox3d .mapboxgl-ctrl-group {
