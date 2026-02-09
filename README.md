@@ -160,7 +160,7 @@ trackali-app/
 │   ├── preparation/      # Ma préparation – contenu IA
 │   │   ├── advice.ts     # Conseils personnalisés (paragraphe) – optionnel
 │   │   └── content.ts    # Contenu complet Ma préparation (résumé, verdict, recommandations, projection) – cache 7j côté client
-│   ├── weather.ts        # Proxy météo (Xweather)
+│   ├── weather.ts        # Proxy météo (Open-Meteo)
 │   ├── timezone.ts       # Fuseau horaire (offsetHours ; fallback La Réunion UTC+4 en prod)
 │   └── simulator/
 │       └── refine.ts     # Affinage temps simulateur (Mistral API)
@@ -226,14 +226,12 @@ VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 
 ⚠️ **Important** : Google Maps est un service payant après le quota gratuit. Configurez des quotas et alertes dans Google Cloud Console pour éviter des factures surprises.
 
-#### Météo Xweather (optionnel)
+#### Météo (Open-Meteo)
 
-Pour utiliser la température réelle dans l’estimation de temps (au lieu de 15°C par défaut), configurer dans Vercel :
+La température et la pluie (24h) pour l’estimation de temps et l'affichage région sont fournies par **Open-Meteo** (modèle Météo-France). Aucune clé API n'est requise pour un usage non commercial.
 
-- `XWEATHER_CLIENT_ID` : Client ID Xweather
-- `XWEATHER_CLIENT_SECRET` : Client Secret Xweather
 
-Compte gratuit : [signup.xweather.com/developer](https://signup.xweather.com/developer). L’appel se fait via la route `/api/weather?lat=...&lon=...` ; le client applique un **cache 4h** par position pour limiter les requêtes.
+Documentation : [open-meteo.com/en/docs/meteofrance-api](https://open-meteo.com/en/docs/meteofrance-api). L’appel se fait via la route `/api/weather?lat=...&lon=...` ; le client applique un **cache 4h** par position pour limiter les requêtes.
 
 #### Supabase (auth + données, obligatoire en prod)
 
@@ -284,7 +282,9 @@ Variables d'environnement Vercel :
 
 - [ ] Synchronisation automatique Strava (webhooks)
 - [ ] Comparaison multi-courses
-- [ ] Intégration météo pour l'estimation de temps (partiellement en place : température + vent)
+- [x] Intégration météo pour l'estimation de temps (Open-Meteo / Météo-France)
+- [ ] Export PDF du rapport de préparation
+- [ ] Partage de préparation avec coach/amis
 - [ ] Historique des analyses dans le temps (données réelles par semaine)
 - [ ] Notifications / rappels (objectifs 4 semaines, reprise d’activité)
 

@@ -1,6 +1,7 @@
 /**
- * Client météo Xweather avec cache 4h.
+ * Client météo Open-Meteo (Météo-France) avec cache 4h.
  * Une requête par position (arrondie) au plus toutes les 4 heures.
+ * L’API renvoie tempC, icon (dérivé du code WMO) et rainLast24h.
  */
 
 const CACHE_KEY_PREFIX = 'trackali:weather:'
@@ -136,7 +137,7 @@ export async function getWeather(lat: number, lon: number): Promise<WeatherResul
 export type WeatherIconType = 'sun' | 'cloud' | 'rain' | 'moon'
 
 /**
- * Map le code/icône API (Aeris) ou l'heure vers une des 4 icônes.
+ * Map le code/icône API (Open-Meteo : clear, cloud, fog, rain) ou l'heure vers une des 4 icônes.
  * La nuit (20h–6h) on affiche la lune si le temps est dégagé.
  */
 export function weatherIconType(apiIcon?: string | null, date: Date = new Date()): WeatherIconType {
