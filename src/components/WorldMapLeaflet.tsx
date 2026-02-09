@@ -211,7 +211,7 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect, coursesF
   }
 
   return (
-    <div className="world-map-leaflet">
+    <div className="world-map-leaflet" data-map="world">
       <MapContainer
         center={mapCenter}
         zoom={mapZoom}

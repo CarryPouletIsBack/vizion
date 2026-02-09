@@ -281,6 +281,9 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
             startCoordinates: course.start_coordinates && Array.isArray(course.start_coordinates) && course.start_coordinates.length === 2
               ? [course.start_coordinates[0], course.start_coordinates[1]] as [number, number]
               : undefined,
+            gpxBounds: course.gpx_bounds && typeof course.gpx_bounds === 'object' && 'minLat' in course.gpx_bounds
+              ? course.gpx_bounds as GpxBounds
+              : undefined,
             date: course.date ?? undefined,
             startTime: course.start_time ?? undefined,
           })
@@ -387,6 +390,7 @@ function App() {
     elevationGain?: number
     profile?: Array<[number, number]>
     startCoordinates?: [number, number] // [lat, lon]
+    gpxBounds?: GpxBounds
     date?: string // YYYY-MM-DD
     startTime?: string // HH:mm
     stravaRouteId?: string
@@ -544,6 +548,7 @@ function App() {
       elevation_gain: elevationGainRounded,
       profile: payload.profile ? JSON.stringify(payload.profile) : null,
       start_coordinates: payload.startCoordinates || null,
+      gpx_bounds: payload.gpxBounds ?? null,
       date: payload.date || null,
       start_time: payload.startTime || null,
       strava_route_id: payload.stravaRouteId || null,
@@ -621,6 +626,7 @@ function App() {
       elevationGain?: number
       profile?: Array<[number, number]>
       startCoordinates?: [number, number]
+      gpxBounds?: GpxBounds | null
       date?: string | null
       startTime?: string | null
     }
@@ -650,6 +656,7 @@ function App() {
     if (elevationGainRounded != null) updatePayload.elevation_gain = elevationGainRounded
     if (payload.profile != null) updatePayload.profile = JSON.stringify(payload.profile)
     if (payload.startCoordinates != null) updatePayload.start_coordinates = payload.startCoordinates
+    if (payload.gpxBounds != null) updatePayload.gpx_bounds = payload.gpxBounds
     if (import.meta.env.DEV) {
       console.log('[App] handleUpdateCourse payload:', { courseId, date: updatePayload.date, start_time: updatePayload.start_time })
     }

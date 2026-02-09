@@ -5,7 +5,7 @@ import './SaisonPage.css'
 
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
-import { gpxToSvg, extractGpxStartCoordinates, extractGpxWaypoints } from '../lib/gpxToSvg'
+import { gpxToSvg, extractGpxStartCoordinates, extractGpxWaypoints, getBoundsFromGpx } from '../lib/gpxToSvg'
 import { extractRouteIdFromUrl } from '../lib/stravaRouteParser'
 
 type EventWithCourses = {
@@ -206,6 +206,7 @@ export default function SaisonPage({
 
     // Traiter le GPX d'abord
     let startCoordinates: [number, number] | undefined
+    let gpxBounds: { minLat: number; maxLat: number; minLon: number; maxLon: number } | undefined
     if (gpxFile) {
       try {
         console.log('📊 Traitement GPX...')
@@ -215,8 +216,9 @@ export default function SaisonPage({
         elevationGain = stats.elevationGain
         profile = stats.profile
         
-        // Extraire les coordonnées de départ
+        // Extraire les coordonnées de départ et les bornes pour la carte
         startCoordinates = extractGpxStartCoordinates(gpxText) || undefined
+        gpxBounds = getBoundsFromGpx(gpxText) ?? undefined
         
         // Extraire les waypoints (points d'intérêt)
         const waypoints = extractGpxWaypoints(gpxText)
@@ -326,6 +328,7 @@ export default function SaisonPage({
       elevationGain,
       profile,
       ...(startCoordinates && { startCoordinates }),
+      ...(gpxBounds && { gpxBounds }),
       ...(stravaRouteId && { stravaRouteId }),
       ...(stravaSegments && stravaSegments.length > 0 && { stravaSegments }),
     }

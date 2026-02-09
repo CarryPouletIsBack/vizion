@@ -10,7 +10,7 @@ import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 import Skeleton from '../components/Skeleton'
 import useStravaMetrics from '../hooks/useStravaMetrics'
-import { gpxToSvg, extractGpxStartCoordinates, extractGpxWaypoints } from '../lib/gpxToSvg'
+import { gpxToSvg, extractGpxStartCoordinates, extractGpxWaypoints, getBoundsFromGpx } from '../lib/gpxToSvg'
 import { extractRouteIdFromUrl } from '../lib/stravaRouteParser'
 import { formatCountdownLabel } from '../lib/dateUtils'
 import { getWeather, formatWeatherCircuitMessage } from '../lib/xweather'
@@ -471,6 +471,7 @@ export default function CoursesPage({
     }> | undefined
 
     let startCoordinates: [number, number] | undefined
+    let gpxBounds: { minLat: number; maxLat: number; minLon: number; maxLon: number } | undefined
     if (gpxFile) {
       try {
         console.log('📊 Traitement GPX...')
@@ -481,6 +482,7 @@ export default function CoursesPage({
         profile = stats.profile
         
         startCoordinates = extractGpxStartCoordinates(gpxText) || undefined
+        gpxBounds = getBoundsFromGpx(gpxText) ?? undefined
         
         const waypoints = extractGpxWaypoints(gpxText)
         
@@ -546,6 +548,7 @@ export default function CoursesPage({
       elevationGain,
       profile,
       ...(startCoordinates && { startCoordinates }),
+      ...(gpxBounds && { gpxBounds }),
       ...(dateVal && { date: dateVal }),
       ...(timeVal && { startTime: timeVal }),
       ...(stravaRouteId && { stravaRouteId }),

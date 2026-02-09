@@ -4,10 +4,10 @@
   position: relative;
 }
 
-/* Styles pour les markers personnalisés */
-.custom-marker {
-  background: transparent !important;
-  border: none !important;
+/* Styles pour les markers personnalisés (carte monde) */
+.world-map-leaflet .custom-marker {
+  background: transparent;
+  border: none;
 }
 
 .map-tag-container {
@@ -55,23 +55,23 @@
   display: block;
 }
 
-/* Styles pour la popup/card */
-.map-card-popup {
-  padding: 0 !important;
-  margin-bottom: 20px !important;
+/* Styles pour la popup/card (carte monde) */
+.world-map-leaflet .map-card-popup {
+  padding: 0;
+  margin-bottom: 20px;
 }
 
-.map-card-popup .leaflet-popup-content-wrapper {
+.world-map-leaflet .map-card-popup .leaflet-popup-content-wrapper {
   background: transparent;
   border: none;
   box-shadow: none;
   padding: 0;
 }
 
-.map-card-popup .leaflet-popup-content {
+.world-map-leaflet .map-card-popup .leaflet-popup-content {
   margin: 0;
   padding: 0;
-  width: 340px !important;
+  width: 340px;
 }
 
 .map-card-popup .course-card {
@@ -85,38 +85,26 @@
   margin-right: calc(var(--spacing-4, 8px) * -1);
 }
 
-/* Personnaliser le style de la carte Leaflet pour correspondre au design */
-.world-map-leaflet .leaflet-container {
-  background: transparent !important;
+/* Carte monde uniquement : masquer les tuiles OSM (fond océans), pas la carte segment */
+.world-map-leaflet[data-map="world"] .leaflet-container {
+  background: transparent;
   font-family: 'Space Grotesk', sans-serif;
 }
 
-/* Masquer complètement les tuiles OpenStreetMap (océans) */
-.world-map-leaflet .leaflet-tile-pane {
-  opacity: 0 !important;
-  pointer-events: none !important;
+.world-map-leaflet[data-map="world"] .leaflet-tile-pane,
+.world-map-leaflet[data-map="world"] .leaflet-tile-container {
+  opacity: 0;
+  pointer-events: none;
 }
 
-/* Alternative : rendre les tuiles complètement transparentes */
-.world-map-leaflet .leaflet-tile-container {
-  opacity: 0 !important;
-  pointer-events: none !important;
+.map-section .world-map-leaflet[data-map="world"] .leaflet-tile-pane,
+.map-section .world-map-leaflet[data-map="world"] .leaflet-tile-container {
+  opacity: 0;
+  pointer-events: none;
 }
 
-/* S'assurer que le conteneur de la carte a un background transparent */
-.world-map-leaflet .leaflet-container {
-  background: transparent !important;
-}
-
-/* Masquer les océans dans la section map */
-.map-section .world-map-leaflet .leaflet-tile-pane,
-.map-section .world-map-leaflet .leaflet-tile-container {
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-/* Style pour les continents GeoJSON */
-.world-map-leaflet .leaflet-interactive {
-  fill: #E5E7EB !important;
-  stroke: transparent !important;
+/* Style pour les continents GeoJSON (carte monde) */
+.world-map-leaflet[data-map="world"] .leaflet-interactive {
+  fill: #E5E7EB;
+  stroke: transparent;
 }

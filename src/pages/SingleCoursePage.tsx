@@ -6,7 +6,6 @@ import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 import SingleCourseElevationChart from '../components/SingleCourseElevationChart'
 import SimulationEngine from '../components/SimulationEngine'
-import WindVectorChart from '../components/WindVectorChart'
 import React, { useEffect, useRef, useState } from 'react'
 
 /** ID Strava de l'activité du 1er finisher (Diagonale des fous) pour embed + temps au km */
@@ -28,8 +27,9 @@ import { getUserFitActivities, saveUserFitActivity, type UserFitActivityRow } fr
 import { grandRaidStats } from '../data/grandRaidStats'
 import { getWeather, getCityFromCoords, formatWeatherCircuitMessage } from '../lib/xweather'
 import { analyzeProfileZones } from '../lib/profileAnalysis'
-import { segmentSvgIntoNumberedSegments, addSvgTooltips, addSvgSegmentClickListeners, getSvgZoomedOnSegment, getSegmentSvgWithElevation, type SegmentClickPayload } from '../lib/svgZoneSegmenter'
-import { latLonToSvg, type GpxBounds } from '../lib/gpxToSvg'
+import { segmentSvgIntoNumberedSegments, addSvgTooltips, addSvgSegmentClickListeners, getSvgZoomedOnSegment, getSegmentSvgWithElevation, getSegmentPathPoints, type SegmentClickPayload } from '../lib/svgZoneSegmenter'
+import { latLonToSvg, svgPointToLatLon, getBoundsFromSvg, type GpxBounds } from '../lib/gpxToSvg'
+import SegmentMapLeaflet from '../components/SegmentMapLeaflet'
 import { construireDateDepart, formatPreparationMonthsLabel } from '../lib/dateUtils'
 import FitParser from 'fit-file-parser'
 
@@ -1041,6 +1041,17 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                         totalKm
                       )
                     : baseSvg
+                const boundsForMap =
+                  gpxBounds ??
+                  (gpxSvg && regionCoords
+                    ? getBoundsFromSvg(gpxSvg, regionCoords, totalKm)
+                    : null)
+                const segmentPositions: Array<[number, number]> =
+                  boundsForMap && gpxSvg && totalKm > 0
+                    ? getSegmentPathPoints(gpxSvg, selectedSegment.startKm, selectedSegment.endKm, totalKm).map(
+                        ([x, y]) => svgPointToLatLon(x, y, boundsForMap)
+                      )
+                    : []
                 return (
                   <>
                     <div className="single-course-course single-course-course--segment-view">
@@ -1134,21 +1145,25 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                                   dangerouslySetInnerHTML={{ __html: svgToShow.replace('<svg', '<svg id=\"gpx-inline-svg\"') }}
                                 />
                                 {rainOverlay3D}
-                                {viewBox3D && <WindVectorChart viewBox={viewBox3D} windDir={windDir} windSpeedKmh={windSpeedKmh} />}
                               </div>
                             ) : (
                               <img src={gpxIcon} alt="GPX" />
                             )
                           })()
+                        ) : segmentPositions.length > 0 ? (
+                          <div className="single-course-course__gpx-map single-course-course__gpx-map--osm">
+                            <SegmentMapLeaflet
+                              key={`segment-${selectedSegment.segmentNumber}`}
+                              segmentPositions={segmentPositions}
+                              height="100%"
+                            />
+                          </div>
                         ) : segmentZoomedSvg ? (
                           <div className="single-course-course__gpx-map">
                             <div
                               className="single-course-course__gpx-svg"
                               dangerouslySetInnerHTML={{ __html: segmentZoomedSvg.replace('<svg', '<svg id=\"gpx-inline-svg\"') }}
                             />
-                            {parseViewBox(segmentZoomedSvg) && (
-                              <WindVectorChart viewBox={parseViewBox(segmentZoomedSvg)!} windDir={windDir} windSpeedKmh={windSpeedKmh} />
-                            )}
                             {(() => {
                               const viewBox = parseViewBox(segmentZoomedSvg)
                               if (!viewBox || !rainAlongRoute?.length || !gpxBounds) return null

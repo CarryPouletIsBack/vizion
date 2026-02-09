@@ -5,6 +5,55 @@
 type Point = [number, number] // [lat, lon]
 type PointWithElevation = [number, number, number] // [lat, lon, ele]
 
+const SVG_TARGET_WIDTH_BOUNDS = 302
+const SVG_TARGET_HEIGHT_BOUNDS = 258
+const SVG_MARGIN_BOUNDS = 20
+const SVG_DRAW_WIDTH = SVG_TARGET_WIDTH_BOUNDS - 2 * SVG_MARGIN_BOUNDS
+const SVG_DRAW_HEIGHT = SVG_TARGET_HEIGHT_BOUNDS - 2 * SVG_MARGIN_BOUNDS
+
+function parsePathBbox(pathData: string): { minX: number; maxX: number; minY: number; maxY: number } | null {
+  const commands = pathData.match(/[ML]\s*([\d.-]+),([\d.-]+)/g) || []
+  if (commands.length === 0) return null
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+  for (const cmd of commands) {
+    const m = cmd.match(/([\d.-]+),([\d.-]+)/)
+    if (!m) continue
+    const x = parseFloat(m[1])
+    const y = parseFloat(m[2])
+    if (Number.isNaN(x) || Number.isNaN(y)) continue
+    if (x < minX) minX = x
+    if (x > maxX) maxX = x
+    if (y < minY) minY = y
+    if (y > maxY) maxY = y
+  }
+  if (minX === Infinity || minY === Infinity) return null
+  return { minX, maxX, minY, maxY }
+}
+
+/**
+ * Retourne la bbox du tracé COMPLET (path avec la plus grande étendue).
+ * Dans un SVG segmenté, les premiers paths sont des zones/segments partiels ; on évite de les utiliser
+ * pour que les bounds restent cohérentes avec getSegmentPathPoints (tracé complet).
+ */
+function getPathBboxFromSvg(svgContent: string): { minX: number; maxX: number; minY: number; maxY: number } | null {
+  const pathRegex = /<path[^>]*\sd=["']([^"']+)["']/g
+  let best: { minX: number; maxX: number; minY: number; maxY: number } | null = null
+  let bestArea = -1
+  let match: RegExpExecArray | null
+  while ((match = pathRegex.exec(svgContent)) !== null) {
+    const bbox = parsePathBbox(match[1])
+    if (!bbox) continue
+    const w = bbox.maxX - bbox.minX
+    const h = bbox.maxY - bbox.minY
+    const area = w * h
+    if (area > bestArea) {
+      bestArea = area
+      best = bbox
+    }
+  }
+  return best
+}
+
 export type GpxWaypoint = {
   lat: number
   lon: number
@@ -193,6 +242,78 @@ export function getBoundsFromGpx(gpxText: string): GpxBounds | null {
   }
 }
 
+/**
+ * Estime les bornes géographiques à partir d’un SVG produit par gpxToSvg,
+ * quand on n’a pas le GPX (ex. course chargée depuis Supabase sans gpxBounds).
+ * Utilise le path du SVG pour déduire scale et ranges (cohérent avec svgPointToLatLon).
+ */
+export function getBoundsFromSvg(
+  svgContent: string,
+  center?: [number, number] | null,
+  totalKm?: number
+): GpxBounds | null {
+  if (!svgContent || typeof svgContent !== 'string') return null
+  const lat0 = center?.[0] ?? 0
+  const lon0 = center?.[1] ?? 0
+
+  const pathBbox = getPathBboxFromSvg(svgContent)
+  if (pathBbox && totalKm != null && totalKm > 0) {
+    const pathWidth = pathBbox.maxX - pathBbox.minX
+    const pathHeight = pathBbox.maxY - pathBbox.minY
+    if (pathWidth > 0 && pathHeight > 0) {
+      const widthLimiting = pathWidth / pathHeight >= SVG_DRAW_WIDTH / SVG_DRAW_HEIGHT
+      const pathCenterX = (pathBbox.minX + pathBbox.maxX) / 2
+      const pathCenterY = (pathBbox.minY + pathBbox.maxY) / 2
+      let scale: number
+      let lonRange: number
+      let latRange: number
+      if (widthLimiting) {
+        scale = (SVG_DRAW_WIDTH + pathHeight) * 111 / totalKm
+        scale = Math.max(0.1, Math.min(10000, scale))
+        lonRange = SVG_DRAW_WIDTH / scale
+        latRange = pathHeight / scale
+      } else {
+        scale = (pathWidth + SVG_DRAW_HEIGHT) * 111 / totalKm
+        scale = Math.max(0.1, Math.min(10000, scale))
+        latRange = SVG_DRAW_HEIGHT / scale
+        lonRange = pathWidth / scale
+      }
+      // Positionner les bounds pour que le point (pathCenterX, pathCenterY) corresponde au centre géographique
+      // (évite le décalage quand le départ n'est pas au centre du tracé)
+      const lonCenter = lon0 - lonRange * (0.5 - (pathCenterX - SVG_MARGIN_BOUNDS) / (widthLimiting ? SVG_DRAW_WIDTH : pathWidth))
+      const latCenter = lat0 - latRange * (0.5 - (SVG_TARGET_HEIGHT_BOUNDS - SVG_MARGIN_BOUNDS - pathCenterY) / (widthLimiting ? pathHeight : SVG_DRAW_HEIGHT))
+      return {
+        minLat: latCenter - latRange / 2,
+        maxLat: latCenter + latRange / 2,
+        minLon: lonCenter - lonRange / 2,
+        maxLon: lonCenter + lonRange / 2,
+      }
+    }
+  }
+
+  const match = svgContent.match(/viewBox=["']([^"']+)["']/)
+  if (!match) return null
+  const parts = match[1].trim().split(/\s+/).map(Number)
+  if (parts.length !== 4 || parts.some(Number.isNaN)) return null
+  const [, , vbW, vbH] = parts
+  if (vbW <= 0 || vbH <= 0) return null
+  const ratio = vbW / vbH
+  let latRange: number
+  if (totalKm != null && totalKm > 0) {
+    const spanDeg = (totalKm / 111) * 0.6
+    latRange = Math.max(0.005, Math.min(0.5, spanDeg))
+  } else {
+    latRange = 0.04
+  }
+  const lonRange = latRange * ratio
+  return {
+    minLat: lat0 - latRange / 2,
+    maxLat: lat0 + latRange / 2,
+    minLon: lon0 - lonRange / 2,
+    maxLon: lon0 + lonRange / 2,
+  }
+}
+
 const HAVERSINE_R = 6371
 function haversineKm(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
   const toRad = (v: number) => (v * Math.PI) / 180
@@ -261,6 +382,23 @@ export function latLonToSvg(lat: number, lon: number, bounds: GpxBounds): [numbe
   const x = SVG_MARGIN + (lon - bounds.minLon) * scale
   const y = SVG_TARGET_HEIGHT - SVG_MARGIN - (lat - bounds.minLat) * scale
   return [x, y]
+}
+
+/**
+ * Convertit un point SVG (x, y) en coordonnées géographiques (lat, lon).
+ * Utilise le même repère que latLonToSvg / gpxToSvg (viewBox 302×258).
+ */
+export function svgPointToLatLon(x: number, y: number, bounds: GpxBounds): [number, number] {
+  const latRange = bounds.maxLat - bounds.minLat || 0.001
+  const lonRange = bounds.maxLon - bounds.minLon || 0.001
+  const scaleLat = (SVG_TARGET_HEIGHT - 2 * SVG_MARGIN) / latRange
+  const scaleLon = (SVG_TARGET_WIDTH - 2 * SVG_MARGIN) / lonRange
+  const aspectRatio = lonRange / latRange
+  const targetAspectRatio = SVG_TARGET_WIDTH / SVG_TARGET_HEIGHT
+  const scale = aspectRatio > targetAspectRatio ? scaleLon : scaleLat
+  const lon = (x - SVG_MARGIN) / scale + bounds.minLon
+  const lat = (SVG_TARGET_HEIGHT - SVG_MARGIN - y) / scale + bounds.minLat
+  return [lat, lon]
 }
 
 /**

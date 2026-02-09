@@ -35,6 +35,7 @@ export type CourseRow = {
   elevation_gain: number | null
   profile: Array<[number, number]> | null
   start_coordinates: [number, number] | null // [lat, lon]
+  gpx_bounds: { minLat: number; maxLat: number; minLon: number; maxLon: number } | null
   /** Date de la course (YYYY-MM-DD) pour météo et simulation. Si la table n'a pas la colonne : ALTER TABLE courses ADD COLUMN date text, ADD COLUMN start_time text; */
   date: string | null
   /** Heure de départ (HH:mm) imposée par l'organisation */
