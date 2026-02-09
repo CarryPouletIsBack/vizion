@@ -398,7 +398,6 @@ export default function SingleCoursePage({
     : startCoords?.length === 2
       ? startCoords
       : undefined
-  const startCoordsKey = regionCoords ? `${regionCoords[0]},${regionCoords[1]}` : ''
   const weatherSamplePoints = (selectedCourse as { weatherSamplePoints?: Array<[number, number]> } | undefined)?.weatherSamplePoints
   const gpxBounds = (selectedCourse as { gpxBounds?: GpxBounds } | undefined)?.gpxBounds
   const totalKmForRegion = maxDistance ?? (selectedCourse as { distanceKm?: number })?.distanceKm ?? 0
