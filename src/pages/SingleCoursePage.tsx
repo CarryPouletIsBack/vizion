@@ -27,9 +27,10 @@ import { getUserFitActivities, saveUserFitActivity, type UserFitActivityRow } fr
 import { grandRaidStats } from '../data/grandRaidStats'
 import { getWeather, getCityFromCoords, formatWeatherCircuitMessage } from '../lib/xweather'
 import { analyzeProfileZones } from '../lib/profileAnalysis'
-import { segmentSvgIntoNumberedSegments, addSvgTooltips, addSvgSegmentClickListeners, getSvgZoomedOnSegment, getSegmentSvgWithElevation, getSegmentPathPoints, type SegmentClickPayload } from '../lib/svgZoneSegmenter'
+import { segmentSvgIntoNumberedSegments, addSvgTooltips, addSvgSegmentClickListeners, getSvgZoomedOnSegment, getSegmentPathPoints, type SegmentClickPayload } from '../lib/svgZoneSegmenter'
 import { latLonToSvg, svgPointToLatLon, getBoundsFromSvg, type GpxBounds } from '../lib/gpxToSvg'
 import SegmentMapLeaflet from '../components/SegmentMapLeaflet'
+import SegmentMapMapbox3D from '../components/SegmentMapMapbox3D'
 import { construireDateDepart, formatPreparationMonthsLabel } from '../lib/dateUtils'
 import FitParser from 'fit-file-parser'
 
@@ -231,7 +232,7 @@ export default function SingleCoursePage({
   const [currentStep, setCurrentStep] = useState<CourseStepId>('description')
   const [segmentedSvg, setSegmentedSvg] = useState<string | null>(null)
   const [selectedSegment, setSelectedSegment] = useState<SegmentClickPayload | null>(null)
-  /** Vue 3D (perspective) du tracé GPX sur la page Segment */
+  /** Vue 3D : carte Mapbox avec relief (nécessite VITE_MAPBOX_ACCESS_TOKEN) */
   const [segmentView3D, setSegmentView3D] = useState(false)
   const segmentStartKm =
     currentStep === 'segment' && selectedSegment != null ? selectedSegment.startKm : undefined
@@ -1082,7 +1083,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                           </p>
                         )}
                       </div>
-                      <div className={`single-course-course__gpx single-course-course__gpx--with-overlay ${segmentView3D ? 'single-course-course__gpx--view-3d' : ''}`}>
+                      <div className="single-course-course__gpx single-course-course__gpx--with-overlay">
                         <div className="single-course-course__gpx-toolbar">
                           <button
                             type="button"
@@ -1095,76 +1096,26 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                           </button>
                         </div>
                         <WindBadge windDir={windDir} windSpeedKmh={windSpeedKmh} />
-                        {segmentView3D ? (
-                          (() => {
-                            const baseSvg = segmentedSvg || gpxSvg || ''
-                            const svgWithElevation =
-                              baseSvg && segmentProfile.length >= 2
-                                ? getSegmentSvgWithElevation(
-                                    baseSvg,
-                                    selectedSegment.startKm,
-                                    selectedSegment.endKm,
-                                    totalKm,
-                                    segmentProfile,
-                                    { strokeColor: '#bfc900', elevationScale: 1.2 }
-                                  )
-                                : ''
-                            const svgToShow = svgWithElevation.startsWith('<?xml') ? svgWithElevation : segmentZoomedSvg
-                            const viewBox3D = svgToShow ? parseViewBox(svgToShow) : null
-                            const rainOverlay3D =
-                              viewBox3D && rainAlongRoute?.length && gpxBounds
-                                ? (() => {
-                                    const allRain = rainAlongRoute
-                                      .filter((p) => p.rain)
-                                      .map((p) => latLonToSvg(p.lat, p.lon, gpxBounds))
-                                    if (allRain.length === 0) return null
-                                    const parts = viewBox3D.trim().split(/\s+/).map(Number)
-                                    const minX = parts[0]; const minY = parts[1]; const w = parts[2]; const h = parts[3]
-                                    const inSegment = parts.length === 4 && !parts.some(Number.isNaN)
-                                      ? allRain.filter(([x, y]) => x >= minX && x <= minX + w && y >= minY && y <= minY + h)
-                                      : allRain
-                                    const rainPositions = inSegment.length > 0 ? inSegment : [[minX + w / 2, minY + h / 2]]
-                                    return (
-                                      <svg
-                                        className="single-course-course__gpx-rain-overlay"
-                                        viewBox={viewBox3D}
-                                        preserveAspectRatio="xMidYMid meet"
-                                        width="100%"
-                                        height="100%"
-                                        aria-hidden
-                                        style={{ pointerEvents: 'none' }}
-                                      >
-                                        <title>Pluie (secteurs où il a plu)</title>
-                                        <g fill="#3b82f6" stroke="#1d4ed8" strokeWidth="0.35">
-                                          {rainPositions.map(([x, y], i) => (
-                                            <path key={i} d={DROP_PATH} transform={`translate(${x},${y}) scale(0.9)`} aria-hidden />
-                                          ))}
-                                        </g>
-                                      </svg>
-                                    )
-                                  })()
-                                : null
-                            return svgToShow ? (
-                              <div className="single-course-course__gpx-map">
-                                <div
-                                  className="single-course-course__gpx-svg"
-                                  dangerouslySetInnerHTML={{ __html: svgToShow.replace('<svg', '<svg id=\"gpx-inline-svg\"') }}
-                                />
-                                {rainOverlay3D}
-                              </div>
-                            ) : (
-                              <img src={gpxIcon} alt="GPX" />
-                            )
-                          })()
-                        ) : fullTrackPositions.length > 0 || segmentPositions.length > 0 ? (
-                          <div className="single-course-course__gpx-map single-course-course__gpx-map--osm">
-                            <SegmentMapLeaflet
-                              key={`segment-${selectedSegment.segmentNumber}`}
-                              fullTrackPositions={fullTrackPositions.length > 0 ? fullTrackPositions : undefined}
-                              segmentPositions={segmentPositions}
-                              height="100%"
-                            />
-                          </div>
+                        {(fullTrackPositions.length > 0 || segmentPositions.length > 0) ? (
+                          segmentView3D ? (
+                            <div className="single-course-course__gpx-map single-course-course__gpx-map--osm">
+                              <SegmentMapMapbox3D
+                                key={`segment-3d-${selectedSegment.segmentNumber}`}
+                                fullTrackPositions={fullTrackPositions.length > 0 ? fullTrackPositions : undefined}
+                                segmentPositions={segmentPositions}
+                                height="100%"
+                              />
+                            </div>
+                          ) : (
+                            <div className="single-course-course__gpx-map single-course-course__gpx-map--osm">
+                              <SegmentMapLeaflet
+                                key={`segment-${selectedSegment.segmentNumber}`}
+                                fullTrackPositions={fullTrackPositions.length > 0 ? fullTrackPositions : undefined}
+                                segmentPositions={segmentPositions}
+                                height="100%"
+                              />
+                            </div>
+                          )
                         ) : segmentZoomedSvg ? (
                           <div className="single-course-course__gpx-map">
                             <div

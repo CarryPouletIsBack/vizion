@@ -804,7 +804,6 @@
   color: var(--color-accent, #bfc900);
 }
 
-/* Wrapper carte + overlay pour la vue 3D */
 .single-course-course__gpx-map {
   position: relative;
   width: 100%;
@@ -822,17 +821,6 @@
   height: 100%;
   min-height: 280px;
   z-index: 0;
-}
-
-/* Vue 3D : perspective sur le tracé (SVG + overlay) */
-.single-course-course__gpx--view-3d {
-  perspective: 1200px;
-}
-
-.single-course-course__gpx--view-3d .single-course-course__gpx-map {
-  transform: rotateX(52deg);
-  transform-origin: center 30% center;
-  transition: transform 0.35s ease;
 }
 
 .single-course-course__gpx-rain-overlay {

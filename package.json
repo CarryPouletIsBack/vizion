@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "export-courses": "node scripts/export-courses-from-supabase.mjs"
   },
   "dependencies": {
     "@d3/versor-dragging": "https://api.observablehq.com/d/d422dd0a1d5ee8b8@231.tgz?v=3",
@@ -26,6 +27,7 @@
     "highcharts": "^12.1.0",
     "highcharts-react-official": "^3.2.3",
     "leaflet": "^1.9.4",
+    "mapbox-gl": "^3.18.1",
     "openmeteo": "^1.2.3",
     "react": "18.3.1",
     "react-dom": "18.3.1",

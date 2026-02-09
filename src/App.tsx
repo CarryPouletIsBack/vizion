@@ -312,6 +312,22 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
   }
 }
 
+/** Charge les events + courses depuis le fichier JSON local (généré par scripts/export-courses-from-supabase.mjs) */
+async function loadEventsFromLocal(): Promise<EventItem[]> {
+  try {
+    const base = typeof window !== 'undefined' ? window.location.origin : ''
+    const res = await fetch(`${base}/data/localEventsAndCourses.json`)
+    if (!res.ok) return prependExampleCourse([])
+    const data = (await res.json()) as EventItem[]
+    if (!Array.isArray(data)) return prependExampleCourse([])
+    console.log('[App] Données locales chargées:', data.length, 'events')
+    return prependExampleCourse(data)
+  } catch (e) {
+    console.warn('[App] Fichier local non disponible:', e)
+    return prependExampleCourse([])
+  }
+}
+
 function App() {
   const [view, setView] = useState<AppView>(() => {
     // Détecter si on est sur la page de callback Strava
@@ -716,11 +732,25 @@ function App() {
     }
   }, [selectedCourseId])
 
-  // Charger les events depuis Supabase au démarrage
+  // Charger les events : priorité au fichier local si VITE_USE_LOCAL_COURSES=true, sinon Supabase (avec fallback local si vide)
   useEffect(() => {
+    const useLocalFirst = import.meta.env.VITE_USE_LOCAL_COURSES === 'true'
     const loadEvents = async () => {
       setLoading(true)
-      const loadedEvents = await loadEventsFromSupabase()
+      if (useLocalFirst) {
+        const loadedEvents = await loadEventsFromLocal()
+        setEvents(loadedEvents)
+        setLoading(false)
+        return
+      }
+      let loadedEvents = await loadEventsFromSupabase()
+      if (loadedEvents.length === 0) {
+        const localEvents = await loadEventsFromLocal()
+        if (localEvents.length > 0) {
+          console.log('[App] Fallback: utilisation des données locales')
+          loadedEvents = localEvents
+        }
+      }
       setEvents(loadedEvents)
       setLoading(false)
     }
