@@ -1,0 +1,46 @@
+.mapbox-cyberpunk {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background: #0a0e14;
+}
+
+.mapbox-cyberpunk .mapboxgl-map {
+  width: 100%;
+  height: 100%;
+}
+
+.mapbox-cyberpunk .mapboxgl-canvas-container {
+  filter: contrast(1.05) brightness(0.95);
+}
+
+.mapbox-cyberpunk .mapboxgl-ctrl-group {
+  background: rgba(0, 15, 25, 0.9);
+  border: 1px solid rgba(0, 247, 255, 0.2);
+  border-radius: 6px;
+}
+
+.mapbox-cyberpunk .mapboxgl-ctrl-group button {
+  background: transparent;
+  color: #00f7ff;
+}
+
+.mapbox-cyberpunk .mapboxgl-ctrl-group button:hover {
+  background: rgba(0, 247, 255, 0.08);
+}
+
+.mapbox-cyberpunk--no-token {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 14px;
+  text-align: center;
+  padding: 1rem;
+}
+
+.mapbox-cyberpunk--no-token code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
