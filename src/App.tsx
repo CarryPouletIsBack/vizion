@@ -32,6 +32,10 @@ type CourseItem = {
     type: 'climb' | 'descent' | 'flat'
   }>
   startCoordinates?: [number, number]
+  /** Date de la course (YYYY-MM-DD) */
+  date?: string
+  /** Heure de départ (HH:mm) */
+  startTime?: string
   /** Points échantillonnés le long du tracé pour météo (pluie par segment) */
   weatherSamplePoints?: Array<[number, number]>
   /** Bornes du GPX pour placer les gouttes sur le SVG */
@@ -277,6 +281,8 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
             startCoordinates: course.start_coordinates && Array.isArray(course.start_coordinates) && course.start_coordinates.length === 2
               ? [course.start_coordinates[0], course.start_coordinates[1]] as [number, number]
               : undefined,
+            date: course.date ?? undefined,
+            startTime: course.start_time ?? undefined,
           })
         } else {
           coursesWithoutEvent++
@@ -381,6 +387,8 @@ function App() {
     elevationGain?: number
     profile?: Array<[number, number]>
     startCoordinates?: [number, number] // [lat, lon]
+    date?: string // YYYY-MM-DD
+    startTime?: string // HH:mm
     stravaRouteId?: string
     stravaSegments?: Array<{
       id: number
@@ -536,6 +544,8 @@ function App() {
       elevation_gain: elevationGainRounded,
       profile: payload.profile ? JSON.stringify(payload.profile) : null,
       start_coordinates: payload.startCoordinates || null,
+      date: payload.date || null,
+      start_time: payload.startTime || null,
       strava_route_id: payload.stravaRouteId || null,
       strava_segments: payload.stravaSegments ? JSON.stringify(payload.stravaSegments) : null,
     }).select()
@@ -586,6 +596,69 @@ function App() {
   const handleSelectCourse = (courseId: string) => {
     setSelectedCourseId(courseId)
     setView('course')
+  }
+
+  const handleDeleteCourse = async (courseId: string) => {
+    const { error } = await supabase.from('courses').delete().eq('id', courseId)
+    if (error) {
+      console.error('Erreur lors de la suppression de la course:', error)
+      alert('Erreur lors de la suppression de la course')
+      return
+    }
+    const loadedEvents = await loadEventsFromSupabase()
+    setEvents(loadedEvents)
+    if (selectedCourseId === courseId) setSelectedCourseId(null)
+  }
+
+  const handleUpdateCourse = async (
+    courseId: string,
+    payload: {
+      name: string
+      imageUrl?: string
+      gpxName?: string
+      gpxSvg?: string
+      distanceKm?: number
+      elevationGain?: number
+      profile?: Array<[number, number]>
+      startCoordinates?: [number, number]
+      date?: string
+      startTime?: string
+    }
+  ) => {
+    const cleanName = payload.name?.trim()
+    if (!cleanName || cleanName.toLowerCase() === 'sans titre') {
+      alert('Veuillez entrer un nom de course valide')
+      return
+    }
+    let imageUrl = payload.imageUrl
+    if (imageUrl && imageUrl.startsWith('blob:')) {
+      imageUrl = await blobUrlToBase64(imageUrl)
+    }
+    const elevationGainRounded = payload.elevationGain != null
+      ? Number(payload.elevationGain.toFixed(2))
+      : null
+    const { error } = await supabase
+      .from('courses')
+      .update({
+        name: cleanName,
+        image_url: imageUrl ?? undefined,
+        gpx_name: payload.gpxName ?? undefined,
+        gpx_svg: payload.gpxSvg ?? undefined,
+        distance_km: payload.distanceKm ?? undefined,
+        elevation_gain: elevationGainRounded ?? undefined,
+        profile: payload.profile ? JSON.stringify(payload.profile) : undefined,
+        start_coordinates: payload.startCoordinates ?? undefined,
+        date: payload.date ?? undefined,
+        start_time: payload.startTime ?? undefined,
+      })
+      .eq('id', courseId)
+    if (error) {
+      console.error('Erreur lors de la mise à jour de la course:', error)
+      alert('Erreur lors de la mise à jour de la course')
+      return
+    }
+    const loadedEvents = await loadEventsFromSupabase()
+    setEvents(loadedEvents)
   }
 
   const handleNavigate = (nextView: AppView) => {
@@ -698,6 +771,8 @@ function App() {
           selectedEventId={selectedEventId}
           onSelectCourse={handleSelectCourse}
           onCreateCourse={handleCreateCourse}
+          onUpdateCourse={handleUpdateCourse}
+          onDeleteCourse={handleDeleteCourse}
         />
       )}
       {view === 'strava-callback' && (

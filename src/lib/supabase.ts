@@ -35,6 +35,10 @@ export type CourseRow = {
   elevation_gain: number | null
   profile: Array<[number, number]> | null
   start_coordinates: [number, number] | null // [lat, lon]
+  /** Date de la course (YYYY-MM-DD) pour météo et simulation. Si la table n'a pas la colonne : ALTER TABLE courses ADD COLUMN date text, ADD COLUMN start_time text; */
+  date: string | null
+  /** Heure de départ (HH:mm) imposée par l'organisation */
+  start_time: string | null
   strava_route_id: string | null
   strava_segments: string | Array<{
     id: number

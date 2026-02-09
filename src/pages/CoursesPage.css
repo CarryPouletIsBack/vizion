@@ -182,11 +182,85 @@
 }
 
 .course-card__top {
+  position: relative;
   width: 100%;
   display: flex;
   justify-content: flex-start;
   align-items: flex-start;
   gap: var(--spacing-2, 4px);
+}
+
+.course-card__options-wrap {
+  position: absolute;
+  top: var(--spacing-2, 4px);
+  right: var(--spacing-2, 4px);
+}
+
+.course-card__options-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--spacing-2, 4px);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-secondary, #9ca3af);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.course-card__options-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.course-card__options-btn[aria-expanded="true"] {
+  background: rgba(191, 201, 0, 0.2);
+  color: var(--color-accent, #bfc900);
+}
+
+/* Fond opaque sans variable (--color-card-bg est rgba(0,0,0,0.3) et rendait le menu transparent) */
+.course-card__options-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: var(--spacing-1, 2px);
+  min-width: 180px;
+  padding: var(--spacing-2, 4px);
+  background: rgba(84, 84, 84, 1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--spacing-4, 8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 20;
+  opacity: 1;
+  isolation: isolate;
+}
+
+.course-card__options-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4, 8px);
+  width: 100%;
+  padding: var(--spacing-4, 8px) var(--spacing-6, 12px);
+  border: none;
+  border-radius: var(--spacing-2, 4px);
+  background: transparent;
+  color: var(--color-text-primary, #e5e7eb);
+  font-size: var(--font-size-sm, 12px);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.course-card__options-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.course-card__options-item--danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
 }
 
 .course-card__gpx {

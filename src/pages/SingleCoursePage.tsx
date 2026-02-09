@@ -30,6 +30,7 @@ import { getWeather, getCityFromCoords } from '../lib/xweather'
 import { analyzeProfileZones } from '../lib/profileAnalysis'
 import { segmentSvgIntoNumberedSegments, addSvgTooltips, addSvgSegmentClickListeners, getSvgZoomedOnSegment, getSegmentSvgWithElevation, type SegmentClickPayload } from '../lib/svgZoneSegmenter'
 import { latLonToSvg, type GpxBounds } from '../lib/gpxToSvg'
+import { construireDateDepart } from '../lib/dateUtils'
 import FitParser from 'fit-file-parser'
 
 /** Extrait le viewBox d’une chaîne SVG (pour superposer les gouttes de pluie). */
@@ -1575,6 +1576,11 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                           metrics={metrics}
                           baseTimeEstimate={analysis.timeEstimate}
                           temperature={courseData.temperature}
+                          profileData={profileData}
+                          heureDepart={construireDateDepart(
+                            (selectedCourse as { date?: string; startTime?: string })?.date,
+                            (selectedCourse as { date?: string; startTime?: string })?.startTime
+                          )}
                         />
                       )}
                     </div>
