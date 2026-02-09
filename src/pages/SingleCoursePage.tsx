@@ -1,12 +1,12 @@
 import './SingleCoursePage.css'
 
-import { FiAlertCircle, FiZap, FiChevronRight, FiMapPin, FiSun, FiClock, FiWind } from 'react-icons/fi'
+import { FiAlertCircle, FiZap, FiChevronRight, FiMapPin, FiSun, FiMoon, FiClock, FiWind } from 'react-icons/fi'
 import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
 import SingleCourseElevationChart from '../components/SingleCourseElevationChart'
 import SimulationEngine from '../components/SimulationEngine'
-import React, { useEffect, useRef, useState, lazy, Suspense } from 'react'
+import React, { useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 
 /** ID Strava de l'activité du 1er finisher (Diagonale des fous) pour embed + temps au km */
 const FIRST_FINISHER_ACTIVITY_ID = '16387493791'
@@ -129,9 +129,22 @@ function CourseMetaRegion({
     windDir != null || windSpeedKmh != null
       ? [windDir, windSpeedKmh != null ? `${Math.round(windSpeedKmh)} km/h` : null].filter(Boolean).join(' ')
       : null
+  /* Jour/nuit selon l’heure locale de la région (ex. Réunion : soleil de jour, lune la nuit) */
+  const isNight =
+    regionOffsetHours != null
+      ? (() => {
+          const regionMs = Date.now() + regionOffsetHours * 60 * 60 * 1000
+          const h = new Date(regionMs).getUTCHours()
+          return h < 6 || h >= 18
+        })()
+      : false
   const items: { icon: React.ReactNode; text: string }[] = []
   if (regionCity != null) items.push({ icon: <FiMapPin aria-hidden />, text: regionCity })
-  if (weatherTemp != null) items.push({ icon: <FiSun aria-hidden />, text: `${Math.round(weatherTemp)}°` })
+  if (weatherTemp != null)
+    items.push({
+      icon: isNight ? <FiMoon aria-hidden /> : <FiSun aria-hidden />,
+      text: `${Math.round(weatherTemp)}°`,
+    })
   if (timeStr != null) items.push({ icon: <FiClock aria-hidden />, text: timeStr })
   if (windStr != null) items.push({ icon: <FiWind aria-hidden />, text: windStr })
   if (items.length === 0) return null
@@ -388,6 +401,22 @@ export default function SingleCoursePage({
   const startCoordsKey = regionCoords ? `${regionCoords[0]},${regionCoords[1]}` : ''
   const weatherSamplePoints = (selectedCourse as { weatherSamplePoints?: Array<[number, number]> } | undefined)?.weatherSamplePoints
   const gpxBounds = (selectedCourse as { gpxBounds?: GpxBounds } | undefined)?.gpxBounds
+  const totalKmForRegion = maxDistance ?? (selectedCourse as { distanceKm?: number })?.distanceKm ?? 0
+
+  /** En vue Segment : centre du secteur pour météo/heure/ville (trails longs = météo peut changer) */
+  const segmentCenterCoords = useMemo((): [number, number] | undefined => {
+    if (currentStep !== 'segment' || !selectedSegment || !gpxSvg || totalKmForRegion <= 0) return undefined
+    const bounds = gpxBounds ?? (regionCoords ? getBoundsFromSvg(gpxSvg, regionCoords, totalKmForRegion) : null)
+    if (!bounds) return undefined
+    const pathPoints = getSegmentPathPoints(gpxSvg, selectedSegment.startKm, selectedSegment.endKm, totalKmForRegion)
+    if (pathPoints.length === 0) return undefined
+    const mid = pathPoints[Math.floor(pathPoints.length / 2)]
+    return svgPointToLatLon(mid[0], mid[1], bounds)
+  }, [currentStep, selectedSegment?.startKm, selectedSegment?.endKm, gpxSvg, gpxBounds, regionCoords, totalKmForRegion])
+
+  /** Coordonnées utilisées pour météo/ville/heure : secteur en vue Segment, sinon départ de la course */
+  const displayCoords = (currentStep === 'segment' && segmentCenterCoords) ? segmentCenterCoords : regionCoords
+  const displayCoordsKey = displayCoords ? `${displayCoords[0]},${displayCoords[1]}` : ''
 
   // Météo par point le long du tracé (pour gouttes sur le GPX)
   useEffect(() => {
@@ -415,9 +444,9 @@ export default function SingleCoursePage({
     return () => { cancelled = true }
   }, [selectedCourseId, !!gpxBounds, weatherSamplePoints?.length ?? 0])
 
-  // Météo, lieu, heure et pluie 24h de la région de la course (cache 4h pour météo/ville)
+  // Météo, lieu, heure : région du départ (Description) ou centre du secteur (Segment, trails longs)
   useEffect(() => {
-    if (!regionCoords || regionCoords.length < 2) {
+    if (!displayCoords || displayCoords.length < 2) {
       setWeatherTemp(null)
       setCircuitWeather(undefined)
       setWindSpeedKmh(null)
@@ -428,7 +457,7 @@ export default function SingleCoursePage({
       return
     }
     let cancelled = false
-    const [lat, lon] = regionCoords
+    const [lat, lon] = displayCoords
     const base = typeof window !== 'undefined' ? window.location.origin : ''
     Promise.all([
       getWeather(lat, lon),
@@ -455,14 +484,14 @@ export default function SingleCoursePage({
         }
       })
     return () => { cancelled = true }
-  }, [selectedCourseId, startCoordsKey])
+  }, [selectedCourseId, displayCoordsKey])
 
-  // Mise à jour de l'heure de la région toutes les minutes
+  // Mise à jour de l'heure (départ ou secteur) toutes les minutes
   useEffect(() => {
-    if (!regionCoords || regionCoords.length < 2) return
+    if (!displayCoords || displayCoords.length < 2) return
     const id = setInterval(() => {
       const base = typeof window !== 'undefined' ? window.location.origin : ''
-      const [lat, lon] = regionCoords
+      const [lat, lon] = displayCoords
       fetch(`${base}/api/timezone?lat=${lat}&lon=${lon}`)
         .then((r) => (r.ok ? r.json() : null))
         .then((tz) => {
@@ -473,7 +502,7 @@ export default function SingleCoursePage({
         })
     }, 60 * 1000)
     return () => clearInterval(id)
-  }, [selectedCourseId, startCoordsKey])
+  }, [selectedCourseId, displayCoordsKey])
 
   // Charger le script Strava embed (une fois)
   useEffect(() => {

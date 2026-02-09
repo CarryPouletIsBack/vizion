@@ -154,6 +154,20 @@ export function extractGpxStartCoordinates(gpxText: string): [number, number] | 
   return [points[0][0], points[0][1]]
 }
 
+/**
+ * Répartition par type de terrain (sentier, piste, etc.) en %.
+ * Non disponible dans les GPX actuels : le format GPX 1.1 et les extensions Garmin
+ * ne contiennent pas de champ "surface". Strava affiche un % (sentier, piste, etc.)
+ * dans l’app (données OSM) mais ne l’exporte pas dans le GPX ni via l’API Routes.
+ * Une future source possible : OpenRouteService (extra info surface) ou calcul côté
+ * serveur à partir d’OSM le long du tracé.
+ */
+export type GpxSurfaceBreakdown = { surface: string; percent: number }[]
+
+export function getGpxSurfaceBreakdown(_gpxText: string): GpxSurfaceBreakdown | null {
+  return null
+}
+
 export type GpxStats = {
   distanceKm: number
   elevationGain: number
