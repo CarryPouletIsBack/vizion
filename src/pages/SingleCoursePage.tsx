@@ -1,6 +1,6 @@
 import './SingleCoursePage.css'
 
-import { FiAlertCircle, FiZap, FiChevronRight, FiMapPin, FiSun, FiMoon, FiClock, FiWind } from 'react-icons/fi'
+import { FiAlertCircle, FiZap, FiChevronRight, FiMapPin, FiSun, FiMoon, FiClock, FiWind, FiPlus, FiCheck } from 'react-icons/fi'
 import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
@@ -19,6 +19,7 @@ const COURSE_STEPS = [
 ] as const
 export type CourseStepId = (typeof COURSE_STEPS)[number]['id']
 import useGpxHoverMarker from '../hooks/useGpxHoverMarker'
+import { useMyParcoursButton } from '../hooks/useMyParcoursButton'
 import useStravaMetrics from '../hooks/useStravaMetrics'
 import { analyzeCourseReadiness } from '../lib/courseAnalysis'
 import { mergeMetricsWithFit, mergeMetricsWithFitList } from '../lib/fitMetricsMerge'
@@ -199,6 +200,8 @@ type SingleCoursePageProps = {
       gpxBounds?: GpxBounds
       date?: string
       startTime?: string
+      createdByUserId?: string | null
+      isPublished?: boolean
     }>
   }>
   selectedCourseId: string | null
@@ -214,8 +217,12 @@ export default function SingleCoursePage({
       .flatMap((event) => event.courses.map((course) => ({ ...course, eventName: event.name })))
       .find((course) => course.id === selectedCourseId) ?? events[0]?.courses[0]
 
-  const courseTitle = selectedCourse?.name ?? 'Course'
-  const courseEventName = (selectedCourse as { eventName?: string } | undefined)?.eventName ?? 'Grand Raid'
+  const courseId = (selectedCourse as { id?: string } | undefined)?.id ?? ''
+  const createdByUserId = (selectedCourse as { createdByUserId?: string | null } | undefined)?.createdByUserId
+  const { isInMyParcours, loading: myParcoursLoading, addToMyParcours, removeFromMyParcours } = useMyParcoursButton(courseId, createdByUserId)
+
+  const courseTitle = selectedCourse?.name ?? 'Parcours'
+  const courseEventName = (selectedCourse as { eventName?: string } | undefined)?.eventName?.trim() || undefined
 
   useEffect(() => {
     const name =
@@ -233,7 +240,12 @@ export default function SingleCoursePage({
     selectedCourse?.distanceKm && selectedCourse?.elevationGain
       ? `${selectedCourse.distanceKm.toFixed(0)} km · ${Math.round(selectedCourse.elevationGain)} D+`
       : '175 km · 10 150 D+ · Août 2026'
-  const courseHeading = `${courseEventName.toUpperCase()} – ${courseTitle}`
+  const isPlaceholderEvent = /^nouvel événement$/i.test(courseEventName ?? '')
+  const courseHeading = !courseEventName
+    ? 'NOUVEL ÉVÉNEMENT'
+    : isPlaceholderEvent
+      ? courseTitle
+      : `${courseEventName.toUpperCase()} – ${courseTitle}`
   const rawProfile = (selectedCourse as { profile?: Array<[number, number]> | string } | undefined)?.profile
   /** Profil stabilisé (même référence tant que la course ne change pas) pour éviter recalculs en chaîne et freeze */
   const profileData = useMemo((): Array<[number, number]> | undefined => {
@@ -323,7 +335,6 @@ export default function SingleCoursePage({
   const [aiContentError, setAiContentError] = useState<string | null>(null)
 
   const startCoords = (selectedCourse as { startCoordinates?: [number, number] } | undefined)?.startCoordinates
-  const courseId = (selectedCourse as { id?: string } | undefined)?.id ?? ''
   const preparationStorageKey = `vizion_preparation_actions_${selectedCourseId ?? ''}`
   const fitStorageKey = `vizion_fit_${selectedCourseId ?? ''}`
 
@@ -411,7 +422,7 @@ export default function SingleCoursePage({
 
   const isReunionCourse =
     courseId === 'example-grand-raid-course' ||
-    /grand raid|réunion|reunion|diagonale/i.test(courseEventName)
+    (courseEventName != null && /grand raid|réunion|reunion|diagonale/i.test(courseEventName))
   const regionCoords: [number, number] | undefined = isReunionCourse
     ? [-21.01, 55.27]
     : startCoords?.length === 2
@@ -830,7 +841,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
 
   /** Paragraphe dynamique "Quel est un bon temps..." (style Track Titan, adapté trail) */
   const goodTimeParagraph = (() => {
-    const courseLabel = courseTitle || courseData.name || 'cette course'
+    const courseLabel = courseTitle || courseData.name || 'ce parcours'
     const distanceLabel = `${courseData.distanceKm} km`
     const dPlusLabel = `${Math.round(courseData.elevationGain)} m D+`
     if (useGrandRaidStats && grandRaidStats) {
@@ -841,7 +852,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
       const userEstimate = analysis?.timeEstimate?.rangeFormatted
       return {
         intro: `Quel est un bon temps pour ${courseLabel} (${distanceLabel}, ${dPlusLabel}) ?`,
-        best: `Le meilleur temps enregistré sur cette course (données Grand Raid) est d'environ ${bestTime}.`,
+        best: `Le meilleur temps enregistré sur ce parcours (données Grand Raid) est d'environ ${bestTime}.`,
         elite: `Les trailers les plus rapides (top 5 %) réalisent un temps d'environ ${topPercentTime}. Ce sont en général ceux qui visent le podium et les premières places.`,
         average: `Si vous débutez sur ce type d'épreuve ou si votre objectif est simplement de terminer, visez un temps autour de ${finishInTime}.`,
         cta: userEstimate
@@ -853,11 +864,11 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
     return {
       intro: `Quel est un bon temps pour ${courseLabel} (${distanceLabel}, ${dPlusLabel}) ?`,
       best: null,
-      elite: `Pour une course de cette distance et ce dénivelé, les temps varient fortement selon le niveau et les conditions.`,
+      elite: `Pour un parcours de cette distance et ce dénivelé, les temps varient fortement selon le niveau et les conditions.`,
       average: `Si votre objectif est de terminer dans les délais, prévoyez une fourchette réaliste selon votre expérience et votre entraînement.`,
       cta: userEstimate
         ? `Votre temps estimé avec Trackali est de ${userEstimate}. Affinez-le avec le simulateur ci-dessous.`
-        : 'Utilisez le simulateur Trackali pour estimer votre temps et comparer votre préparation aux objectifs de la course.',
+        : 'Utilisez le simulateur Trackali pour estimer votre temps et comparer votre préparation aux objectifs du parcours.',
     }
   })()
 
@@ -919,11 +930,11 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
 
       <div className="single-course-body">
         <aside className="single-course-side">
-          <SideNav activeItem="saison" onNavigate={onNavigate} />
+          <SideNav activeItem="courses" onNavigate={onNavigate} />
         </aside>
 
         <main className="single-course-main">
-          {/* Fil d'Ariane : Courses > [Nom course] > [Étape] */}
+          {/* Fil d'Ariane : Parcours > [Nom parcours] > [Étape] */}
           <nav className="single-course-breadcrumb" aria-label="Fil d'Ariane">
             <ol className="single-course-breadcrumb__list">
               <li className="single-course-breadcrumb__item">
@@ -932,7 +943,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                   className="single-course-breadcrumb__link"
                   onClick={() => onNavigate?.('courses')}
                 >
-                  Courses
+                  Parcours
                 </button>
               </li>
               <li className="single-course-breadcrumb__item" aria-hidden>
@@ -966,6 +977,25 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
           <section className="single-course-heading">
             <div>
               <p className="single-course-title">{courseTitle}</p>
+              <button
+                type="button"
+                className="single-course-choose-btn"
+                onClick={isInMyParcours ? removeFromMyParcours : addToMyParcours}
+                disabled={myParcoursLoading}
+                aria-pressed={isInMyParcours}
+              >
+                {myParcoursLoading ? (
+                  <span>...</span>
+                ) : isInMyParcours ? (
+                  <>
+                    <FiCheck aria-hidden /> Dans mes parcours
+                  </>
+                ) : (
+                  <>
+                    <FiPlus aria-hidden /> Choisir le parcours
+                  </>
+                )}
+              </button>
             </div>
           </section>
 

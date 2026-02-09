@@ -225,7 +225,7 @@ const WorldMapGoogle = memo(function WorldMapGoogle({ onCourseSelect }: WorldMap
                       <p className="course-card__stats">
                         {tag.course.distance_km && tag.course.elevation_gain
                           ? `${Math.round(tag.course.distance_km)} km – ${Math.round(tag.course.elevation_gain)} D+`
-                          : 'Course'}
+                          : 'Parcours'}
                       </p>
                     </div>
                   </div>
@@ -236,7 +236,7 @@ const WorldMapGoogle = memo(function WorldMapGoogle({ onCourseSelect }: WorldMap
                       </p>
                     </div>
                     <div className="course-card__footer-right">
-                      <p>Début de la course</p>
+                      <p>Début du parcours</p>
                       <p className="course-card__countdown">À venir</p>
                     </div>
                   </footer>

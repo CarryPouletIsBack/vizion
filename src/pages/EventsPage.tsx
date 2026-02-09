@@ -81,7 +81,7 @@ export default function EventsPage({ onNavigate, events, onEventSelect, onEventE
               >
                 <div>
                   <p className="info-card__title">Ajouter un événement</p>
-                  <p className="info-card__subtitle">Créer un nouvel événement pour regrouper vos courses</p>
+                  <p className="info-card__subtitle">Créer un nouvel événement pour regrouper vos parcours</p>
                 </div>
                 <span className="info-card__chevron" aria-hidden="true">
                   ›
@@ -156,7 +156,7 @@ export default function EventsPage({ onNavigate, events, onEventSelect, onEventE
               </button>
             </header>
             <p className="modal__subtitle modal__subtitle--left">
-              Un événement vous permet de regrouper plusieurs course.
+              Un événement vous permet de regrouper plusieurs parcours.
             </p>
             <div className="modal-upload-simple">
               <label className="modal-upload-simple__button" htmlFor="event-image-page">

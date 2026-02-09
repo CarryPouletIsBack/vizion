@@ -1,6 +1,6 @@
 import './CoursesPage.css'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HiX } from 'react-icons/hi'
 import { FiMoreVertical, FiEdit3, FiTrash2, FiStar } from 'react-icons/fi'
 
@@ -14,6 +14,8 @@ import { gpxToSvg, extractGpxStartCoordinates, extractGpxWaypoints, getBoundsFro
 import { extractRouteIdFromUrl } from '../lib/stravaRouteParser'
 import { formatCountdownLabel } from '../lib/dateUtils'
 import { getWeather, formatWeatherCircuitMessage } from '../lib/xweather'
+import { getCurrentUser } from '../lib/auth'
+import { getMySelectedCourseIds } from '../lib/userCourseSelections'
 import { supabase } from '../lib/supabase'
 
 /** Affiche le message météo circuit (pluie actuelle, 24h, boue) pour une position. */
@@ -69,6 +71,7 @@ type CoursesPageProps = {
     startCoordinates?: [number, number]
     date?: string
     startTime?: string
+    isPublished?: boolean
     stravaRouteId?: string
     stravaSegments?: Array<{
       id: number
@@ -320,6 +323,7 @@ export default function CoursesPage({
   const courseStravaRouteRef = useRef<HTMLInputElement | null>(null)
   const courseDateRef = useRef<HTMLInputElement | null>(null)
   const courseTimeRef = useRef<HTMLInputElement | null>(null)
+  const coursePublishRef = useRef<HTMLInputElement | null>(null)
 
   const editNameRef = useRef<HTMLInputElement | null>(null)
   const editDateRef = useRef<HTMLInputElement | null>(null)
@@ -445,7 +449,7 @@ export default function CoursesPage({
     
     if (!name || name.toLowerCase() === 'sans titre') {
       console.warn('⚠️ Nom invalide, annulation')
-      alert('Veuillez entrer un nom de course valide')
+      alert('Veuillez entrer un nom de parcours valide')
       return
     }
 
@@ -547,6 +551,7 @@ export default function CoursesPage({
       distanceKm,
       elevationGain,
       profile,
+      isPublished: coursePublishRef.current?.checked ?? false,
       ...(startCoordinates && { startCoordinates }),
       ...(gpxBounds && { gpxBounds }),
       ...(dateVal && { date: dateVal }),
@@ -571,7 +576,7 @@ export default function CoursesPage({
       console.log('✅ onCreateCourse terminé')
     } catch (error) {
       console.error('❌ Erreur lors de l\'appel onCreateCourse:', error)
-      alert('Erreur lors de la création de la course. Vérifiez la console pour plus de détails.')
+      alert('Erreur lors de la création du parcours. Vérifiez la console pour plus de détails.')
     }
 
     if (courseNameRef.current) courseNameRef.current.value = ''
@@ -586,7 +591,7 @@ export default function CoursesPage({
     if (!editingCourse || !onUpdateCourse) return
     const name = editNameRef.current?.value?.trim() || editingCourse.name
     if (!name || name.toLowerCase() === 'sans titre') {
-      alert('Veuillez entrer un nom de course valide')
+      alert('Veuillez entrer un nom de parcours valide')
       return
     }
     const dateVal = (editDateRef.current?.value ?? '').trim()
@@ -629,7 +634,7 @@ export default function CoursesPage({
       await onUpdateCourse(editingCourse.id, payload)
     } catch (err) {
       console.error('Erreur lors de la mise à jour de la course:', err)
-      alert('Erreur lors de la mise à jour de la course')
+      alert('Erreur lors de la mise à jour du parcours')
       setEditingCourse(editingCourse)
     }
   }
@@ -643,9 +648,37 @@ export default function CoursesPage({
   // Utiliser les courses directes si aucune course n'est disponible dans les events
   // Priorité : courses des events > courses directes
   const allCourses = allCoursesFromEvents.length > 0 ? allCoursesFromEvents : directCourses
+
+  const [mySelectedCourseIds, setMySelectedCourseIds] = useState<Set<string>>(new Set())
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
+  const refreshMyParcours = useCallback(() => {
+    Promise.all([getCurrentUser(), getMySelectedCourseIds()]).then(([user, ids]) => {
+      setCurrentUserId(user?.id ?? null)
+      setMySelectedCourseIds(ids)
+    })
+  }, [])
+
+  useEffect(() => {
+    refreshMyParcours()
+  }, [events, refreshMyParcours])
+
+  useEffect(() => {
+    const handler = () => refreshMyParcours()
+    window.addEventListener('my-parcours-changed', handler)
+    return () => window.removeEventListener('my-parcours-changed', handler)
+  }, [refreshMyParcours])
+
+  const isMyParcours = useCallback((course: { id: string; createdByUserId?: string | null }) => {
+    const createdBy = course.createdByUserId
+    return createdBy === currentUserId || mySelectedCourseIds.has(course.id)
+  }, [currentUserId, mySelectedCourseIds])
+
+  const catalogCourses = useMemo(() => allCourses.filter((c) => !isMyParcours(c as { id: string; createdByUserId?: string | null })), [allCourses, isMyParcours])
+  const myParcoursCourses = useMemo(() => allCourses.filter((c) => isMyParcours(c as { id: string; createdByUserId?: string | null })), [allCourses, isMyParcours])
   
   const courseCards =
-    allCourses
+    catalogCourses
       .filter((course) => course.name.trim().toLowerCase() !== 'sans titre')
       .map((course, index) => {
         // Utiliser les vraies valeurs de la course, ou 0 si non définies (pas de valeurs par défaut)
@@ -672,7 +705,7 @@ export default function CoursesPage({
 
         return {
           id: course.id,
-          title: parentEvent?.name || 'Course',
+          title: parentEvent?.name || 'Parcours',
           year: '2026',
           subtitle: course.name,
           stats:
@@ -680,7 +713,7 @@ export default function CoursesPage({
               ? `${course.distanceKm.toFixed(0)} km – ${Math.round(course.elevationGain)} D+`
               : course.distanceKm
                 ? `${course.distanceKm.toFixed(0)} km`
-                : 'Course',
+                : 'Parcours',
           readiness: readinessLabel,
           countdown: countdownLabel,
           imageUrl: course.imageUrl ?? parentEvent?.imageUrl ?? grandRaidLogo,
@@ -690,6 +723,39 @@ export default function CoursesPage({
           courseRaw: course,
         }
       }) ?? []
+
+  const myParcoursCards = myParcoursCourses
+    .filter((course) => course.name.trim().toLowerCase() !== 'sans titre')
+    .map((course) => {
+      const courseDistanceKm = course.distanceKm ?? 0
+      const courseElevationGain = course.elevationGain ?? 0
+      const readinessPercentage = (courseDistanceKm > 0 && courseElevationGain > 0)
+        ? calculateReadinessPercentage(metrics, courseDistanceKm, courseElevationGain)
+        : 0
+      const hasCourseStats = courseDistanceKm > 0 && courseElevationGain > 0
+      const readinessLabel =
+        hasCourseStats && metrics != null
+          ? `${readinessPercentage}%`
+          : hasCourseStats && !metrics
+            ? 'Connecte Strava'
+            : '—'
+      const countdownLabel = formatCountdownLabel(course.date, course.startTime)
+      const parentEvent = events.find(e => e.courses?.some(c => c.id === course.id)) || selectedEvent || events[0]
+      return {
+        id: course.id,
+        title: parentEvent?.name || 'Parcours',
+        subtitle: course.name,
+        stats: course.distanceKm && course.elevationGain
+          ? `${course.distanceKm.toFixed(0)} km – ${Math.round(course.elevationGain)} D+`
+          : course.distanceKm ? `${course.distanceKm.toFixed(0)} km` : 'Parcours',
+        readiness: readinessLabel,
+        countdown: countdownLabel,
+        imageUrl: course.imageUrl ?? parentEvent?.imageUrl ?? grandRaidLogo,
+        gpxSvg: course.gpxSvg,
+        courseRaw: course,
+      }
+    })
+
   return (
     <div className="courses-page">
       <HeaderTopBar onNavigate={onNavigate} />
@@ -702,9 +768,11 @@ export default function CoursesPage({
         <main className="courses-main">
           <section className="courses-header">
             <div>
-              <p className="courses-header__title">COURSE</p>
+              <p className="courses-header__title">PARCOURS</p>
               <p className="courses-header__subtitle">
-                {selectedEvent ? `${selectedEvent.courses.length} courses` : '0 course'}
+                {selectedEvent
+                  ? `${selectedEvent.courses.length} parcours disponible${selectedEvent.courses.length > 1 ? 's' : ''}`
+                  : '0 parcours disponibles'}
               </p>
             </div>
             {onCreateCourse && (
@@ -714,7 +782,7 @@ export default function CoursesPage({
                 onClick={() => setIsCreateModalOpen(true)}
               >
                 <div>
-                  <p className="info-card__title">Ajouter une course</p>
+                  <p className="info-card__title">Ajouter votre parcours</p>
                   <p className="info-card__subtitle">Importer votre GPX et commencer à vous préparer</p>
                 </div>
                 <span className="info-card__chevron" aria-hidden="true">
@@ -724,7 +792,9 @@ export default function CoursesPage({
             )}
           </section>
 
-          <section className="courses-grid">
+          <section className="courses-catalog">
+            <h2 className="courses-catalog__title">Parcours de la communauté</h2>
+            <div className="courses-grid">
             {courseCards.map((card) => (
               <article
                 key={card.id}
@@ -794,7 +864,7 @@ export default function CoursesPage({
                             className="course-card__options-item course-card__options-item--danger"
                             role="menuitem"
                             onClick={() => {
-                              if (window.confirm('Supprimer cette course ?')) {
+                              if (window.confirm('Supprimer ce parcours ?')) {
                                 onDeleteCourse(card.id)
                                 setCourseOptionsOpenId(null)
                               }
@@ -842,7 +912,7 @@ export default function CoursesPage({
                     )}
                   </div>
                   <div className="course-card__footer-right">
-                    <p>Début de la course</p>
+                    <p>Début du parcours</p>
                     <p className="course-card__countdown">{card.countdown}</p>
                   </div>
                 </footer>
@@ -851,6 +921,122 @@ export default function CoursesPage({
                 )}
               </article>
             ))}
+            </div>
+          </section>
+
+          <section className="courses-my-parcours">
+            <div className="courses-my-parcours__heading">
+              <h2 className="courses-my-parcours__title">Mes parcours en cours</h2>
+              <p className="courses-my-parcours__subtitle">
+                {myParcoursCards.length > 0
+                  ? `${myParcoursCards.length} parcours`
+                  : "Aucun parcours. Créez-en un ou choisissez-en un depuis le détail d'un parcours."}
+              </p>
+            </div>
+            <div className="courses-my-parcours__grid">
+              {myParcoursCards.map((card) => (
+                <article
+                  key={card.id}
+                  className="course-card"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => courseOptionsOpenId !== card.id && onSelectCourse?.(card.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') onSelectCourse?.(card.id)
+                  }}
+                >
+                  <div className="course-card__top">
+                    <div className="course-card__gpx">
+                      {card.gpxSvg ? (
+                        <div className="course-card__gpx-svg" dangerouslySetInnerHTML={{ __html: card.gpxSvg }} />
+                      ) : (
+                        <img src={gpxIcon} alt="GPX" />
+                      )}
+                    </div>
+                    <div className="course-card__content">
+                      <h3 className="course-card__title">{card.subtitle}</h3>
+                      <p className="course-card__stats">{card.stats}</p>
+                    </div>
+                    <div className="course-card__options-wrap">
+                      <button
+                        type="button"
+                        className="course-card__options-btn"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setCourseOptionsOpenId((id) => (id === card.id ? null : card.id))
+                        }}
+                        aria-label="Options"
+                        aria-expanded={courseOptionsOpenId === card.id}
+                        aria-haspopup="true"
+                      >
+                        <FiMoreVertical aria-hidden />
+                      </button>
+                      {courseOptionsOpenId === card.id && (
+                        <div className="course-card__options-dropdown" role="menu" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            className="course-card__options-item"
+                            role="menuitem"
+                            onClick={() => {
+                              setCourseOptionsOpenId(null)
+                              if (onUpdateCourse) setEditingCourse(card.courseRaw)
+                              else onSelectCourse?.(card.id)
+                            }}
+                          >
+                            <FiEdit3 /> Modifier
+                          </button>
+                          {onDeleteCourse && (
+                            <button
+                              type="button"
+                              className="course-card__options-item course-card__options-item--danger"
+                              role="menuitem"
+                              onClick={() => {
+                                if (window.confirm('Supprimer ce parcours ?')) {
+                                  onDeleteCourse(card.id)
+                                  setCourseOptionsOpenId(null)
+                                }
+                              }}
+                            >
+                              <FiTrash2 /> Supprimer
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="course-card__options-item"
+                            role="menuitem"
+                            onClick={() => {
+                              setFavorites((prev) => {
+                                const next = new Set(prev)
+                                if (next.has(card.id)) next.delete(card.id)
+                                else next.add(card.id)
+                                try { localStorage.setItem(FAVORITES_KEY, JSON.stringify([...next])) } catch { /* */ }
+                                return next
+                              })
+                              setCourseOptionsOpenId(null)
+                            }}
+                          >
+                            <FiStar style={{ fill: favorites.has(card.id) ? 'currentColor' : undefined }} />
+                            {favorites.has(card.id) ? ' Retirer des favoris' : ' Ajouter aux favoris'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <footer className="course-card__footer">
+                    <div className="course-card__footer-left">
+                      <p className="course-card__footer-prep">État de préparation : <strong>{card.readiness}</strong></p>
+                    </div>
+                    <div className="course-card__footer-right">
+                      <p>Début du parcours</p>
+                      <p className="course-card__countdown">{card.countdown}</p>
+                    </div>
+                  </footer>
+                  {card.courseRaw?.startCoordinates && card.courseRaw.startCoordinates.length === 2 && (
+                    <CourseCardWeather lat={card.courseRaw.startCoordinates[0]} lon={card.courseRaw.startCoordinates[1]} />
+                  )}
+                </article>
+              ))}
+            </div>
           </section>
         </main>
       </div>
@@ -859,7 +1045,7 @@ export default function CoursesPage({
         <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal modal--form">
             <header className="modal__header modal__header--center">
-              <h2>Crée ta course</h2>
+              <h2>Crée ton parcours</h2>
               <button
                 type="button"
                 className="modal__close"
@@ -869,11 +1055,11 @@ export default function CoursesPage({
                 <HiX />
               </button>
             </header>
-            <p className="modal__subtitle">Un événement vous permet de regrouper plusieurs course.</p>
+            <p className="modal__subtitle">Un événement vous permet de regrouper plusieurs parcours.</p>
             <div className="modal-upload-simple">
               <label className="modal-upload-simple__button" htmlFor="course-image-page">
                 <span className="modal-upload-simple__icon">+</span>
-                <span className="modal-upload-simple__text">Télécharger une image pour la course</span>
+                <span className="modal-upload-simple__text">Télécharger une image pour le parcours</span>
               </label>
               <input
                 id="course-image-page"
@@ -886,7 +1072,7 @@ export default function CoursesPage({
             <div className="modal-upload-simple">
               <label className="modal-upload-simple__button" htmlFor="course-gpx-page">
                 <span className="modal-upload-simple__icon">+</span>
-                <span className="modal-upload-simple__text">Télécharger un fichier GPX pour la course</span>
+                <span className="modal-upload-simple__text">Télécharger un fichier GPX pour le parcours</span>
               </label>
               <input
                 id="course-gpx-page"
@@ -898,7 +1084,7 @@ export default function CoursesPage({
             </div>
             <div className="modal-field">
               <label htmlFor="course-name-page">
-                Nom de la course<span className="modal-field__required">*</span>
+                Nom du parcours<span className="modal-field__required">*</span>
               </label>
               <input
                 id="course-name-page"
@@ -909,7 +1095,18 @@ export default function CoursesPage({
               />
             </div>
             <div className="modal-field">
-              <label htmlFor="course-date-page">Date de la course</label>
+              <label className="modal-field__checkbox-label">
+                <input
+                  ref={coursePublishRef}
+                  type="checkbox"
+                  className="modal-input"
+                />
+                <span>Publier (visible par tous)</span>
+              </label>
+              <p className="modal-field__hint">Si coché, votre parcours sera visible par tous les utilisateurs.</p>
+            </div>
+            <div className="modal-field">
+              <label htmlFor="course-date-page">Date du parcours</label>
               <input
                 id="course-date-page"
                 className="modal-input"
@@ -947,7 +1144,7 @@ export default function CoursesPage({
               </p>
             </div>
             <p className="modal-footnote">
-              En créant une course tu accepte{' '}
+              En créant un parcours tu acceptes{' '}
               <span className="modal-footnote__link">la charte d'utilisation de communauté.</span>
             </p>
             <div className="modal-actions">
@@ -966,7 +1163,7 @@ export default function CoursesPage({
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-course-title">
           <div className="modal modal--form">
             <header className="modal__header modal__header--center">
-              <h2 id="edit-course-title">Modifier la course</h2>
+              <h2 id="edit-course-title">Modifier le parcours</h2>
               <button
                 type="button"
                 className="modal__close"
@@ -980,7 +1177,7 @@ export default function CoursesPage({
               <label className="modal-upload-simple__button" htmlFor="edit-course-image">
                 <span className="modal-upload-simple__icon">+</span>
                 <span className="modal-upload-simple__text">
-                  {editingCourse.imageUrl ? "Changer l'image" : "Télécharger une image pour la course"}
+                  {editingCourse.imageUrl ? "Changer l'image" : "Télécharger une image pour le parcours"}
                 </span>
               </label>
               <input
@@ -1014,7 +1211,7 @@ export default function CoursesPage({
             </div>
             <div className="modal-field">
               <label htmlFor="edit-course-name">
-                Nom de la course<span className="modal-field__required">*</span>
+                Nom du parcours<span className="modal-field__required">*</span>
               </label>
               <input
                 id="edit-course-name"
@@ -1025,7 +1222,7 @@ export default function CoursesPage({
               />
             </div>
             <div className="modal-field">
-              <label htmlFor="edit-course-date">Date de la course</label>
+              <label htmlFor="edit-course-date">Date du parcours</label>
               <input
                 id="edit-course-date"
                 className="modal-input"

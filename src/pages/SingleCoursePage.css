@@ -4,7 +4,6 @@
   flex-direction: column;
   gap: var(--spacing-12, 24px);
   min-height: 100vh;
-  padding: calc(var(--spacing-8, 16px) + var(--topbar-height, 56px)) var(--spacing-12, 24px) var(--spacing-16, 32px);
   color: var(--color-text-primary, #e5e7eb);
   transition: var(--transition-smooth);
 }
@@ -169,6 +168,36 @@
   letter-spacing: 0.12em;
   margin: 0 0 var(--spacing-4, 8px);
   text-transform: none;
+}
+
+.single-course-choose-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2, 4px);
+  padding: var(--spacing-2, 4px) var(--spacing-4, 8px);
+  border-radius: var(--spacing-4, 8px);
+  border: 1px solid var(--color-accent, #bfc900);
+  background: rgba(191, 201, 0, 0.12);
+  color: var(--color-accent, #bfc900);
+  font-size: var(--font-size-sm, 14px);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.single-course-choose-btn:hover:not(:disabled) {
+  background: rgba(191, 201, 0, 0.2);
+  border-color: var(--color-accent, #bfc900);
+}
+
+.single-course-choose-btn[aria-pressed="true"] {
+  background: rgba(191, 201, 0, 0.25);
+  border-color: var(--color-accent, #bfc900);
+}
+
+.single-course-choose-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .single-course-subtitle {

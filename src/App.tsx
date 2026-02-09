@@ -9,6 +9,7 @@ import SaisonPage from './pages/SaisonPage'
 import SingleCoursePage from './pages/SingleCoursePage'
 import StravaCallbackPage from './pages/StravaCallbackPage'
 import UserAccountPage from './pages/UserAccountPage'
+import { getCurrentUser } from './lib/auth'
 import { supabase, type EventRow, type CourseRow } from './lib/supabase'
 import { gpxToSvg, computeGpxStats, extractGpxStartCoordinates, getBoundsFromGpx, samplePointsAlongTrack, type GpxBounds } from './lib/gpxToSvg'
 
@@ -22,6 +23,8 @@ type CourseItem = {
   gpxSvg?: string
   distanceKm?: number
   elevationGain?: number
+  createdByUserId?: string | null
+  isPublished?: boolean
   profile?: Array<[number, number]>
   stravaRouteId?: string
   stravaSegments?: Array<{
@@ -287,6 +290,8 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
               : undefined,
             date: course.date ?? undefined,
             startTime: course.start_time ?? undefined,
+            createdByUserId: (course as { created_by_user_id?: string | null }).created_by_user_id ?? undefined,
+            isPublished: (course as { is_published?: boolean }).is_published ?? false,
           })
         } else {
           coursesWithoutEvent++
@@ -405,6 +410,7 @@ function App() {
     gpxSvg?: string
     distanceKm?: number
     elevationGain?: number
+    isPublished?: boolean
     profile?: Array<[number, number]>
     startCoordinates?: [number, number] // [lat, lon]
     gpxBounds?: GpxBounds
@@ -555,9 +561,12 @@ function App() {
       ? Number(payload.elevationGain.toFixed(2))
       : null
 
+    const user = await getCurrentUser()
     const { error, data } = await supabase.from('courses').insert({
       event_id: eventIdToUse,
       name: cleanName,
+      created_by_user_id: user?.id ?? null,
+      is_published: payload.isPublished ?? false,
       image_url: imageUrl || null,
       gpx_name: payload.gpxName || null,
       gpx_svg: gpxSvg || null,

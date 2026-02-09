@@ -1,10 +1,12 @@
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HiX } from 'react-icons/hi'
 
 import './SaisonPage.css'
 
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
+import { getCurrentUser } from '../lib/auth'
+import { getMySelectedCourseIds } from '../lib/userCourseSelections'
 import { gpxToSvg, extractGpxStartCoordinates, extractGpxWaypoints, getBoundsFromGpx } from '../lib/gpxToSvg'
 import { extractRouteIdFromUrl } from '../lib/stravaRouteParser'
 
@@ -15,6 +17,9 @@ type EventWithCourses = {
     id: string
     name: string
     startCoordinates?: [number, number]
+    gpxSvg?: string
+    distanceKm?: number
+    elevationGain?: number
   }>
 }
 
@@ -43,9 +48,36 @@ export default function SaisonPage({
   onCreateEvent,
   onCreateCourse,
 }: SaisonPageProps) {
-  const coursesWithCoordsCount = useMemo(() => {
-    return events.flatMap((ev) => ev.courses).filter((c) => c.startCoordinates && c.startCoordinates.length === 2).length
+  const allCoursesWithCoords = useMemo(() => {
+    return events.flatMap((ev) => ev.courses).filter((c): c is typeof c & { startCoordinates: [number, number] } => c.startCoordinates != null && c.startCoordinates.length === 2)
   }, [events])
+
+  const [mySelectedCourseIds, setMySelectedCourseIds] = useState<Set<string>>(new Set())
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const refreshMyParcours = useCallback(() => {
+    Promise.all([getCurrentUser(), getMySelectedCourseIds()]).then(([user, ids]) => {
+      setCurrentUserId(user?.id ?? null)
+      setMySelectedCourseIds(ids)
+    })
+  }, [])
+
+  useEffect(() => {
+    refreshMyParcours()
+  }, [events, refreshMyParcours])
+
+  useEffect(() => {
+    const handler = () => refreshMyParcours()
+    window.addEventListener('my-parcours-changed', handler)
+    return () => window.removeEventListener('my-parcours-changed', handler)
+  }, [refreshMyParcours])
+
+  const coursesWithCoords = useMemo(() => {
+    return allCoursesWithCoords.filter((c) => {
+      const createdBy = (c as { createdByUserId?: string | null }).createdByUserId
+      return createdBy === currentUserId || mySelectedCourseIds.has(c.id)
+    })
+  }, [allCoursesWithCoords, currentUserId, mySelectedCourseIds])
+  const coursesWithCoordsCount = coursesWithCoords.length
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [createModalView, setCreateModalView] = useState<CreateModalView>('select')
   const eventNameRef = useRef<HTMLInputElement | null>(null)
@@ -54,6 +86,7 @@ export default function SaisonPage({
   const courseImageRef = useRef<HTMLInputElement | null>(null)
   const courseGpxRef = useRef<HTMLInputElement | null>(null)
   const courseStravaRouteRef = useRef<HTMLInputElement | null>(null)
+  const coursePublishRef = useRef<HTMLInputElement | null>(null)
 
   const handleCreateEvent = () => {
     const name = eventNameRef.current?.value?.trim() || 'Sans titre'
@@ -179,7 +212,7 @@ export default function SaisonPage({
     // Vérifier que le nom n'est pas vide ou "Sans titre"
     if (!name || name.toLowerCase() === 'sans titre') {
       console.warn('⚠️ Nom invalide, annulation')
-      alert('Veuillez entrer un nom de course valide')
+      alert('Veuillez entrer un nom de parcours valide')
       return
     }
 
@@ -327,6 +360,7 @@ export default function SaisonPage({
       distanceKm,
       elevationGain,
       profile,
+      isPublished: coursePublishRef.current?.checked ?? false,
       ...(startCoordinates && { startCoordinates }),
       ...(gpxBounds && { gpxBounds }),
       ...(stravaRouteId && { stravaRouteId }),
@@ -353,7 +387,7 @@ export default function SaisonPage({
       console.log('✅ onCreateCourse terminé')
     } catch (error) {
       console.error('❌ Erreur lors de l\'appel onCreateCourse:', error)
-      alert('Erreur lors de la création de la course. Vérifiez la console pour plus de détails.')
+      alert('Erreur lors de la création du parcours. Vérifiez la console pour plus de détails.')
     }
 
     // Réinitialiser les champs
@@ -376,7 +410,7 @@ export default function SaisonPage({
           <section className="saison-heading">
             <div>
               <p className="saison-title">SAISON 2026</p>
-              <p className="saison-subtitle">Aucune course ou événement pour le moment</p>
+              <p className="saison-subtitle">Aucun parcours ou événement pour le moment</p>
             </div>
             <button
               className="info-card"
@@ -387,7 +421,7 @@ export default function SaisonPage({
               }}
             >
               <div>
-                <p className="info-card__title">Ajouter un événement ou une course</p>
+                <p className="info-card__title">Ajouter un événement ou un parcours</p>
                 <p className="info-card__subtitle">Commencer dès à présent à vous préparez</p>
               </div>
               <span className="info-card__chevron" aria-hidden="true">
@@ -399,15 +433,43 @@ export default function SaisonPage({
           <div className="saison-map-block">
             <section className="courses-section">
               <div className="courses-heading">
-                <p className="courses-title">Mes courses en cours</p>
+                <p className="courses-title">Mes parcours en cours</p>
                 <p className="courses-subtitle">
                   {coursesWithCoordsCount > 0
-                    ? `${coursesWithCoordsCount} course(s) affichée(s) sur le globe`
-                    : "Vous n'avez pas encore de course en cours."}
+                    ? `${coursesWithCoordsCount} parcours affiché${coursesWithCoordsCount > 1 ? 's' : ''} sur le globe`
+                    : "Vous n'avez pas encore de parcours en cours."}
                 </p>
               </div>
               <div className="courses-carousel">
-                {/* Les courses seront affichées ici une fois créées */}
+                {coursesWithCoords.map((course) => (
+                  <article
+                    key={course.id}
+                    className="courses-carousel__card"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => _onCourseSelect?.(course.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        _onCourseSelect?.(course.id)
+                      }
+                    }}
+                  >
+                    <div className="courses-carousel__card-gpx">
+                      {course.gpxSvg ? (
+                        <div className="courses-carousel__card-gpx-svg" dangerouslySetInnerHTML={{ __html: course.gpxSvg }} />
+                      ) : (
+                        <div className="courses-carousel__card-gpx-placeholder" aria-hidden />
+                      )}
+                    </div>
+                    <div className="courses-carousel__card-content">
+                      <p className="courses-carousel__card-title">{course.name}</p>
+                      {course.distanceKm != null && course.elevationGain != null && (
+                        <p className="courses-carousel__card-stats">{course.distanceKm.toFixed(0)} km · {Math.round(course.elevationGain)} D+</p>
+                      )}
+                    </div>
+                  </article>
+                ))}
               </div>
             </section>
           </div>
@@ -419,7 +481,7 @@ export default function SaisonPage({
           {createModalView === 'select' && (
             <div className="modal">
               <header className="modal__header">
-                <h2>Ajouter un événement ou une course</h2>
+                <h2>Ajouter un événement ou un parcours</h2>
                 <button
                   type="button"
                   className="modal__close"
@@ -438,7 +500,7 @@ export default function SaisonPage({
                 <div>
                   <p className="modal-card__title">Créer un événement</p>
                   <p className="modal-card__text">
-                    Un événement vous permet de regrouper plusieurs course.
+                    Un événement vous permet de regrouper plusieurs parcours.
                   </p>
                 </div>
                 <span aria-hidden="true">›</span>
@@ -449,7 +511,7 @@ export default function SaisonPage({
                 onClick={() => setCreateModalView('course')}
               >
                 <div>
-                  <p className="modal-card__title">Créer une course</p>
+                  <p className="modal-card__title">Créer un parcours</p>
                   <p className="modal-card__text">
                     Importer votre gpx et commencer à vous préparer pour le jour-j
                   </p>
@@ -480,7 +542,7 @@ export default function SaisonPage({
                 </button>
               </header>
               <p className="modal__subtitle modal__subtitle--left">
-                Un événement vous permet de regrouper plusieurs course.
+                Un événement vous permet de regrouper plusieurs parcours.
               </p>
               <div className="modal-upload-simple">
                 <label className="modal-upload-simple__button" htmlFor="event-image">
@@ -524,7 +586,7 @@ export default function SaisonPage({
           {createModalView === 'course' && (
             <div className="modal modal--form">
               <header className="modal__header modal__header--center">
-                <h2>Crée ta course</h2>
+                <h2>Crée ton parcours</h2>
                 <button
                   type="button"
                   className="modal__close"
@@ -534,11 +596,11 @@ export default function SaisonPage({
                   <HiX />
                 </button>
               </header>
-              <p className="modal__subtitle">Un événement vous permet de regrouper plusieurs course.</p>
+              <p className="modal__subtitle">Un événement vous permet de regrouper plusieurs parcours.</p>
               <div className="modal-upload-simple">
                 <label className="modal-upload-simple__button" htmlFor="course-image">
                   <span className="modal-upload-simple__icon">+</span>
-                  <span className="modal-upload-simple__text">Télécharger une image pour la course</span>
+                  <span className="modal-upload-simple__text">Télécharger une image pour le parcours</span>
                 </label>
                 <input
                   id="course-image"
@@ -551,7 +613,7 @@ export default function SaisonPage({
               <div className="modal-upload-simple">
                 <label className="modal-upload-simple__button" htmlFor="course-gpx">
                   <span className="modal-upload-simple__icon">+</span>
-                  <span className="modal-upload-simple__text">Télécharger un fichier GPX pour la course</span>
+                  <span className="modal-upload-simple__text">Télécharger un fichier GPX pour le parcours</span>
                 </label>
                 <input
                   id="course-gpx"
@@ -563,7 +625,7 @@ export default function SaisonPage({
               </div>
               <div className="modal-field">
                 <label htmlFor="course-name">
-                  Nom de la course<span className="modal-field__required">*</span>
+                  Nom du parcours<span className="modal-field__required">*</span>
                 </label>
                 <input
                   id="course-name"
@@ -572,6 +634,17 @@ export default function SaisonPage({
                   placeholder="UTMB"
                   ref={courseNameRef}
                 />
+              </div>
+              <div className="modal-field">
+                <label className="modal-field__checkbox-label">
+                  <input
+                    ref={coursePublishRef}
+                    type="checkbox"
+                    className="modal-input"
+                  />
+                  <span>Publier (visible par tous)</span>
+                </label>
+                <p className="modal-field__hint">Si coché, votre parcours sera visible par tous les utilisateurs.</p>
               </div>
               <div className="modal-field modal-field--hidden" aria-hidden="true">
                 <label htmlFor="course-strava-route">
@@ -589,7 +662,7 @@ export default function SaisonPage({
                 </p>
               </div>
               <p className="modal-footnote">
-                En créant une course tu accepte{' '}
+                En créant un parcours tu acceptes{' '}
                 <span className="modal-footnote__link">la charte d’utilisation de communauté.</span>
               </p>
               <div className="modal-actions">

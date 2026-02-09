@@ -41,6 +41,8 @@ export type CourseRow = {
   /** Heure de départ (HH:mm) imposée par l'organisation */
   start_time: string | null
   strava_route_id: string | null
+  created_by_user_id: string | null
+  is_published: boolean
   strava_segments: string | Array<{
     id: number
     name: string

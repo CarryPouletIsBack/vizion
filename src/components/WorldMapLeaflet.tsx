@@ -293,7 +293,7 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect, coursesF
                       <p className="course-card__stats">
                         {tag.course?.distance_km != null && tag.course?.elevation_gain != null
                           ? `${Math.round(tag.course.distance_km)} km – ${Math.round(tag.course.elevation_gain)} D+`
-                          : 'Course'}
+                          : 'Parcours'}
                       </p>
                     </div>
                   </div>
@@ -304,7 +304,7 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect, coursesF
                       </p>
                     </div>
                     <div className="course-card__footer-right">
-                      <p>Début de la course</p>
+                      <p>Début du parcours</p>
                       <p className="course-card__countdown">À venir</p>
                     </div>
                   </footer>

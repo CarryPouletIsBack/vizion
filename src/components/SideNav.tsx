@@ -29,7 +29,7 @@ export default function SideNav({ activeItem = 'saison', onNavigate }: SideNavPr
         type="button"
         onClick={() => onNavigate?.('courses')}
       >
-        Courses
+        Parcours
       </button>
     </nav>
   )
