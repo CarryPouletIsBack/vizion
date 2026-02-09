@@ -299,21 +299,30 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
         {/* Contenu masqué */}
       </div>
 
-      {/* Lieu, météo, heure + compte/connexion : affichés pour tous, groupés à droite */}
+      {/* Lieu, météo, heure + compte/connexion : affichés pour tous, groupés à droite (toujours visible sur mobile) */}
       <div className="saison-topbar__actions">
-        {locationWeather && (
-          <div className="saison-topbar__weather" aria-label={`Météo : ${locationWeather.city}, ${Math.round(locationWeather.tempC)}°C, ${currentTime}`}>
-            <span className="saison-topbar__weather-icon">
-              {locationWeather.iconType === 'sun' && <FiSun />}
-              {locationWeather.iconType === 'cloud' && <FiCloud />}
-              {locationWeather.iconType === 'rain' && <FiCloudRain />}
-              {locationWeather.iconType === 'moon' && <FiMoon />}
-            </span>
-            <span className="saison-topbar__weather-text">
-              {locationWeather.city} · {Math.round(locationWeather.tempC)}° · {currentTime}
-            </span>
-          </div>
-        )}
+        <div
+          className="saison-topbar__weather"
+          aria-label={locationWeather ? `Météo : ${locationWeather.city}, ${Math.round(locationWeather.tempC)}°C, ${currentTime}` : `Météo · ${currentTime}`}
+        >
+          <span className="saison-topbar__weather-icon">
+            {locationWeather ? (
+              <>
+                {locationWeather.iconType === 'sun' && <FiSun />}
+                {locationWeather.iconType === 'cloud' && <FiCloud />}
+                {locationWeather.iconType === 'rain' && <FiCloudRain />}
+                {locationWeather.iconType === 'moon' && <FiMoon />}
+              </>
+            ) : (
+              <FiSun aria-hidden />
+            )}
+          </span>
+          <span className="saison-topbar__weather-text">
+            {locationWeather
+              ? `${locationWeather.city} · ${Math.round(locationWeather.tempC)}° · ${currentTime}`
+              : `— · ${currentTime}`}
+          </span>
+        </div>
         {user === 'loading' ? null : user ? (
         <button
           className="saison-topbar__user-trigger"

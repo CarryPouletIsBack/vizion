@@ -637,20 +637,21 @@ function App() {
     const elevationGainRounded = payload.elevationGain != null
       ? Number(payload.elevationGain.toFixed(2))
       : null
+    const updatePayload: Record<string, unknown> = {
+      name: cleanName,
+      image_url: imageUrl ?? undefined,
+      gpx_name: payload.gpxName ?? undefined,
+      gpx_svg: payload.gpxSvg ?? undefined,
+      distance_km: payload.distanceKm ?? undefined,
+      elevation_gain: elevationGainRounded ?? undefined,
+      profile: payload.profile ? JSON.stringify(payload.profile) : undefined,
+      start_coordinates: payload.startCoordinates ?? undefined,
+    }
+    if ('date' in payload) updatePayload.date = payload.date ?? null
+    if ('startTime' in payload) updatePayload.start_time = payload.startTime ?? null
     const { error } = await supabase
       .from('courses')
-      .update({
-        name: cleanName,
-        image_url: imageUrl ?? undefined,
-        gpx_name: payload.gpxName ?? undefined,
-        gpx_svg: payload.gpxSvg ?? undefined,
-        distance_km: payload.distanceKm ?? undefined,
-        elevation_gain: elevationGainRounded ?? undefined,
-        profile: payload.profile ? JSON.stringify(payload.profile) : undefined,
-        start_coordinates: payload.startCoordinates ?? undefined,
-        date: payload.date ?? undefined,
-        start_time: payload.startTime ?? undefined,
-      })
+      .update(updatePayload)
       .eq('id', courseId)
     if (error) {
       console.error('Erreur lors de la mise à jour de la course:', error)

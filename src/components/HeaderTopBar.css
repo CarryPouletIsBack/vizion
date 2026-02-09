@@ -277,6 +277,19 @@
     margin-left: auto;
   }
 
+  .saison-topbar__weather {
+    flex-shrink: 0;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .saison-topbar__weather-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 140px;
+  }
+
   .saison-topbar__user {
     gap: var(--spacing-4, 8px);
     padding: var(--spacing-2, 4px) var(--spacing-4, 8px);

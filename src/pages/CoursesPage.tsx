@@ -70,8 +70,8 @@ type CoursesPageProps = {
       elevationGain?: number
       profile?: Array<[number, number]>
       startCoordinates?: [number, number]
-      date?: string
-      startTime?: string
+      date?: string | null
+      startTime?: string | null
     }
   ) => void
   onDeleteCourse?: (courseId: string) => void
@@ -559,8 +559,8 @@ export default function CoursesPage({
       alert('Veuillez entrer un nom de course valide')
       return
     }
-    const dateVal = editDateRef.current?.value?.trim()
-    const timeVal = editTimeRef.current?.value?.trim()
+    const dateVal = (editDateRef.current?.value ?? '').trim()
+    const timeVal = (editTimeRef.current?.value ?? '').trim()
     let imageUrl: string | undefined = editingCourse.imageUrl
     const imageFile = editImageRef.current?.files?.[0]
     if (imageFile) imageUrl = URL.createObjectURL(imageFile)
@@ -591,8 +591,8 @@ export default function CoursesPage({
       ...(elevationGain != null && { elevationGain }),
       ...(profile && profile.length > 0 && { profile }),
       ...(startCoordinates && { startCoordinates }),
-      ...(dateVal && { date: dateVal }),
-      ...(timeVal && { startTime: timeVal }),
+      date: dateVal || null,
+      startTime: timeVal || null,
     }
     setEditingCourse(null)
     try {
