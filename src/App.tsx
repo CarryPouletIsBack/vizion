@@ -653,15 +653,10 @@ function App() {
     if (import.meta.env.DEV) {
       console.log('[App] handleUpdateCourse payload:', { courseId, date: updatePayload.date, start_time: updatePayload.start_time })
     }
-    const { data: updatedRow, error } = await supabase
+    const { error } = await supabase
       .from('courses')
       .update(updatePayload)
       .eq('id', courseId)
-      .select('id, date, start_time')
-      .single()
-    if (import.meta.env.DEV && updatedRow) {
-      console.log('[App] Ligne mise à jour (retour Supabase):', updatedRow)
-    }
     if (error) {
       console.error('Erreur lors de la mise à jour de la course:', error)
       const msg = error.message || ''
