@@ -637,7 +637,7 @@ function App() {
     const elevationGainRounded = payload.elevationGain != null
       ? Number(payload.elevationGain.toFixed(2))
       : null
-    const updatePayload: Record<string, unknown> = {
+    const updatePayload = {
       name: cleanName,
       image_url: imageUrl ?? undefined,
       gpx_name: payload.gpxName ?? undefined,
@@ -646,16 +646,24 @@ function App() {
       elevation_gain: elevationGainRounded ?? undefined,
       profile: payload.profile ? JSON.stringify(payload.profile) : undefined,
       start_coordinates: payload.startCoordinates ?? undefined,
+      date: payload.date ?? null,
+      start_time: payload.startTime ?? null,
     }
-    if ('date' in payload) updatePayload.date = payload.date ?? null
-    if ('startTime' in payload) updatePayload.start_time = payload.startTime ?? null
+    if (import.meta.env.DEV) {
+      console.log('[App] handleUpdateCourse payload envoyé à Supabase:', { courseId, date: updatePayload.date, start_time: updatePayload.start_time })
+    }
     const { error } = await supabase
       .from('courses')
       .update(updatePayload)
       .eq('id', courseId)
     if (error) {
       console.error('Erreur lors de la mise à jour de la course:', error)
-      alert('Erreur lors de la mise à jour de la course')
+      const msg = error.message || ''
+      if (msg.includes('date') || msg.includes('start_time') || msg.includes('column') || msg.includes('does not exist')) {
+        alert('Erreur mise à jour (date/heure). Vérifiez que la migration Supabase a été exécutée : voir supabase/migrations/20250209000000_add_course_date_start_time.sql')
+      } else {
+        alert('Erreur lors de la mise à jour de la course')
+      }
       return
     }
     const loadedEvents = await loadEventsFromSupabase()

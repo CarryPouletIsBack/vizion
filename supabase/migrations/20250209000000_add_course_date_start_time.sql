@@ -1,5 +1,6 @@
 -- Ajout des colonnes date et start_time à la table courses (pour départ officiel et simulation).
--- À exécuter une fois dans l'éditeur SQL Supabase (Dashboard > SQL Editor) ou via Supabase CLI.
+-- IMPORTANT : exécuter ce script une fois sur chaque projet Supabase (dev + prod).
+-- Dans le Dashboard Supabase : SQL Editor > New query > coller le script > Run.
 
 ALTER TABLE courses ADD COLUMN IF NOT EXISTS date text;
 ALTER TABLE courses ADD COLUMN IF NOT EXISTS start_time text;
