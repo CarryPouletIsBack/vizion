@@ -66,7 +66,7 @@ export default defineConfig({
 
               res.setHeader('Content-Type', 'application/json')
               res.end(JSON.stringify({ svg: svgContent, profile }))
-            } catch (error) {
+            } catch {
               res.statusCode = 500
               res.end('GPX conversion failed')
             }
@@ -172,7 +172,7 @@ export default defineConfig({
                     athlete: tokenData.athlete,
                   })
                 )
-              } catch (error) {
+              } catch {
                 res.statusCode = 500
                 res.setHeader('Content-Type', 'application/json')
                 res.end(JSON.stringify({ error: 'Token exchange failed' }))
@@ -515,7 +515,7 @@ export default defineConfig({
               res.setHeader('Content-Type', 'application/json')
               res.setHeader('Access-Control-Allow-Origin', '*')
               res.end(fileContent)
-            } catch (error) {
+            } catch {
               res.statusCode = 404
               res.end('File not found')
             }

@@ -37,7 +37,7 @@ export function estimateRunnerPerformance(
 
   // Calculer l'estimation point par point
   const estimatedProfile: Array<[number, number]> = []
-  let cumulativeTime = 0 // Temps cumulé en heures
+  let cumulativeTime = 0 // Réservé pour usage futur (estimation temps par segment)
   let previousDistance = 0
   let previousElevation = profile[0] ? profile[0][1] : 0
 
@@ -57,9 +57,10 @@ export function estimateRunnerPerformance(
       : 1 + Math.abs(segmentElevation / segmentDistance) * 0.02 // Légère accélération en descente
 
     const adjustedPace = avgPaceKmPerH * elevationFactor
-    const segmentTime = segmentDistance / adjustedPace // Temps en heures
-
+    const segmentTime = segmentDistance / adjustedPace
     cumulativeTime += segmentTime
+    void cumulativeTime
+    // segmentTime = segmentDistance / adjustedPace (non utilisé pour l’instant)
 
     // L'élévation estimée reste la même (on suit le profil)
     // Mais on pourrait ajuster si le coureur ne peut pas monter aussi haut

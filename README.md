@@ -25,10 +25,10 @@ L'application sera accessible sur `http://localhost:5173`
 
 ### 🗺️ Navigation et Interface
 
-- **Écran Saison** : Globe WebGL plein écran (côtes en lignes, mers transparentes) ; fond fixe sous la sidebar et le header ; globe **interactif** (rotation, zoom) sur cette page uniquement ; référence de positionnement pour toutes les pages (titres, padding, sidebar 200px, main 224px)
+- **Écran Saison (Accueil)** : Globe WebGL plein écran (côtes en lignes, mers transparentes) ; fond fixe sous la sidebar et le header ; globe **interactif** (rotation, zoom) sur cette page uniquement ; sidebar sticky avec fond semi-transparent (backdrop-filter) harmonisée sur toutes les pages
 - **Écran Événements** : Tableau avec filtres (Highcharts DataGrid)
-- **Écran Courses** : Grille de cartes de courses avec statistiques
-- **Écran Single Course** : Détails complets d'une course (GPX pleine largeur, profil, analyse) ; **météo et heure avec icônes** (lieu, soleil, horloge, vent — ex. Saint-Pierre · 24° · 01h15 (+3h) · Vent NNE 12 km/h) ; **vent sur le tracé** (grille de flèches Highcharts Vector + pastille) ; **segments numérotés** sur le tracé (étiquettes au-dessus/en dessous pour ne pas superposer) ; **segment actif** mis en évidence sur la page Segment ; **pluie** (gouttes sur les secteurs où il a plu) ; cartes alignées sur le style `course-card` (fond `--color-card-bg`, bordure, backdrop-filter)
+- **Écran Parcours** : Grille de cartes de parcours avec statistiques ; sections « Parcours de la communauté » et « Mes parcours en cours »
+- **Écran Single Parcours** : Détails complets d'un parcours (GPX pleine largeur, profil, analyse) ; bouton « Choisir le parcours » pour ajouter à Mes parcours ; **météo et heure avec icônes** (lieu, soleil, horloge, vent) ; **vent sur le tracé** (grille de flèches Highcharts Vector + pastille) ; **segments numérotés** sur le tracé ; **segment actif** mis en évidence ; **pluie** (gouttes sur les secteurs où il a plu)
 - **Compte utilisateur** : Accès via **icône utilisateur** dans le header (connexion / création de compte en modale ; une fois connecté, clic sur l’icône → page Mon compte) ; lien « Mon compte » retiré de la sidebar
 
 ### 📁 Compte Trackali et import .fit
@@ -174,10 +174,10 @@ trackali-app/
 │   │   ├── SingleCourseElevationChart.tsx
 │   │   └── ...
 │   ├── pages/            # Pages principales
-│   │   ├── SaisonPage.tsx
+│   │   ├── SaisonPage.tsx       # Accueil (globe)
 │   │   ├── EventsPage.tsx
-│   │   ├── CoursesPage.tsx
-│   │   └── SingleCoursePage.tsx
+│   │   ├── CoursesPage.tsx      # Parcours
+│   │   └── SingleCoursePage.tsx # Détail parcours
 │   ├── lib/              # Logique métier
 │   │   ├── courseAnalysis.ts      # Moteur d'analyse
 │   │   ├── svgZoneSegmenter.ts    # Segments numérotés GPX, zoom segment, vue 3D
@@ -187,6 +187,7 @@ trackali-app/
 │   │   ├── fitMetricsMerge.ts     # Fusion métriques Strava + .fit (5 sorties longues)
 │   │   ├── userFitActivities.ts   # CRUD activités .fit (Supabase)
 │   │   ├── parseFitFile.ts        # Parsing .fit → résumé (distance, D+, durée)
+│   │   ├── userCourseSelections.ts # CRUD parcours choisis (Mes parcours)
 │   │   └── ...
 │   ├── types/            # Types TypeScript
 │   │   └── strava.ts
@@ -194,15 +195,17 @@ trackali-app/
 │   │   └── grandRaidStats.ts
 │   └── hooks/            # Hooks React personnalisés
 │       ├── useStravaMetrics.ts
-│       └── useGpxHoverMarker.ts
+│       ├── useGpxHoverMarker.ts
+│       └── useMyParcoursButton.ts  # État « Choisir le parcours » / « Dans Mes parcours »
 ```
 
 ## Persistance des Données (Supabase)
 
-- **Tables** : `events`, `courses`, `user_fit_activities` (activités .fit par utilisateur)
+- **Tables** : `events`, `courses` (colonnes `created_by_user_id`, `is_published`), `user_course_selections` (parcours choisis par l'utilisateur), `user_fit_activities` (activités .fit par utilisateur)
 - **Auth** : Compte Trackali (email/mot de passe) ; pas de table `users` dédiée, auth via Supabase Auth
 - **Chargement automatique** des events/courses au démarrage
 - **user_fit_activities** : `user_id`, `file_name`, `summary` (JSON), `imported_at` ; RLS par `auth.uid()`
+- **user_course_selections** : association utilisateur ↔ parcours choisi ; RLS par `auth.uid()`
 - **Stockage** : Images et SVG en base64 dans la base
 - **Row Level Security (RLS)** : Accès sécurisé par utilisateur
 
@@ -298,7 +301,8 @@ Variables d'environnement Vercel :
 - L'analyse est basée sur les 6-12 dernières semaines d'activités Strava
 - **Cartes** : Fond commun `--color-card-bg` (noir 30 %) dans `tokens.css` ; style de référence = `.course-card` (bordure, backdrop-filter, border-radius)
 - **Scrollbar** : Style global (index.css) aligné sur le portfolio (WebKit + Firefox, fin, arrondi, semi-transparent)
-- **Note temporaire** : La fonctionnalité "Événements" est masquée dans la navigation. Les courses sont indépendantes pour le moment.
+- **Terminologie** : Parcours (plutôt que « courses ») dans la navigation et l’interface. Les parcours peuvent être créés (option « Publier ») ou choisis (« Mes parcours en cours »).
+- **Note temporaire** : La fonctionnalité « Événements » est masquée dans la navigation.
 - **Heure de la course** : Affichée côté client à partir de l’offset fuseau renvoyé par `/api/timezone` ; pour La Réunion, l’API force `Indian/Reunion` (UTC+4) en prod pour éviter les écarts liés à l’environnement.
 
 ## Déploiement

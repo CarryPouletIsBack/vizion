@@ -266,7 +266,7 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
               })
             }
           }
-        } catch (error) {
+        } catch {
           // Ignorer les erreurs
         }
       }
@@ -368,23 +368,13 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
         initialMode={loginModalMode}
         onClose={() => setIsLoginModalOpen(false)}
         onLogin={async (email, password) => {
-          try {
-            await signIn(email, password)
-            setIsLoginModalOpen(false)
-            // L'utilisateur sera mis à jour via onAuthStateChange
-          } catch (error) {
-            throw error
-          }
+          await signIn(email, password)
+          setIsLoginModalOpen(false)
         }}
         onSignup={async (email, password) => {
-          try {
-            await signUp(email, password)
-            setIsLoginModalOpen(false)
-            alert('Compte créé avec succès ! Vérifiez votre email pour confirmer votre compte.')
-            // L'utilisateur sera mis à jour via onAuthStateChange après confirmation email
-          } catch (error) {
-            throw error
-          }
+          await signUp(email, password)
+          setIsLoginModalOpen(false)
+          alert('Compte créé avec succès ! Vérifiez votre email pour confirmer votre compte.')
         }}
         onStravaConnect={handleStravaConnect}
       />

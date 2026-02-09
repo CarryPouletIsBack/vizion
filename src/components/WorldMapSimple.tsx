@@ -64,8 +64,7 @@ const WorldMapSimple = memo(function WorldMapSimple({ onCourseSelect }: WorldMap
 
     // Obtenir les dimensions du SVG
     const svgRect = svgElement.getBoundingClientRect()
-    const containerRect = mapContainerRef.current.getBoundingClientRect()
-    
+
     // Coordonnées du clic dans le SVG (relatives au viewport)
     const clickX = event.clientX - svgRect.left
     const clickY = event.clientY - svgRect.top

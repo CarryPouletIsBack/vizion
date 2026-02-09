@@ -415,7 +415,9 @@ export default function SingleCoursePage({
       const next = { ...prev, [actionText]: !prev[actionText] }
       try {
         localStorage.setItem(preparationStorageKey, JSON.stringify(next))
-      } catch {}
+      } catch {
+        // Ignorer si localStorage indisponible (mode privé, quota dépassé)
+      }
       return next
     })
   }
@@ -1026,7 +1028,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                   <>
                     <div
                       className="single-course-course__gpx-svg"
-                      dangerouslySetInnerHTML={{ __html: (segmentedSvg || gpxSvg || '').replace('<svg', '<svg id=\"gpx-inline-svg\"') }}
+                      dangerouslySetInnerHTML={{ __html: (segmentedSvg || gpxSvg || '').replace('<svg', '<svg id="gpx-inline-svg"') }}
                     />
                     <WindBadge windDir={windDir} windSpeedKmh={windSpeedKmh} />
                     {(() => {
@@ -1339,7 +1341,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                           <div className="single-course-course__gpx-map">
                             <div
                               className="single-course-course__gpx-svg"
-                              dangerouslySetInnerHTML={{ __html: segmentZoomedSvg.replace('<svg', '<svg id=\"gpx-inline-svg\"') }}
+                              dangerouslySetInnerHTML={{ __html: segmentZoomedSvg.replace('<svg', '<svg id="gpx-inline-svg"') }}
                             />
                             {(() => {
                               const viewBox = parseViewBox(segmentZoomedSvg)
@@ -1917,7 +1919,11 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                         onClick={() => {
                           if (!courseData) return
                           const key = `${AI_CONTENT_CACHE_PREFIX}${courseId}_${courseData.distanceKm}_${courseData.elevationGain}_${effectiveFitTop5.length}_${fitSignature}`
-                          try { localStorage.removeItem(key) } catch {}
+                          try {
+                            localStorage.removeItem(key)
+                          } catch {
+                            // Ignorer si localStorage indisponible
+                          }
                           setAiContent(null)
                           setAiContentLoading(true)
                           setAiContentError(null)
@@ -1956,7 +1962,11 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                                   projectionIfFollows: data.projectionIfFollows ?? '',
                                   segmentIntro: data.segmentIntro,
                                 })
-                                try { localStorage.setItem(key, JSON.stringify({ generatedAt: Date.now(), content: { summary: data.summary, coachVerdict: data.coachVerdict, stateSublabel: data.stateSublabel, next4WeeksSummary: data.next4WeeksSummary, immediateActions: data.immediateActions, secondaryActions: data.secondaryActions, projectionIfContinues: data.projectionIfContinues, projectionIfFollows: data.projectionIfFollows, segmentIntro: data.segmentIntro } })) } catch {}
+                                try {
+                                  localStorage.setItem(key, JSON.stringify({ generatedAt: Date.now(), content: { summary: data.summary, coachVerdict: data.coachVerdict, stateSublabel: data.stateSublabel, next4WeeksSummary: data.next4WeeksSummary, immediateActions: data.immediateActions, secondaryActions: data.secondaryActions, projectionIfContinues: data.projectionIfContinues, projectionIfFollows: data.projectionIfFollows, segmentIntro: data.segmentIntro } }))
+                                } catch {
+                                  // Ignorer si localStorage indisponible
+                                }
                               }
                             })
                             .catch((err) => { setAiContentError(err?.message ?? 'Erreur réseau'); setAiContent(null) })

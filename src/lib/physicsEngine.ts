@@ -199,7 +199,7 @@ export function simulerCourse(
     }
 
     const facteurPente = getFacteurPente(pente)
-    let vitesseActuelle = vitesseBaseMS * facteurPente
+    const vitesseActuelle = vitesseBaseMS * facteurPente
 
     const conditions = getConditionsMeteo(currentTime, weatherData)
 

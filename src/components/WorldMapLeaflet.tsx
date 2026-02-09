@@ -4,10 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, GeoJSON } from 'react-l
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-import franceFlag from '../assets/0d2a1183d2a0d185452acf52145cc62ece475c35.png'
-import madagascarFlag from '../assets/368baee8720e10132672b44dafc4f6648780c5e9.png'
 import reunionFlag from '../assets/5375c6ef182ea756eeb23fb723865d5c353eb10b.png'
-import grandRaidLogo from '../assets/da2a1ce5e69564e56a29b5912fd151a8f515e136.png'
 import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import { supabase, type CourseRow } from '../lib/supabase'
 import './WorldMapLeaflet.css'
@@ -186,7 +183,7 @@ const WorldMapLeaflet = memo(function WorldMapLeaflet({ onCourseSelect, coursesF
     setMapZoom(6)
   }
 
-  const handleMapClick = (lat: number, lng: number) => {
+  const handleMapClick = (_lat: number, _lng: number) => {
     // Le zoom est géré par MapClickHandler
   }
 
