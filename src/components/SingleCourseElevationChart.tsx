@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import Highcharts from 'highcharts'
 
 import './SingleCourseElevationChart.css'
@@ -28,16 +28,17 @@ type SingleCourseElevationChartProps = {
 
 export default function SingleCourseElevationChart({ data, metrics }: SingleCourseElevationChartProps) {
   const ref = useRef<HTMLDivElement | null>(null)
-  
-  // S'assurer que data est un tableau valide
-  const isValidData = Array.isArray(data) && data.length > 1
-  const seriesData = isValidData ? data.map(([x, y]) => [x, y]) : sampleData.map(([x, y]) => [x, y])
-  
-  // Calculer la ligne estimée du coureur
-  const runnerEstimateData: Array<[number, number]> = isValidData && metrics
-    ? estimateRunnerElevationLine(seriesData as Array<[number, number]>, metrics)
-    : []
-  
+
+  const seriesData = useMemo(() => {
+    const isValid = Array.isArray(data) && data.length > 1
+    return isValid ? data.map(([x, y]) => [x, y]) : sampleData.map(([x, y]) => [x, y])
+  }, [data])
+
+  const runnerEstimateData = useMemo((): Array<[number, number]> => {
+    if (!(Array.isArray(seriesData) && seriesData.length > 1) || !metrics) return []
+    return estimateRunnerElevationLine(seriesData as Array<[number, number]>, metrics)
+  }, [seriesData, metrics])
+
   const allYValues = [
     ...seriesData.map((p) => p[1]),
     ...(runnerEstimateData.length > 0 ? runnerEstimateData.map((p) => p[1]) : []),

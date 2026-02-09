@@ -1125,13 +1125,13 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                   )}
                 </div>
               )}
+            </div>
+
+            {/* Colonne droite Description : profil D+ en haut puis cartes segment */}
+            <div className="single-course-right">
               <div className="single-course-course__card">
                 <SingleCourseElevationChart data={profileData} metrics={metrics} />
               </div>
-            </div>
-
-            {/* Colonne droite Description : cartes segment avec elevation chart */}
-            <div className="single-course-right">
               <div className="single-course-segment-cards">
                 {segmentBoundsList.map((seg) => {
                   const segmentProfile = getSegmentProfile(seg.startKm, seg.endKm)

@@ -6,7 +6,7 @@ import { redirectToStravaAuth } from '../lib/stravaAuth'
 import { getCurrentUser, signOut, updateProfile } from '../lib/auth'
 import { getUserFitActivities, saveUserFitActivity, deleteUserFitActivity, type UserFitActivityRow } from '../lib/userFitActivities'
 import { parseFitFile } from '../lib/parseFitFile'
-import Skeleton, { SkeletonLines } from '../components/Skeleton'
+import Skeleton from '../components/Skeleton'
 
 type UserAccountPageProps = {
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
