@@ -205,6 +205,7 @@ export default function CoursesPage({
     profile?: Array<[number, number]>
     date?: string
     startTime?: string
+    startCoordinates?: [number, number]
   } | null>(null)
   const [favorites, setFavorites] = useState<Set<string>>(() => {
     try {
@@ -227,6 +228,7 @@ export default function CoursesPage({
     profile?: Array<[number, number]>
     date?: string
     startTime?: string
+    startCoordinates?: [number, number]
   }>>([])
   
   // Charger les courses directement depuis Supabase si elles ne sont pas dans les events (fallback pour RLS)

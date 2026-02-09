@@ -237,7 +237,6 @@ export default function SingleCoursePage({
     currentStep === 'segment' && selectedSegment != null ? selectedSegment.startKm : undefined
   useGpxHoverMarker('gpx-inline-svg', maxDistance, segmentStartKm)
   const [weatherTemp, setWeatherTemp] = useState<number | null>(null)
-  const [rainLast24h, setRainLast24h] = useState<boolean | null>(null)
   /** Météo complète de la région du circuit (pour message pluie/boue). undefined = pas encore chargé. */
   const [circuitWeather, setCircuitWeather] = useState<Awaited<ReturnType<typeof getWeather>> | undefined>(undefined)
   const [windSpeedKmh, setWindSpeedKmh] = useState<number | null>(null)
@@ -406,7 +405,6 @@ export default function SingleCoursePage({
   useEffect(() => {
     if (!regionCoords || regionCoords.length < 2) {
       setWeatherTemp(null)
-      setRainLast24h(null)
       setCircuitWeather(undefined)
       setWindSpeedKmh(null)
       setWindDir(null)
@@ -426,7 +424,6 @@ export default function SingleCoursePage({
       .then(([weather, city, tz]) => {
         if (cancelled) return
         setWeatherTemp(weather?.tempC ?? null)
-        setRainLast24h(weather?.rainLast24h ?? true)
         setCircuitWeather(weather ?? null)
         const hasRealWind = weather?.windDir != null || weather?.windSpeedKmh != null
         setWindSpeedKmh(weather?.windSpeedKmh ?? (hasRealWind ? null : 12))
@@ -438,7 +435,6 @@ export default function SingleCoursePage({
       .catch(() => {
         if (!cancelled) {
           setWeatherTemp(null)
-          setRainLast24h(true)
           setCircuitWeather(null)
           setWindSpeedKmh(12)
           setWindDir('NNE')
