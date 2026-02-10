@@ -534,7 +534,7 @@ function App() {
       : null
 
     const user = await getCurrentUser()
-    const { error, data } = await supabase.from('courses').insert({
+    const { error } = await supabase.from('courses').insert({
       event_id: eventIdToUse,
       name: cleanName,
       created_by_user_id: user?.id ?? null,
