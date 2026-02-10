@@ -38,19 +38,23 @@
   align-items: flex-start;
 }
 
-/* Référence : single-course-side (page single parcours) */
+/* Référence : single-course-side (page single parcours) — desktop : largeur au contenu, pas toute la colonne */
 .saison-side {
   position: sticky;
   top: calc(var(--topbar-height, 56px) + var(--spacing-8, 16px));
-  width: max-content;
-  max-width: 200px;
+  width: auto;
+  max-width: 100%;
   flex-shrink: 0;
   z-index: 90;
   padding-bottom: var(--spacing-8, 16px);
   transition: var(--transition-smooth);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 
 .saison-side .side-nav {
+  width: max-content;
   padding: var(--spacing-6, 12px) var(--spacing-8, 16px);
   border-radius: var(--spacing-4, 8px);
   background: rgba(11, 14, 17, 0.6);
@@ -80,7 +84,7 @@
   font-family: 'Cabin', sans-serif;
   font-size: var(--font-h2-size, 40px);
   line-height: var(--font-h2-line-height, 1.2);
-  color: var(--color-accent, #bfc900);
+  color: var(--color-text-primary, #e5e7eb);
   letter-spacing: 0.12em;
   margin: 0 0 var(--spacing-4, 8px);
 }
@@ -92,6 +96,7 @@
   color: var(--color-text-primary);
 }
 
+/* Carte d’action (alignée sur single-course-segment-card / design system) */
 .info-card {
   display: flex;
   align-items: flex-start;
@@ -102,10 +107,17 @@
   border-radius: var(--spacing-4, 8px);
   border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
   background: var(--color-card-bg);
+  backdrop-filter: blur(100px);
+  -webkit-backdrop-filter: blur(100px);
   color: var(--color-text-primary, #e5e7eb);
   cursor: pointer;
   transition: var(--transition-base);
   text-align: left;
+}
+
+.info-card:hover {
+  border-color: var(--color-accent, #bfc900);
+  background: rgba(191, 201, 0, 0.06);
 }
 
 .info-card__title {
@@ -114,6 +126,7 @@
   font-weight: 300;
   margin: 0 0 var(--spacing-2, 4px);
   text-align: left;
+  color: var(--color-text-primary, #e5e7eb);
 }
 
 .info-card__subtitle {
@@ -121,11 +134,14 @@
   line-height: var(--font-body-sm-line-height, 1.5);
   margin: 0;
   text-align: left;
+  color: var(--color-text-secondary, #9ca3af);
 }
 
 .info-card__chevron {
   font-size: var(--font-size-2xl, 24px);
   line-height: var(--line-height-tight, 1.2);
+  color: var(--color-text-secondary, #9ca3af);
+  flex-shrink: 0;
 }
 
 .info-card__chevron svg {
@@ -396,6 +412,7 @@
   line-height: var(--font-h3-line-height, 1.25);
   letter-spacing: var(--spacing-2, 4px);
   margin: 0 0 var(--spacing-2, 4px);
+  color: var(--color-text-primary, #e5e7eb);
 }
 
 .courses-subtitle {
@@ -557,6 +574,7 @@
     z-index: 90;
     display: flex;
     justify-content: center;
+    align-items: flex-start;
   }
 
   .side-nav {

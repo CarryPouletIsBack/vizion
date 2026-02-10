@@ -1,4 +1,6 @@
-# TRACKALI — Simulateur de préparation Trail (MVP)
+# Kaldera — Simulateur de préparation Trail (MVP)
+
+**Version : 0.1.0 (bêta)**
 
 Application React/Vite pour un simulateur de préparation trail basé sur l'analyse de courses, l'import GPX et l'intégration Strava. Le projet suit la maquette Figma et les règles de développement définies dans `DEV_RULES.md`.
 
@@ -269,7 +271,7 @@ Variables d'environnement Vercel :
 ### Redirect URIs
 
 - **Développement** : `http://localhost:5173/auth/strava/callback`
-- **Production** : `https://trackali-blush.vercel.app/auth/strava/callback`
+- **Production** : à configurer selon l’URL de déploiement (ex. `https://votre-app.vercel.app/auth/strava/callback`)
 
 ⚠️ La Redirect URI doit correspondre **exactement** à celle configurée dans Strava.
 
@@ -307,7 +309,7 @@ Variables d'environnement Vercel :
 
 ## Déploiement
 
-Le projet est déployé sur Vercel : [https://trackali-blush.vercel.app](https://trackali-blush.vercel.app)
+Le projet peut être déployé sur Vercel (ou tout hébergeur supportant Vite/React). Configurer les variables d’environnement en production ; ne jamais committer `.env` ni de clés réelles.
 
 ---
 

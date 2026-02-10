@@ -1,17 +1,27 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-// Configuration Supabase (variables d'environnement recommandées pour la prod)
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? 'https://bzltfvqzquqkvfnwcmmr.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? 'sb_publishable_uU3vmqDdKuULADE7bGzRow_aEsu4F2N'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? ''
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''
+/** True si VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY sont définis (évite d’appeler le client si non configuré). */
+export const supabaseConfigured = supabaseUrl.length > 0 && supabaseAnonKey.length > 0
+const configured = supabaseConfigured
 
-// Client Supabase avec gestion des erreurs CORS
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false, // Désactiver la détection automatique pour éviter les appels répétés
-  },
-})
+const MSG = 'Supabase non configuré : ajoutez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY dans votre fichier .env (voir .env.example).'
+
+function throwNotConfigured(): never {
+  throw new Error(MSG)
+}
+
+// Client Supabase — créé uniquement si URL et clé sont définis (sinon proxy qui throw à l’utilisation)
+export const supabase: SupabaseClient = configured
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    })
+  : (new Proxy({} as SupabaseClient, { get: () => throwNotConfigured }) as SupabaseClient)
 
 // Types pour les tables
 export type EventRow = {

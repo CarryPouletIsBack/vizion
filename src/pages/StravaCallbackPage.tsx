@@ -38,7 +38,6 @@ export default function StravaCallbackPage({ onAuthSuccess }: StravaCallbackPage
         // Échanger le code contre un token (via l'endpoint API Vercel)
         const { exchangeStravaCode } = await import('../lib/stravaAuth')
         const tokenData = await exchangeStravaCode(code)
-        console.log('Token Strava reçu:', tokenData)
 
         // TODO: Stocker le token dans Supabase (table users ou sessions)
         // Pour l'instant, on stocke juste dans localStorage (temporaire)

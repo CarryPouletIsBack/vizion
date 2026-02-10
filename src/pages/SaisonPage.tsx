@@ -205,13 +205,8 @@ export default function SaisonPage({
   }
 
   const handleCreateCourse = async () => {
-    console.log('🚀 Début création course')
     const name = courseNameRef.current?.value?.trim() || 'Sans titre'
-    console.log('📝 Nom:', name)
-    
-    // Vérifier que le nom n'est pas vide ou "Sans titre"
     if (!name || name.toLowerCase() === 'sans titre') {
-      console.warn('⚠️ Nom invalide, annulation')
       alert('Veuillez entrer un nom de parcours valide')
       return
     }
@@ -221,7 +216,6 @@ export default function SaisonPage({
     const stravaRouteUrl = courseStravaRouteRef.current?.value?.trim()
     const imageUrl = imageFile ? URL.createObjectURL(imageFile) : undefined
     const gpxName = gpxFile?.name
-    console.log('📁 Fichiers:', { image: !!imageFile, gpx: !!gpxFile, stravaUrl: !!stravaRouteUrl })
     
     let gpxSvg: string | undefined
     let distanceKm: number | undefined
@@ -242,7 +236,6 @@ export default function SaisonPage({
     let gpxBounds: { minLat: number; maxLat: number; minLon: number; maxLon: number } | undefined
     if (gpxFile) {
       try {
-        console.log('📊 Traitement GPX...')
         const gpxText = await gpxFile.text()
         const stats = parseGpxStats(gpxText)
         distanceKm = stats.distanceKm
@@ -253,22 +246,10 @@ export default function SaisonPage({
         startCoordinates = extractGpxStartCoordinates(gpxText) || undefined
         gpxBounds = getBoundsFromGpx(gpxText) ?? undefined
         
-        // Extraire les waypoints (points d'intérêt)
-        const waypoints = extractGpxWaypoints(gpxText)
-        
-        console.log('📊 Stats GPX:', { 
-          distanceKm, 
-          elevationGain, 
-          profilePoints: profile?.length, 
-          startCoordinates,
-          waypointsCount: waypoints.length,
-          waypoints: waypoints.slice(0, 5).map(w => ({ name: w.name, ele: w.ele, distance: w.extensions?.distance }))
-        })
-        
+        extractGpxWaypoints(gpxText)
         // Conversion GPX → SVG côté client (fonctionne en production)
         const rawSvg = gpxToSvg(gpxText)
         gpxSvg = sanitizeSvg(rawSvg)
-        console.log('✅ SVG généré:', !!gpxSvg)
       } catch (error) {
         console.error('❌ Erreur lors de la conversion GPX → SVG', error)
       }
@@ -276,10 +257,8 @@ export default function SaisonPage({
 
     // Extraire l'ID de route depuis l'URL Strava (optionnel, ne bloque pas la création)
     if (stravaRouteUrl) {
-      console.log('🔗 Récupération segments Strava et performances...')
       stravaRouteId = extractRouteIdFromUrl(stravaRouteUrl) || undefined
       if (stravaRouteId) {
-        console.log('🔗 Route ID extrait:', stravaRouteId)
         // Récupérer les segments depuis l'API Strava (non bloquant)
         try {
           // Récupérer le token depuis localStorage
@@ -297,8 +276,6 @@ export default function SaisonPage({
             if (segmentsResponse.ok) {
               const segmentsData = await segmentsResponse.json()
               stravaSegments = segmentsData.segments || undefined
-              console.log(`✅ Segments récupérés : ${stravaSegments?.length || 0}`)
-              
               // 2. Récupérer les performances du coureur sur cette route (pour améliorer l'analyse)
               try {
                 const performanceResponse = await fetch(`/api/strava/route-performance?route_id=${stravaRouteId}`, {
@@ -309,7 +286,6 @@ export default function SaisonPage({
                 
                 if (performanceResponse.ok) {
                   const performanceData = await performanceResponse.json()
-                  console.log(`📊 Performances récupérées : ${performanceData.activities_count} activités, ${performanceData.segment_performance?.length || 0} segments avec données`)
                   
                   // Enrichir les segments avec les performances
                   if (stravaSegments && performanceData.segment_performance) {
@@ -326,7 +302,6 @@ export default function SaisonPage({
                       }
                       return seg
                     })
-                    console.log(`✅ Segments enrichis avec performances`)
                   }
                 } else {
                   console.warn('⚠️ Impossible de récupérer les performances (non bloquant)')
@@ -367,14 +342,6 @@ export default function SaisonPage({
       ...(stravaSegments && stravaSegments.length > 0 && { stravaSegments }),
     }
     
-    console.log('💾 Données course à créer:', {
-      name,
-      hasImage: !!imageUrl,
-      hasGpx: !!gpxSvg,
-      hasStravaRoute: !!stravaRouteId,
-      hasSegments: !!stravaSegments,
-    })
-
     // Fermer la modale et naviguer
     setIsCreateModalOpen(false)
     setCreateModalView('select')
@@ -382,9 +349,7 @@ export default function SaisonPage({
 
     // Appeler la fonction de création (asynchrone)
     try {
-      console.log('📤 Appel onCreateCourse...')
       await onCreateCourse?.(courseData)
-      console.log('✅ onCreateCourse terminé')
     } catch (error) {
       console.error('❌ Erreur lors de l\'appel onCreateCourse:', error)
       alert('Erreur lors de la création du parcours. Vérifiez la console pour plus de détails.')
@@ -421,7 +386,7 @@ export default function SaisonPage({
               }}
             >
               <div>
-                <p className="info-card__title">Ajouter un événement ou un parcours</p>
+                <p className="info-card__title">Ajouter un parcours</p>
                 <p className="info-card__subtitle">Commencer dès à présent à vous préparez</p>
               </div>
               <span className="info-card__chevron" aria-hidden="true">
@@ -481,7 +446,7 @@ export default function SaisonPage({
           {createModalView === 'select' && (
             <div className="modal">
               <header className="modal__header">
-                <h2>Ajouter un événement ou un parcours</h2>
+                <h2>Ajouter un parcours</h2>
                 <button
                   type="button"
                   className="modal__close"
@@ -491,20 +456,7 @@ export default function SaisonPage({
                   <HiX />
                 </button>
               </header>
-              <p className="modal__subtitle">Description</p>
-              <button
-                className="modal-card"
-                type="button"
-                onClick={() => setCreateModalView('event')}
-              >
-                <div>
-                  <p className="modal-card__title">Créer un événement</p>
-                  <p className="modal-card__text">
-                    Un événement vous permet de regrouper plusieurs parcours.
-                  </p>
-                </div>
-                <span aria-hidden="true">›</span>
-              </button>
+              <p className="modal__subtitle">Importer votre GPX et commencer à vous préparer.</p>
               <button
                 className="modal-card"
                 type="button"
@@ -635,17 +587,6 @@ export default function SaisonPage({
                   ref={courseNameRef}
                 />
               </div>
-              <div className="modal-field">
-                <label className="modal-field__checkbox-label">
-                  <input
-                    ref={coursePublishRef}
-                    type="checkbox"
-                    className="modal-input"
-                  />
-                  <span>Publier (visible par tous)</span>
-                </label>
-                <p className="modal-field__hint">Si coché, votre parcours sera visible par tous les utilisateurs.</p>
-              </div>
               <div className="modal-field modal-field--hidden" aria-hidden="true">
                 <label htmlFor="course-strava-route">
                   URL Strava Route (optionnel)
@@ -660,6 +601,17 @@ export default function SaisonPage({
                 <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
                   Les segments critiques seront automatiquement analysés
                 </p>
+              </div>
+              <div className="modal-field">
+                <label className="modal-field__checkbox-label">
+                  <input
+                    ref={coursePublishRef}
+                    type="checkbox"
+                    className="modal-input"
+                  />
+                  <span>Publier (visible par tous)</span>
+                </label>
+                <p className="modal-field__hint">Si coché, votre parcours sera visible par tous les utilisateurs.</p>
               </div>
               <p className="modal-footnote">
                 En créant un parcours tu acceptes{' '}

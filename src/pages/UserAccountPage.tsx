@@ -615,9 +615,11 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
                             type="button"
                             className="user-account-connection__button user-account-connection__button--connect"
                             onClick={handleStravaConnect}
-                            disabled={isLoading}
+                            disabled
+                            title="Connexion Strava temporairement indisponible"
+                            aria-disabled="true"
                           >
-                            {isLoading ? 'Connexion...' : 'Se connecter'}
+                            Se connecter
                           </button>
                         )}
                       </div>

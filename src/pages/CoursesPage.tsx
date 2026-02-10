@@ -443,12 +443,8 @@ export default function CoursesPage({
   }
 
   const handleCreateCourse = async () => {
-    console.log('🚀 Début création course')
     const name = courseNameRef.current?.value?.trim() || 'Sans titre'
-    console.log('📝 Nom:', name)
-    
     if (!name || name.toLowerCase() === 'sans titre') {
-      console.warn('⚠️ Nom invalide, annulation')
       alert('Veuillez entrer un nom de parcours valide')
       return
     }
@@ -458,7 +454,6 @@ export default function CoursesPage({
     const stravaRouteUrl = courseStravaRouteRef.current?.value?.trim()
     const imageUrl = imageFile ? URL.createObjectURL(imageFile) : undefined
     const gpxName = gpxFile?.name
-    console.log('📁 Fichiers:', { image: !!imageFile, gpx: !!gpxFile, stravaUrl: !!stravaRouteUrl })
     
     let gpxSvg: string | undefined
     let distanceKm: number | undefined
@@ -478,7 +473,6 @@ export default function CoursesPage({
     let gpxBounds: { minLat: number; maxLat: number; minLon: number; maxLon: number } | undefined
     if (gpxFile) {
       try {
-        console.log('📊 Traitement GPX...')
         const gpxText = await gpxFile.text()
         const stats = parseGpxStats(gpxText)
         distanceKm = stats.distanceKm
@@ -488,29 +482,17 @@ export default function CoursesPage({
         startCoordinates = extractGpxStartCoordinates(gpxText) || undefined
         gpxBounds = getBoundsFromGpx(gpxText) ?? undefined
         
-        const waypoints = extractGpxWaypoints(gpxText)
-        
-        console.log('📊 Stats GPX:', { 
-          distanceKm, 
-          elevationGain, 
-          profilePoints: profile?.length, 
-          startCoordinates,
-          waypointsCount: waypoints.length,
-        })
-        
+        extractGpxWaypoints(gpxText)
         const rawSvg = gpxToSvg(gpxText)
         gpxSvg = sanitizeSvg(rawSvg)
-        console.log('✅ SVG généré:', !!gpxSvg)
       } catch (error) {
         console.error('❌ Erreur lors de la conversion GPX → SVG', error)
       }
     }
 
     if (stravaRouteUrl) {
-      console.log('🔗 Récupération segments Strava et performances...')
       stravaRouteId = extractRouteIdFromUrl(stravaRouteUrl) || undefined
       if (stravaRouteId) {
-        console.log('🔗 Route ID extrait:', stravaRouteId)
         try {
           const tokenData = localStorage.getItem('trackali:strava_token')
           if (tokenData) {
@@ -525,7 +507,6 @@ export default function CoursesPage({
             if (segmentsResponse.ok) {
               const segmentsData = await segmentsResponse.json()
               stravaSegments = segmentsData.segments || undefined
-              console.log(`✅ Segments récupérés : ${stravaSegments?.length || 0}`)
             } else {
               const errorText = await segmentsResponse.text()
               console.warn('⚠️ Impossible de récupérer les segments Strava:', errorText)
@@ -560,20 +541,10 @@ export default function CoursesPage({
       ...(stravaSegments && stravaSegments.length > 0 && { stravaSegments }),
     }
     
-    console.log('💾 Données course à créer:', {
-      name,
-      hasImage: !!imageUrl,
-      hasGpx: !!gpxSvg,
-      hasStravaRoute: !!stravaRouteId,
-      hasSegments: !!stravaSegments,
-    })
-
     setIsCreateModalOpen(false)
 
     try {
-      console.log('📤 Appel onCreateCourse...')
       await onCreateCourse?.(courseData)
-      console.log('✅ onCreateCourse terminé')
     } catch (error) {
       console.error('❌ Erreur lors de l\'appel onCreateCourse:', error)
       alert('Erreur lors de la création du parcours. Vérifiez la console pour plus de détails.')
@@ -1095,17 +1066,6 @@ export default function CoursesPage({
               />
             </div>
             <div className="modal-field">
-              <label className="modal-field__checkbox-label">
-                <input
-                  ref={coursePublishRef}
-                  type="checkbox"
-                  className="modal-input"
-                />
-                <span>Publier (visible par tous)</span>
-              </label>
-              <p className="modal-field__hint">Si coché, votre parcours sera visible par tous les utilisateurs.</p>
-            </div>
-            <div className="modal-field">
               <label htmlFor="course-date-page">Date du parcours</label>
               <input
                 id="course-date-page"
@@ -1142,6 +1102,17 @@ export default function CoursesPage({
               <p className="modal-field__hint">
                 Les segments critiques seront automatiquement analysés
               </p>
+            </div>
+            <div className="modal-field">
+              <label className="modal-field__checkbox-label">
+                <input
+                  ref={coursePublishRef}
+                  type="checkbox"
+                  className="modal-input"
+                />
+                <span>Publier (visible par tous)</span>
+              </label>
+              <p className="modal-field__hint">Si coché, votre parcours sera visible par tous les utilisateurs.</p>
             </div>
             <p className="modal-footnote">
               En créant un parcours tu acceptes{' '}

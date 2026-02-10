@@ -61,7 +61,7 @@
   font-size: var(--font-h3-size, 32px);
   line-height: var(--font-h3-line-height, 1.25);
   font-weight: 600;
-  color: var(--color-accent, #bfc900);
+  color: var(--color-text-primary, #e5e7eb);
   letter-spacing: 0.02em;
   overflow-wrap: break-word;
   max-width: 100%;

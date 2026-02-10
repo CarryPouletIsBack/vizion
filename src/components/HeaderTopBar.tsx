@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
-import { FiSun, FiCloud, FiCloudRain, FiMoon, FiUser } from 'react-icons/fi'
+import { FiSun, FiCloud, FiCloudRain, FiMoon, FiUser, FiThumbsUp, FiThumbsDown } from 'react-icons/fi'
+import { HiX } from 'react-icons/hi'
 
 import './HeaderTopBar.css'
 
-import logoVision from '../assets/c5c94aad0b681f3e62439f66f02703ba7c8b5826.svg'
+import logoKaldera from '../assets/logo-kaldera.svg'
+import { APP_VERSION } from '../config/version'
 import Skeleton from './Skeleton'
 import { redirectToStravaAuth } from '../lib/stravaAuth'
 import { getWeather, getCityFromCoords, weatherIconType, type WeatherIconType } from '../lib/xweather'
 import { signIn, signUp, onAuthStateChange, getCurrentUser } from '../lib/auth'
+import { supabaseConfigured } from '../lib/supabase'
 import LoginModal from './LoginModal'
 
 type HeaderTopBarProps = {
@@ -34,6 +37,7 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [loginModalMode, setLoginModalMode] = useState<'login' | 'signup' | 'forgot-password' | 'otp-expired'>('login')
   const [locationWeather, setLocationWeather] = useState<LocationWeather | null>(null)
+  const [isBetaModalOpen, setIsBetaModalOpen] = useState(false)
   const [currentTime, setCurrentTime] = useState<string>(() => {
     const d = new Date()
     return `${d.getHours().toString().padStart(2, '0')}h${d.getMinutes().toString().padStart(2, '0')}`
@@ -142,7 +146,6 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
   useEffect(() => {
     let mounted = true
 
-    // Charger l'utilisateur Supabase
     const loadSupabaseUser = async () => {
       try {
         const supabaseUser = await getCurrentUser()
@@ -198,9 +201,34 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
       }
     }
 
-    loadSupabaseUser()
+    if (supabaseConfigured) {
+      loadSupabaseUser()
+    } else {
+      // Sans Supabase : afficher l'utilisateur Strava si token présent
+      const tokenData = localStorage.getItem('trackali:strava_token')
+      if (tokenData) {
+        try {
+          const parsed = JSON.parse(tokenData)
+          const athlete = parsed?.athlete
+          if (athlete?.id) {
+            setUser({
+              id: String(athlete.id),
+              email: parsed.athlete?.email ?? '',
+              firstname: athlete.firstname,
+              lastname: athlete.lastname,
+              profile: athlete.profile ?? athlete.profile_medium ?? athlete.profile_large,
+            })
+          } else {
+            setUser(null)
+          }
+        } catch {
+          setUser(null)
+        }
+      } else {
+        setUser(null)
+      }
+    }
 
-    // Écouter les changements d'authentification Supabase
     const { data: { subscription } } = onAuthStateChange((supabaseUser) => {
       if (!mounted) return
 
@@ -275,7 +303,7 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
     window.addEventListener('storage', handleStorageChange)
     return () => {
       mounted = false
-      subscription.unsubscribe()
+      subscription?.unsubscribe?.()
       window.removeEventListener('storage', handleStorageChange)
     }
   }, []) // Retirer 'user' des dépendances pour éviter les boucles infinies
@@ -291,8 +319,18 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
 
   return (
     <header className="saison-topbar">
-      <div className="saison-topbar__logo" role="button" tabIndex={0} onClick={() => onNavigate?.('saison')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onNavigate?.('saison') }}>
-        <img src={logoVision} alt="Trackali" />
+      <div className="saison-topbar__brand">
+        <div className="saison-topbar__logo" role="button" tabIndex={0} onClick={() => onNavigate?.('saison')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onNavigate?.('saison') }}>
+          <img src={logoKaldera} alt="Kaldera" />
+        </div>
+        <button
+          type="button"
+          className="saison-topbar__beta-tag"
+          onClick={() => setIsBetaModalOpen(true)}
+          aria-label="À propos de la version bêta"
+        >
+          beta {APP_VERSION}
+        </button>
       </div>
 
       {/* Header race masqué pour le moment */}
@@ -378,6 +416,45 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
         }}
         onStravaConnect={handleStravaConnect}
       />
+
+      {isBetaModalOpen && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="beta-modal-title" onClick={() => setIsBetaModalOpen(false)}>
+          <div className="modal modal--form saison-topbar__beta-modal" onClick={(e) => e.stopPropagation()}>
+            <header className="modal__header modal__header--center">
+              <h2 id="beta-modal-title">Bienvenue sur la version bêta</h2>
+              <button
+                type="button"
+                className="modal__close"
+                onClick={() => setIsBetaModalOpen(false)}
+                aria-label="Fermer"
+              >
+                <HiX />
+              </button>
+            </header>
+            <div className="saison-topbar__beta-modal-body">
+              <p>
+                Cette version sert à recueillir vos retours, vos besoins et vos idées pour faire évoluer Kaldera.
+              </p>
+              <p>
+                Vous trouverez des icônes{' '}
+                <span className="saison-topbar__beta-modal-icons" aria-hidden>
+                  <FiThumbsUp className="saison-topbar__beta-modal-icon" />
+                  <FiThumbsDown className="saison-topbar__beta-modal-icon" />
+                </span>{' '}
+                à plusieurs endroits (parcours, descriptions, conseils, etc.). N’hésitez pas à nous faire part de vos retours, qu’ils soient positifs ou négatifs — ils nous aident à améliorer l’outil.
+              </p>
+              <p>
+                Merci de faire partie de l’aventure.
+              </p>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="modal-primary" onClick={() => setIsBetaModalOpen(false)}>
+                Compris
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   )
 }

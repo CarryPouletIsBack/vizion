@@ -1,0 +1,257 @@
+/**
+ * Bottom sheet de feedback Kaldera — style sombre, aligné sur ModalShared.
+ */
+
+.feedback-bottom-sheet-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(var(--spacing-4, 8px));
+  -webkit-backdrop-filter: blur(var(--spacing-4, 8px));
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  transition: var(--transition-smooth);
+  animation: feedback-overlay-in 0.25s ease-out;
+}
+
+@keyframes feedback-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.feedback-bottom-sheet {
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  background: var(--color-bg-primary, #0b0e11);
+  border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--spacing-8, 16px) var(--spacing-8, 16px) 0 0;
+  box-shadow: 0 var(--spacing-6, 12px) var(--spacing-20, 40px) rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  animation: feedback-sheet-in 0.3s ease-out;
+}
+
+@keyframes feedback-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.feedback-bottom-sheet__handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 2px;
+  margin: var(--spacing-4, 8px) auto 0;
+  flex-shrink: 0;
+}
+
+.feedback-bottom-sheet__inner {
+  padding: var(--spacing-6, 12px) var(--spacing-12, 24px) var(--spacing-12, 24px);
+  overflow-y: auto;
+}
+
+.feedback-bottom-sheet__header {
+  position: relative;
+  padding-right: calc(var(--spacing-12, 24px) + var(--spacing-8, 16px) + var(--spacing-12, 24px));
+  margin-bottom: var(--spacing-8, 16px);
+}
+
+.feedback-bottom-sheet__title {
+  margin: 0 0 var(--spacing-2, 4px);
+  font-family: var(--text-h3-font-family);
+  font-size: var(--text-h3-font-size);
+  line-height: var(--text-h3-line-height);
+  font-weight: 600;
+  color: var(--color-accent, #bfc900);
+  letter-spacing: 0.02em;
+}
+
+.feedback-bottom-sheet__subtitle {
+  margin: 0;
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
+  color: var(--color-text-muted, rgba(229, 231, 235, 0.72));
+}
+
+.feedback-bottom-sheet__close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary, #e5e7eb);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--spacing-4, 8px);
+  transition: var(--transition-base);
+}
+
+.feedback-bottom-sheet__close:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.feedback-bottom-sheet__close-icon {
+  width: var(--spacing-12, 24px);
+  height: var(--spacing-12, 24px);
+}
+
+.feedback-bottom-sheet__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-8, 16px);
+}
+
+.feedback-bottom-sheet__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4, 8px);
+}
+
+.feedback-bottom-sheet__label {
+  font-size: var(--font-body-sm-size, 14px);
+  font-weight: 500;
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.feedback-bottom-sheet__rating {
+  display: flex;
+  gap: var(--spacing-4, 8px);
+}
+
+.feedback-bottom-sheet__rating-btn {
+  flex: 1;
+  padding: var(--spacing-6, 12px) var(--spacing-8, 16px);
+  background: var(--color-bg-surface, #161b21);
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border-radius: var(--spacing-4, 8px);
+  color: var(--color-text-primary, #e5e7eb);
+  font-size: var(--font-body-size, 16px);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-base);
+  font-family: inherit;
+}
+
+.feedback-bottom-sheet__rating-btn:hover {
+  border-color: var(--color-accent, #bfc900);
+  background: rgba(191, 201, 0, 0.05);
+}
+
+.feedback-bottom-sheet__rating-btn--active {
+  border-color: var(--color-accent, #bfc900);
+  background: rgba(191, 201, 0, 0.12);
+  color: var(--color-accent, #bfc900);
+}
+
+.feedback-bottom-sheet__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3, 8px);
+}
+
+.feedback-bottom-sheet__tag {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-3, 6px) var(--spacing-5, 10px);
+  background: var(--color-bg-surface, #161b21);
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border-radius: 20px;
+  font-size: var(--font-size-sm, 12px);
+  color: var(--color-text-primary, #e5e7eb);
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.feedback-bottom-sheet__tag:hover {
+  border-color: var(--color-accent, #bfc900);
+}
+
+.feedback-bottom-sheet__tag--selected {
+  border-color: var(--color-accent, #bfc900);
+  background: rgba(191, 201, 0, 0.12);
+  color: var(--color-accent, #bfc900);
+}
+
+.feedback-bottom-sheet__tag-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.feedback-bottom-sheet__textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.feedback-bottom-sheet__error {
+  margin: 0;
+  font-size: var(--font-body-sm-size, 14px);
+  color: #ef4444;
+}
+
+.feedback-bottom-sheet__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-8, 16px);
+  margin-top: var(--spacing-4, 8px);
+}
+
+/* Référence taille : même padding, marge et taille de texte pour les deux boutons */
+.feedback-bottom-sheet__cancel {
+  padding: var(--spacing-5, 10px) var(--spacing-8, 16px);
+  background: transparent;
+  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border-radius: 20px;
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: 1.5;
+  color: var(--color-text-muted, rgba(229, 231, 235, 0.72));
+  cursor: pointer;
+  transition: var(--transition-base);
+  font-family: inherit;
+}
+
+.feedback-bottom-sheet__cancel:hover:not(:disabled) {
+  border-color: var(--color-accent, #bfc900);
+  color: var(--color-accent, #bfc900);
+}
+
+/* Envoyer : même gabarit qu'Annuler (padding, font-size), pas de min-width pour rester compact */
+.feedback-bottom-sheet__submit {
+  min-width: unset;
+  padding: var(--spacing-5, 10px) var(--spacing-8, 16px);
+  border-radius: 20px;
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+@media (max-width: 768px) {
+  .feedback-bottom-sheet {
+    max-width: 100%;
+  }
+
+  .feedback-bottom-sheet__inner {
+    padding-left: var(--spacing-8, 16px);
+    padding-right: var(--spacing-8, 16px);
+  }
+}

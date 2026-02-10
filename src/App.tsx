@@ -10,7 +10,7 @@ import SingleCoursePage from './pages/SingleCoursePage'
 import StravaCallbackPage from './pages/StravaCallbackPage'
 import UserAccountPage from './pages/UserAccountPage'
 import { getCurrentUser } from './lib/auth'
-import { supabase, type EventRow, type CourseRow } from './lib/supabase'
+import { supabase, supabaseConfigured, type EventRow, type CourseRow } from './lib/supabase'
 import { gpxToSvg, computeGpxStats, extractGpxStartCoordinates, getBoundsFromGpx, samplePointsAlongTrack, type GpxBounds } from './lib/gpxToSvg'
 
 type AppView = 'saison' | 'course' | 'events' | 'courses' | 'strava-callback' | 'account'
@@ -204,11 +204,6 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
       )
     }
 
-    console.log('[App] Courses chargées depuis Supabase:', {
-      coursesCount: coursesData?.length || 0,
-      eventsCount: eventsData.length,
-    })
-
     // Transformer les données Supabase en EventItem[]
     const eventsMap = new Map<string, EventItem>()
     eventsData.forEach((event: EventRow) => {
@@ -224,7 +219,6 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
 
     // Associer les courses à leurs events
     if (coursesData && coursesData.length > 0) {
-      console.log('[App] Association des courses aux events...')
       let coursesWithoutEvent = 0
       coursesData.forEach((course: CourseRow) => {
         const event = eventsMap.get(course.event_id)
@@ -302,11 +296,6 @@ async function loadEventsFromSupabase(): Promise<EventItem[]> {
       if (coursesWithoutEvent > 0) {
         console.warn(`[App] ${coursesWithoutEvent} course(s) sans event parent`)
       }
-      
-      console.log('[App] Résultat final:', {
-        eventsCount: eventsMap.size,
-        totalCourses: Array.from(eventsMap.values()).reduce((sum, e) => sum + e.courses.length, 0),
-      })
     } else {
       console.warn('[App] Aucune course chargée depuis Supabase')
     }
@@ -324,12 +313,13 @@ async function loadEventsFromLocal(): Promise<EventItem[]> {
     const base = typeof window !== 'undefined' ? window.location.origin : ''
     const res = await fetch(`${base}/data/localEventsAndCourses.json`)
     if (!res.ok) return prependExampleCourse([])
-    const data = (await res.json()) as EventItem[]
+    const text = await res.text()
+    // Éviter de parser du HTML (ex. 404 → index.html en dev)
+    if (text.trimStart().toLowerCase().startsWith('<!')) return prependExampleCourse([])
+    const data = JSON.parse(text) as EventItem[]
     if (!Array.isArray(data)) return prependExampleCourse([])
-    console.log('[App] Données locales chargées:', data.length, 'events')
     return prependExampleCourse(data)
-  } catch (e) {
-    console.warn('[App] Fichier local non disponible:', e)
+  } catch {
     return prependExampleCourse([])
   }
 }
@@ -426,14 +416,6 @@ function App() {
       type: 'climb' | 'descent' | 'flat'
     }>
   }) => {
-    console.log('📥 App.tsx handleCreateCourse appelé avec:', {
-      name: payload.name,
-      hasImage: !!payload.imageUrl,
-      hasGpx: !!payload.gpxSvg,
-      hasStravaRoute: !!payload.stravaRouteId,
-      hasSegments: !!payload.stravaSegments,
-    })
-
     const cleanName = payload.name.trim()
     if (!cleanName || cleanName.toLowerCase() === 'sans titre') {
       console.warn('⚠️ Nom invalide, annulation')
@@ -444,9 +426,7 @@ function App() {
     // Convertir les blob URLs en base64 si nécessaire
     let imageUrl = payload.imageUrl
     if (imageUrl && imageUrl.startsWith('blob:')) {
-      console.log('🖼️ Conversion image blob → base64...')
       imageUrl = await blobUrlToBase64(imageUrl)
-      console.log('✅ Image convertie:', !!imageUrl)
     }
 
     // Le SVG est déjà une string, pas besoin de conversion
@@ -465,7 +445,6 @@ function App() {
 
       if (existingEvent) {
         eventIdToUse = selectedEventId
-        console.log('✅ Utilisation de l\'événement sélectionné:', eventIdToUse)
       }
     }
 
@@ -479,13 +458,11 @@ function App() {
 
       if (existingEvent) {
         eventIdToUse = events[0].id
-        console.log('✅ Utilisation du premier événement de la liste:', eventIdToUse)
       }
     }
 
     // 3. Si toujours pas d'event valide, créer un nouvel événement
     if (!eventIdToUse) {
-      console.log('📝 Création d\'un nouvel événement...')
       const { data: newEvent, error: eventError } = await supabase
         .from('events')
         .insert({
@@ -510,7 +487,6 @@ function App() {
       }
 
       eventIdToUse = newEvent.id
-      console.log('✅ Nouvel événement créé avec ID:', eventIdToUse, 'Données complètes:', newEvent)
 
       // Vérifier immédiatement que l'event existe en base
       const { data: verifyEvent, error: verifyError } = await supabase
@@ -524,8 +500,6 @@ function App() {
         alert('Erreur: l\'événement a été créé mais n\'est pas accessible. Problème de permissions possible.')
         return
       }
-
-      console.log('✅ Vérification immédiate OK, event existe:', verifyEvent.id)
 
       // Recharger les events pour avoir le nouvel event dans la liste
       const loadedEvents = await loadEventsFromSupabase()
@@ -552,8 +526,6 @@ function App() {
       alert(`Erreur: l'événement sélectionné n'existe pas en base de données. Veuillez réessayer.`)
       return
     }
-
-    console.log('✅ Vérification finale OK, event_id valide:', eventIdToUse)
 
     // Insérer dans Supabase avec un event_id valide
     // Arrondir elevation_gain à 2 décimales
@@ -588,14 +560,11 @@ function App() {
       return
     }
 
-    console.log('✅ Course créée avec succès:', data)
-
     // Recharger les events depuis Supabase
     const loadedEvents = await loadEventsFromSupabase()
     setEvents(loadedEvents)
     setSelectedEventId(eventIdToUse)
     setView('courses')
-    console.log('✅ Events rechargés, total:', loadedEvents.length)
   }
 
   const handleSelectEvent = (eventId: string) => {
@@ -603,9 +572,7 @@ function App() {
     setView('courses')
   }
 
-  const handleEditEvent = (eventId: string) => {
-    // TODO: Implémenter l'édition d'un événement
-    console.log('Édition de l\'événement:', eventId)
+  const handleEditEvent = (_eventId: string) => {
     alert('Fonctionnalité d\'édition à venir')
   }
 
@@ -684,7 +651,6 @@ function App() {
     if (payload.startCoordinates != null) updatePayload.start_coordinates = payload.startCoordinates
     if (payload.gpxBounds != null) updatePayload.gpx_bounds = payload.gpxBounds
     if (import.meta.env.DEV) {
-      console.log('[App] handleUpdateCourse payload:', { courseId, date: updatePayload.date, start_time: updatePayload.start_time })
     }
     const { error } = await supabase
       .from('courses')
@@ -705,7 +671,6 @@ function App() {
   }
 
   const handleNavigate = (nextView: AppView) => {
-    console.log('[App] handleNavigate appelé avec:', nextView)
     // Scroll immédiat vers le haut avant de changer de vue pour éviter le sursaut
     window.scrollTo({ top: 0, behavior: 'instant' })
     // Utiliser requestAnimationFrame pour s'assurer que le scroll est terminé avant le changement de vue
@@ -742,27 +707,29 @@ function App() {
     }
   }, [selectedCourseId])
 
-  // Charger les events : priorité au fichier local si VITE_USE_LOCAL_COURSES=true, sinon Supabase (avec fallback local si vide)
+  // Charger les events : priorité au fichier local si VITE_USE_LOCAL_COURSES=true ou Supabase non configuré, sinon Supabase (avec fallback local si vide)
   useEffect(() => {
     const useLocalFirst = import.meta.env.VITE_USE_LOCAL_COURSES === 'true'
     const loadEvents = async () => {
       setLoading(true)
-      if (useLocalFirst) {
-        const loadedEvents = await loadEventsFromLocal()
-        setEvents(loadedEvents)
-        setLoading(false)
-        return
-      }
-      let loadedEvents = await loadEventsFromSupabase()
-      if (loadedEvents.length === 0) {
-        const localEvents = await loadEventsFromLocal()
-        if (localEvents.length > 0) {
-          console.log('[App] Fallback: utilisation des données locales')
-          loadedEvents = localEvents
+      try {
+        if (useLocalFirst || !supabaseConfigured) {
+          const loadedEvents = await loadEventsFromLocal()
+          setEvents(loadedEvents)
+        } else {
+          let loadedEvents = await loadEventsFromSupabase()
+          if (loadedEvents.length === 0) {
+            const localEvents = await loadEventsFromLocal()
+            if (localEvents.length > 0) loadedEvents = localEvents
+          }
+          setEvents(loadedEvents)
         }
+      } catch (e) {
+        const localEvents = await loadEventsFromLocal()
+        setEvents(localEvents)
+      } finally {
+        setLoading(false)
       }
-      setEvents(loadedEvents)
-      setLoading(false)
     }
     loadEvents()
   }, [])

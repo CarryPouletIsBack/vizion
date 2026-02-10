@@ -385,7 +385,9 @@ export default function LoginModal({ isOpen, initialMode = 'login', onClose, onL
               type="button"
               className="login-modal__strava"
               onClick={onStravaConnect}
-              disabled={isLoading}
+              disabled
+              title="Connexion Strava temporairement indisponible"
+              aria-disabled="true"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7.01 13.828h4.169" />

@@ -1,9 +1,16 @@
-import { supabase } from './supabase'
+import { supabase, supabaseConfigured } from './supabase'
+
+function requireSupabase(): void {
+  if (!supabaseConfigured) {
+    throw new Error('Supabase non configuré : ajoutez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY dans .env')
+  }
+}
 
 /**
  * Créer un compte utilisateur avec email et mot de passe
  */
 export async function signUp(email: string, password: string) {
+  requireSupabase()
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -20,6 +27,7 @@ export async function signUp(email: string, password: string) {
  * Se connecter avec email et mot de passe
  */
 export async function signIn(email: string, password: string) {
+  requireSupabase()
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -36,6 +44,7 @@ export async function signIn(email: string, password: string) {
  * Se déconnecter
  */
 export async function signOut() {
+  if (!supabaseConfigured) return
   const { error } = await supabase.auth.signOut()
   if (error) {
     throw new Error(error.message)
@@ -46,6 +55,7 @@ export async function signOut() {
  * Obtenir l'utilisateur actuellement connecté
  */
 export async function getCurrentUser() {
+  if (!supabaseConfigured) return null
   try {
     const { data: { user }, error } = await supabase.auth.getUser()
     if (error) {
@@ -63,10 +73,15 @@ export async function getCurrentUser() {
   }
 }
 
+const noopSubscription = { unsubscribe: () => {} }
+
 /**
  * Écouter les changements d'authentification
  */
 export function onAuthStateChange(callback: (user: any) => void) {
+  if (!supabaseConfigured) {
+    return { data: { subscription: noopSubscription } }
+  }
   return supabase.auth.onAuthStateChange((_event, session) => {
     callback(session?.user ?? null)
   })
@@ -81,6 +96,7 @@ export async function updateProfile(data: {
   lastname?: string
   birthdate?: string
 }) {
+  requireSupabase()
   const updates: any = {}
 
   // Mettre à jour l'email si fourni
@@ -119,6 +135,7 @@ export async function updateProfile(data: {
  * Supprimer le compte utilisateur
  */
 export async function deleteAccount() {
+  requireSupabase()
   const { error } = await supabase.auth.admin.deleteUser(
     (await supabase.auth.getUser()).data.user?.id || ''
   )
@@ -134,6 +151,7 @@ export async function deleteAccount() {
  * Demander un email de réinitialisation de mot de passe
  */
 export async function resetPasswordForEmail(email: string) {
+  requireSupabase()
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/auth/reset-password`,
   })

@@ -114,8 +114,9 @@
   --color-text-primary: var(--dark-text-primary);
   --color-text-muted: var(--dark-text-muted);
   --color-text-secondary: var(--dark-text-secondary);
-  --color-accent: var(--figma-texte-titre);
-  --color-brand-primary: var(--figma-texte-titre);
+  /* Accent et marque : vert/jaune Kaldera (plus d’orange sur les titres / UI) */
+  --color-accent: #bfc900;
+  --color-brand-primary: #bfc900;
   --color-brand-secondary: var(--figma-background);
   /* Fond des cartes — référence course-card (noir 30 %) */
   --color-card-bg: rgba(0, 0, 0, 0.3);

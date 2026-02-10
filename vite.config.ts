@@ -412,6 +412,102 @@ export default defineConfig({
       },
     },
     {
+      name: 'feedback-api',
+      configureServer(server) {
+        server.middlewares.use('/api/feedback', async (req, res) => {
+          if (req.method !== 'POST') {
+            res.statusCode = 405
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: 'Method Not Allowed' }))
+            return
+          }
+          const chunks: Buffer[] = []
+          req.on('data', (chunk: Buffer) => chunks.push(chunk))
+          req.on('end', async () => {
+            try {
+              const body = JSON.parse(Buffer.concat(chunks).toString('utf8')) as {
+                userId?: string | null
+                courseId?: string | null
+                courseName?: string | null
+                activityId?: string | null
+                rating?: string
+                tags?: string[]
+                comment?: string | null
+              }
+              const rating = body?.rating
+              if (rating !== 'like' && rating !== 'dislike') {
+                res.statusCode = 400
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify({ error: 'Body invalide', message: 'Le champ "rating" doit être "like" ou "dislike".' }))
+                return
+              }
+              const tags = Array.isArray(body.tags) ? body.tags : []
+              const comment = typeof body.comment === 'string' ? body.comment : null
+              const userId = body.userId && typeof body.userId === 'string' ? body.userId : null
+              const courseId = body.courseId && typeof body.courseId === 'string' ? body.courseId : null
+              const activityId = body.activityId && typeof body.activityId === 'string' ? body.activityId : null
+              const courseName = body.courseName && typeof body.courseName === 'string' ? body.courseName : null
+
+              const supabaseUrl = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL ?? ''
+              const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY ?? ''
+              if (supabaseUrl && supabaseAnonKey) {
+                const { createClient } = await import('@supabase/supabase-js')
+                const supabase = createClient(supabaseUrl, supabaseAnonKey)
+                const { error } = await supabase.from('user_feedback').insert({
+                  user_id: userId || null,
+                  course_id: courseId || null,
+                  activity_id: activityId || null,
+                  rating,
+                  tags,
+                  comment: comment || null,
+                })
+                if (error) {
+                  console.error('[api/feedback] Supabase insert error:', error)
+                  res.statusCode = 500
+                  res.setHeader('Content-Type', 'application/json')
+                  res.end(JSON.stringify({ error: 'Erreur lors de l\'enregistrement du retour', message: error.message }))
+                  return
+                }
+              }
+
+              const discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL ?? ''
+              if (discordWebhookUrl) {
+                const emoji = rating === 'like' ? '👍' : '👎'
+                const ratingLabel = rating === 'like' ? 'Like' : 'Dislike'
+                const courseDisplay = courseName?.trim() || '_Parcours non précisé_'
+                const tagsLine = tags.length > 0 ? tags.join(', ') : '_Aucun tag_'
+                const commentValue = comment?.trim() ? `**${comment.trim()}**` : '_Pas de commentaire_'
+                const payload = {
+                  username: 'Kaldera Bot',
+                  embeds: [{
+                    title: `${emoji} ${ratingLabel} sur le parcours`,
+                    description: `**${courseDisplay}**`,
+                    color: rating === 'like' ? 0x22c55e : 0xef4444,
+                    fields: [
+                      { name: '🏷️ Tags', value: tagsLine, inline: false },
+                      { name: '💬 Message', value: commentValue, inline: false },
+                    ],
+                    footer: { text: 'Kaldera · Retour utilisateur' },
+                    timestamp: new Date().toISOString(),
+                  }],
+                }
+                const discordRes = await fetch(discordWebhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+                if (!discordRes.ok) console.warn('[api/feedback] Discord webhook failed:', discordRes.status)
+              }
+
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ success: true }))
+            } catch (err) {
+              console.error('[api/feedback]', err)
+              res.statusCode = 500
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ error: 'Erreur serveur', message: err instanceof Error ? err.message : 'Erreur inconnue' }))
+            }
+          })
+        })
+      },
+    },
+    {
       name: 'simulator-refine-api',
       configureServer(server) {
         server.middlewares.use('/api/simulator/refine', (req, res) => {

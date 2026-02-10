@@ -1,6 +1,7 @@
 import './SingleCoursePage.css'
 
 import { FiAlertCircle, FiZap, FiChevronRight, FiMapPin, FiSun, FiMoon, FiClock, FiWind, FiPlus, FiCheck } from 'react-icons/fi'
+import { HiX } from 'react-icons/hi'
 import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import HeaderTopBar from '../components/HeaderTopBar'
 import SideNav from '../components/SideNav'
@@ -24,6 +25,7 @@ import useStravaMetrics from '../hooks/useStravaMetrics'
 import { analyzeCourseReadiness } from '../lib/courseAnalysis'
 import { mergeMetricsWithFit, mergeMetricsWithFitList } from '../lib/fitMetricsMerge'
 import { getCurrentUser } from '../lib/auth'
+import { supabaseConfigured } from '../lib/supabase'
 import { getUserFitActivities, saveUserFitActivity, type UserFitActivityRow } from '../lib/userFitActivities'
 import { grandRaidStats } from '../data/grandRaidStats'
 import { getWeather, getCityFromCoords, formatWeatherCircuitMessage } from '../lib/xweather'
@@ -33,6 +35,8 @@ import { latLonToSvg, svgPointToLatLon, getBoundsFromSvg, type GpxBounds } from 
 import { fetchWaysForBounds, computeSurfaceBreakdownFromWays, type GpxSurfaceBreakdown, type OverpassWay } from '../lib/surfaceFromOsm'
 import Skeleton, { SkeletonLines } from '../components/Skeleton'
 import SegmentMapLeaflet from '../components/SegmentMapLeaflet'
+import FeedbackBottomSheet, { type FeedbackContext } from '../components/FeedbackBottomSheet'
+import FeedbackLikeDislike from '../components/FeedbackLikeDislike'
 
 const SegmentMapMapbox3D = lazy(() => import('../components/SegmentMapMapbox3D'))
 import { construireDateDepart, formatPreparationMonthsLabel } from '../lib/dateUtils'
@@ -232,8 +236,8 @@ export default function SingleCoursePage({
       document.title = name
       return () => { document.title = prev }
     }
-    document.title = 'trackali-app'
-    return () => { document.title = 'trackali-app' }
+    document.title = 'Kaldera'
+    return () => { document.title = 'Kaldera' }
   }, [selectedCourseId, selectedCourse?.id, selectedCourse?.name])
 
   const courseStats =
@@ -267,14 +271,30 @@ export default function SingleCoursePage({
   const gpxSvg = selectedCourse?.gpxSvg
   const maxDistance = profileData?.length ? profileData[profileData.length - 1][0] : undefined
   const { metrics } = useStravaMetrics()
-  /** Étape courante du guide (Description | Ma préparation) */
+  /** Étape courante du guide (Description | Segment | Ma préparation). Ma préparation n’est visible que si le parcours est choisi. */
   const [currentStep, setCurrentStep] = useState<CourseStepId>('description')
+  /** Étapes affichées dans le fil d’Ariane : Ma préparation n’apparaît que lorsque le parcours est dans « Mes parcours ». */
+  const visibleCourseSteps = useMemo(
+    () => (isInMyParcours ? COURSE_STEPS : COURSE_STEPS.filter((s) => s.id !== 'ma-preparation')),
+    [isInMyParcours]
+  )
   const [segmentedSvg, setSegmentedSvg] = useState<string | null>(null)
   const [selectedSegment, setSelectedSegment] = useState<SegmentClickPayload | null>(null)
   /** Vue 3D : carte Mapbox avec relief (nécessite VITE_MAPBOX_ACCESS_TOKEN) */
   const [segmentView3D, setSegmentView3D] = useState(false)
   /** Carte GPX en plein écran (sur mobile : map en paysage, le site reste en vertical) */
   const [gpxMapFullscreen, setGpxMapFullscreen] = useState(false)
+  /** Bottom sheet de feedback (retour utilisateur) */
+  const [feedbackSheetOpen, setFeedbackSheetOpen] = useState(false)
+  const [feedbackInitialRating, setFeedbackInitialRating] = useState<'like' | 'dislike' | null>(null)
+  const [feedbackContext, setFeedbackContext] = useState<FeedbackContext>('parcours')
+
+  // Revenir à Description si on affiche Ma préparation alors que le parcours n’est plus choisi
+  useEffect(() => {
+    if (!isInMyParcours && currentStep === 'ma-preparation') {
+      setCurrentStep('description')
+    }
+  }, [isInMyParcours, currentStep])
 
   useEffect(() => {
     if (!gpxMapFullscreen) return
@@ -319,6 +339,8 @@ export default function SingleCoursePage({
   /** Utilisateur connecté (Trackali) et ses activités .fit sauvegardées */
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [userFitActivities, setUserFitActivities] = useState<UserFitActivityRow[]>([])
+  /** Modale « Pour commencer votre préparation » (utilisateur non connecté) */
+  const [showPrepareLoginModal, setShowPrepareLoginModal] = useState(false)
   /** Contenu Ma préparation généré par l'IA (une fois, cache 7 jours) */
   const [aiContent, setAiContent] = useState<{
     summary: string
@@ -391,6 +413,11 @@ export default function SingleCoursePage({
   }
   useEffect(() => {
     let mounted = true
+    if (!supabaseConfigured) {
+      setCurrentUserId(null)
+      setUserFitActivities([])
+      return
+    }
     getCurrentUser().then((user) => {
       if (!mounted) return
       if (user?.id) {
@@ -960,7 +987,9 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                 <FiChevronRight className="single-course-breadcrumb__sep" aria-hidden />
               </li>
               <li className="single-course-breadcrumb__item single-course-breadcrumb__steps">
-                {COURSE_STEPS.map((step) => (
+                {visibleCourseSteps
+                  .filter((step) => step.id !== 'segment' || selectedSegment != null)
+                  .map((step) => (
                   <button
                     key={step.id}
                     type="button"
@@ -977,28 +1006,34 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
           </nav>
 
           <section className="single-course-heading">
-            <div>
-              <p className="single-course-title">{courseTitle}</p>
-              <button
-                type="button"
-                className="single-course-choose-btn"
-                onClick={isInMyParcours ? removeFromMyParcours : addToMyParcours}
-                disabled={myParcoursLoading}
-                aria-pressed={isInMyParcours}
-              >
-                {myParcoursLoading ? (
-                  <span>...</span>
-                ) : isInMyParcours ? (
-                  <>
-                    <FiCheck aria-hidden /> Dans mes parcours
-                  </>
-                ) : (
-                  <>
-                    <FiPlus aria-hidden /> Choisir le parcours
-                  </>
-                )}
-              </button>
-            </div>
+            <p className="single-course-title">{courseTitle}</p>
+            <button
+              type="button"
+              className="single-course-choose-btn"
+              onClick={() => {
+                if (isInMyParcours) {
+                  removeFromMyParcours()
+                } else if (currentUserId) {
+                  addToMyParcours()
+                } else {
+                  setShowPrepareLoginModal(true)
+                }
+              }}
+              disabled={myParcoursLoading}
+              aria-pressed={isInMyParcours}
+            >
+              {myParcoursLoading ? (
+                <span>...</span>
+              ) : isInMyParcours ? (
+                <>
+                  <FiCheck aria-hidden /> Dans mes parcours
+                </>
+              ) : (
+                <>
+                  <FiPlus aria-hidden /> Lancer ma préparation
+                </>
+              )}
+            </button>
           </section>
 
           {/* Contenu selon l'étape : première étape = Description (deux colonnes) */}
@@ -1022,6 +1057,13 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                     {formatWeatherCircuitMessage(circuitWeather)}
                   </p>
                 )}
+                <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FeedbackLikeDislike
+                    context="description"
+                    onOpenFeedback={(rating, ctx) => { setFeedbackInitialRating(rating); setFeedbackContext(ctx); setFeedbackSheetOpen(true) }}
+                    label="sur la description"
+                  />
+                </div>
               </div>
               <div className="single-course-course__gpx single-course-course__gpx--with-overlay">
                 {segmentedSvg || gpxSvg ? (
@@ -1091,6 +1133,13 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                   <p>{goodTimeParagraph.elite}</p>
                   <p>{goodTimeParagraph.average}</p>
                   <p>{goodTimeParagraph.cta}</p>
+                </div>
+                <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FeedbackLikeDislike
+                    context="bon-temps"
+                    onOpenFeedback={(rating, ctx) => { setFeedbackInitialRating(rating); setFeedbackContext(ctx); setFeedbackSheetOpen(true) }}
+                    label="sur les temps de référence"
+                  />
                 </div>
               </div>
               {courseId === 'example-grand-raid-course' && (
@@ -1197,7 +1246,8 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                       }}
                     >
                       <p className="single-course-segment-card__title">
-                        Segment {seg.segmentNumber}
+                        <span>Segment {seg.segmentNumber}</span>
+                        <FiChevronRight className="single-course-segment-card__chevron" aria-hidden />
                       </p>
                       <p className="single-course-segment-card__km">
                         {seg.startKm.toFixed(1)} – {seg.endKm.toFixed(1)} km
@@ -1450,6 +1500,13 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                                     ? `Sur ce secteur en descente, privilégiez la régularité et la prudence. Contrôlez votre vitesse pour éviter les chocs et les blessures, et gardez les jambes souples. Anticipez les changements de terrain et adaptez votre foulée. Une bonne descente préserve vos quadriceps pour la suite.`
                                     : `Sur ce secteur mixte, alternez course et marche selon la pente pour garder un effort constant. Gérez votre allure sur la longueur du segment et pensez à vous alimenter et vous hydrater. En restant régulier, vous préservez vos réserves pour les secteurs clés à venir.`}
                               </p>
+                              <div className="single-course-segment-page__advice-feedback" style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <FeedbackLikeDislike
+                                  context="conseil-passage"
+                                  onOpenFeedback={(rating, ctx) => { setFeedbackInitialRating(rating); setFeedbackContext(ctx); setFeedbackSheetOpen(true) }}
+                                  label="sur ce conseil"
+                                />
+                              </div>
                             </div>
                           </>
                         ) : null}
@@ -1637,8 +1694,15 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                     <div className="single-course-preparation__next-deadline">
                       <span className="single-course-preparation__next-deadline-label">Prochaine échéance (4 semaines)</span>
                       <span className="single-course-preparation__next-deadline-text">
-                        {aiContent?.next4WeeksSummary || `Vise ${analysis.next4WeeksGoals.volumeKm.min}–${analysis.next4WeeksGoals.volumeKm.max} km/sem, ${analysis.next4WeeksGoals.dPlus.min}–${analysis.next4WeeksGoals.dPlus.max} m D+/sem, ${analysis.next4WeeksGoals.frequency} sorties/sem, 1 sortie > ${analysis.next4WeeksGoals.longRunHours} h.`}
+                        {aiContent?.next4WeeksSummary || `Visez ${analysis.next4WeeksGoals.volumeKm.min}–${analysis.next4WeeksGoals.volumeKm.max} km/sem, ${analysis.next4WeeksGoals.dPlus.min}–${analysis.next4WeeksGoals.dPlus.max} m D+/sem, ${analysis.next4WeeksGoals.frequency} sorties/sem, 1 sortie > ${analysis.next4WeeksGoals.longRunHours} h.`}
                       </span>
+                      <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FeedbackLikeDislike
+                          context="prochaine-echeance"
+                          onOpenFeedback={(rating, ctx) => { setFeedbackInitialRating(rating); setFeedbackContext(ctx); setFeedbackSheetOpen(true) }}
+                          label="sur la prochaine échéance"
+                        />
+                      </div>
                     </div>
                   )}
                   {metricsForAnalysis && (
@@ -1738,6 +1802,13 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                           <p style={{ margin: 0, fontSize: '13px', lineHeight: '1.6', color: 'var(--color-text-primary, #e5e7eb)', fontStyle: 'italic' }}>
                             💬 <strong>Verdict du Coach :</strong> {aiContent?.coachVerdict ?? analysis.coachVerdict}
                           </p>
+                          <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <FeedbackLikeDislike
+                              context="verdict-coach"
+                              onOpenFeedback={(rating, ctx) => { setFeedbackInitialRating(rating); setFeedbackContext(ctx); setFeedbackSheetOpen(true) }}
+                              label="sur le verdict du coach"
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1765,8 +1836,15 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                             </li>
                           </ul>
                           <p style={{ marginTop: '12px', fontSize: '12px', color: 'var(--color-text-secondary, #9ca3af)', fontStyle: 'italic' }}>
-                            {aiContent?.next4WeeksSummary || `Si ces objectifs sont atteints, ton état de préparation passera de ${analysis.readiness === 'risk' ? '🔴 Risque' : analysis.readiness === 'needs_work' ? '🟠 À renforcer' : '🟢 Prêt'} à ${analysis.projection.ifFollowsGoals.m3 === 'ready' ? '🟢 Prêt' : analysis.projection.ifFollowsGoals.m3 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}.`}
+                            {aiContent?.next4WeeksSummary || `Si ces objectifs sont atteints, votre état de préparation passera de ${analysis.readiness === 'risk' ? '🔴 Risque' : analysis.readiness === 'needs_work' ? '🟠 À renforcer' : '🟢 Prêt'} à ${analysis.projection.ifFollowsGoals.m3 === 'ready' ? '🟢 Prêt' : analysis.projection.ifFollowsGoals.m3 === 'needs_work' ? '🟠 À renforcer' : '🔴 Risque'}.`}
                           </p>
+                          <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <FeedbackLikeDislike
+                              context="objectifs"
+                              onOpenFeedback={(rating, ctx) => { setFeedbackInitialRating(rating); setFeedbackContext(ctx); setFeedbackSheetOpen(true) }}
+                              label="sur les objectifs"
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1787,9 +1865,16 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                         <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                           <p style={{ fontSize: '12px', color: 'var(--color-text-secondary, #9ca3af)', marginBottom: '8px' }}>⏱️ Temps estimé de course</p>
                           <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-accent, #bfc900)' }}>{analysis.timeEstimate.rangeFormatted}</p>
-                          <p style={{ fontSize: '11px', color: 'var(--color-text-secondary, #9ca3af)', marginTop: '4px', fontStyle: 'italic' }}>Basé sur ton allure actuelle, le dénivelé et la distance (fourchette indicative)</p>
+                          <p style={{ fontSize: '11px', color: 'var(--color-text-secondary, #9ca3af)', marginTop: '4px', fontStyle: 'italic' }}>Basé sur votre allure actuelle, le dénivelé et la distance (fourchette indicative)</p>
                         </div>
                       )}
+                      <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FeedbackLikeDislike
+                          context="charge-regularite"
+                          onOpenFeedback={(rating, ctx) => { setFeedbackInitialRating(rating); setFeedbackContext(ctx); setFeedbackSheetOpen(true) }}
+                          label="sur charge et régularité"
+                        />
+                      </div>
                       {analysis.timeEstimate && (
                         <SimulationEngine
                           distanceKm={courseData.distanceKm}
@@ -1872,6 +1957,13 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                           </ul>
                         </div>
                       )}
+                      <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FeedbackLikeDislike
+                          context="ajustements"
+                          onOpenFeedback={(rating, ctx) => { setFeedbackInitialRating(rating); setFeedbackContext(ctx); setFeedbackSheetOpen(true) }}
+                          label="sur les ajustements recommandés"
+                        />
+                      </div>
                   </div>
                   {aiContentError && (
                     <p className="single-course-preparation__fit-error" role="alert" style={{ marginBottom: '12px' }}>
@@ -1887,7 +1979,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                     <p className="single-course-panel__title">🧠 PROJECTION</p>
                       <div style={{ marginTop: '12px' }}>
                         <div style={{ marginBottom: '16px' }}>
-                          <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '8px', fontWeight: 500 }}>Si tu continues ainsi</p>
+                          <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '8px', fontWeight: 500 }}>Si vous continuez ainsi</p>
                           {aiContent?.projectionIfContinues ? (
                             <p style={{ fontSize: '13px', lineHeight: 1.5 }}>{aiContent.projectionIfContinues}</p>
                           ) : (
@@ -1898,7 +1990,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                           )}
                         </div>
                         <div>
-                          <p style={{ fontSize: '12px', color: '#22c55e', marginBottom: '8px', fontWeight: 500 }}>Si tu suis les objectifs recommandés</p>
+                          <p style={{ fontSize: '12px', color: '#22c55e', marginBottom: '8px', fontWeight: 500 }}>Si vous suivez les objectifs recommandés</p>
                           {aiContent?.projectionIfFollows ? (
                             <p style={{ fontSize: '13px', lineHeight: 1.5 }}>{aiContent.projectionIfFollows}</p>
                           ) : (
@@ -1909,8 +2001,15 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                           )}
                         </div>
                       </div>
+                      <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FeedbackLikeDislike
+                          context="projection"
+                          onOpenFeedback={(rating, ctx) => { setFeedbackInitialRating(rating); setFeedbackContext(ctx); setFeedbackSheetOpen(true) }}
+                          label="sur la projection"
+                        />
+                      </div>
                     <p style={{ marginTop: '12px', fontSize: '11px', color: 'var(--color-text-secondary, #9ca3af)' }}>
-                      Textes générés par l&apos;IA à partir de tes .fit · mis à jour chaque semaine.
+                      Textes générés par l&apos;IA à partir de vos .fit · mis à jour chaque semaine.
                       {' '}
                       <button
                         type="button"
@@ -2014,6 +2113,62 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
           </section>
         </main>
       </div>
+
+      <FeedbackBottomSheet
+        isOpen={feedbackSheetOpen}
+        onClose={() => {
+          setFeedbackSheetOpen(false)
+          setFeedbackInitialRating(null)
+          setFeedbackContext('parcours')
+        }}
+        courseId={courseId || null}
+        courseName={courseTitle}
+        userId={currentUserId}
+        activityId={undefined}
+        initialRating={feedbackInitialRating}
+        context={feedbackContext}
+      />
+
+      {showPrepareLoginModal && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="prepare-login-modal-title" onClick={() => setShowPrepareLoginModal(false)}>
+          <div className="modal modal--form single-course__prepare-login-modal" onClick={(e) => e.stopPropagation()}>
+            <header className="modal__header modal__header--center">
+              <h2 id="prepare-login-modal-title">Pour commencer votre préparation</h2>
+              <button
+                type="button"
+                className="modal__close"
+                onClick={() => setShowPrepareLoginModal(false)}
+                aria-label="Fermer"
+              >
+                <HiX />
+              </button>
+            </header>
+            <div className="single-course__prepare-login-modal-body">
+              <p>
+                Créez un compte pour enregistrer ce parcours dans « Mes parcours » et accéder à tout le suivi : analyse de votre charge d’entraînement, conseils par segment, objectifs et projections.
+              </p>
+              <p>
+                Une fois connecté, vous pourrez importer vos fichiers .fit (Strava, Garmin, etc.) pour que Kaldera s’appuie sur vos sorties réelles et vous guide jusqu’au jour J.
+              </p>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="modal-back" onClick={() => setShowPrepareLoginModal(false)}>
+                Plus tard
+              </button>
+              <button
+                type="button"
+                className="modal-primary"
+                onClick={() => {
+                  setShowPrepareLoginModal(false)
+                  onNavigate?.('account')
+                }}
+              >
+                Créer un compte
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

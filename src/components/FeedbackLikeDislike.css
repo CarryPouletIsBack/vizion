@@ -1,0 +1,37 @@
+.feedback-like-dislike {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2, 4px);
+}
+
+.feedback-like-dislike__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text-muted, rgba(229, 231, 235, 0.72));
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.feedback-like-dislike__btn:hover {
+  color: var(--color-accent, #bfc900);
+}
+
+.feedback-like-dislike__btn--like:hover {
+  color: #22c55e;
+}
+
+.feedback-like-dislike__btn--dislike:hover {
+  color: #ef4444;
+}
+
+.feedback-like-dislike__icon {
+  width: 20px;
+  height: 20px;
+}

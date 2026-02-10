@@ -145,7 +145,6 @@ export default function EventsColumnFilteringChart({
             const rect = element.getBoundingClientRect()
             // Positionner le menu sous le bouton, centré
             setMenuOpen({ eventId, x: rect.left + rect.width / 2 - 60, y: rect.bottom + 4 })
-            console.log('Menu ouvert pour eventId:', eventId, 'Position:', rect.left + rect.width / 2 - 60, rect.bottom + 4)
           }
         }
         return true
@@ -211,7 +210,6 @@ export default function EventsColumnFilteringChart({
     const timeoutId = setTimeout(() => {
       if (containerRef.current) {
         const optionsElements = containerRef.current.querySelectorAll('.events-grid__options, .events-grid__options-wrapper')
-        console.log('Options elements trouvés:', optionsElements.length)
         optionsElements.forEach((element) => {
           const clickHandler = (e: Event) => {
             e.preventDefault()
