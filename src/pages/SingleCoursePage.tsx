@@ -28,7 +28,6 @@ import { supabaseConfigured } from '../lib/supabase'
 import { getUserFitActivities, saveUserFitActivity, type UserFitActivityRow } from '../lib/userFitActivities'
 import { grandRaidStats } from '../data/grandRaidStats'
 import { getWeather, getCityFromCoords, formatWeatherCircuitMessage } from '../lib/xweather'
-import { analyzeProfileZones } from '../lib/profileAnalysis'
 import { segmentSvgIntoNumberedSegments, addSvgTooltips, addSvgSegmentClickListeners, getSvgZoomedOnSegment, getSegmentPathPoints, type SegmentClickPayload } from '../lib/svgZoneSegmenter'
 import { latLonToSvg, svgPointToLatLon, getBoundsFromSvg, type GpxBounds } from '../lib/gpxToSvg'
 import { fetchWaysForBounds, computeSurfaceBreakdownFromWays, type GpxSurfaceBreakdown, type OverpassWay } from '../lib/surfaceFromOsm'
@@ -772,15 +771,6 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
     courseData,
     stravaSegments,
     useGrandRaidStats ? grandRaidStats : undefined
-  )
-
-  // Analyser les zones du profil (mémoïsé pour éviter re-renders en chaîne)
-  const profileZones = useMemo(
-    () =>
-      profileData && metrics
-        ? analyzeProfileZones(profileData, metrics, courseData.distanceKm, courseData.elevationGain)
-        : [],
-    [profileData, metrics, courseData.distanceKm, courseData.elevationGain]
   )
 
   // Réinitialiser le segment sélectionné quand on change de course
