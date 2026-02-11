@@ -74,8 +74,8 @@ export default function SaisonPage({
     return allCoursesFromEvents.filter((c) => c.name.toLowerCase().includes(term))
   }, [allCoursesFromEvents, searchTerm])
 
-  const [mySelectedCourseIds, setMySelectedCourseIds] = useState<Set<string>>(new Set())
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [, setMySelectedCourseIds] = useState<Set<string>>(new Set())
+  const [, setCurrentUserId] = useState<string | null>(null)
   const refreshMyParcours = useCallback(() => {
     Promise.all([getCurrentUser(), getMySelectedCourseIds()]).then(([user, ids]) => {
       setCurrentUserId(user?.id ?? null)

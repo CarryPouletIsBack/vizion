@@ -898,7 +898,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
     } else {
       setSegmentedSvg(gpxSvg || null)
     }
-  }, [gpxSvg, profileZones, profileData])
+  }, [gpxSvg, profileData])
 
   /** Paragraphe dynamique "Quel est un bon temps..." (style Track Titan, adapté trail) */
   const goodTimeParagraph = (() => {
@@ -1209,8 +1209,6 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
           {currentStep === 'segment' && (
             <section className="single-course-content" data-step="segment">
               {selectedSegment != null ? (() => {
-                const segStats = getSegmentStats(selectedSegment.startKm, selectedSegment.endKm)
-                const segmentProfile = getSegmentProfile(selectedSegment.startKm, selectedSegment.endKm)
                 const totalKm = maxDistance ?? selectedCourse?.distanceKm ?? 0
                 const baseSvg = segmentedSvg || gpxSvg || ''
                 const segmentZoomedSvg =
