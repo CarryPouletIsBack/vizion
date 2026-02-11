@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FiSun, FiCloud, FiCloudRain, FiMoon, FiUser, FiThumbsUp, FiThumbsDown } from 'react-icons/fi'
+import { FiSun, FiCloud, FiCloudRain, FiMoon, FiUser, FiThumbsUp, FiThumbsDown, FiMenu } from 'react-icons/fi'
 import { HiX } from 'react-icons/hi'
 
 import './HeaderTopBar.css'
@@ -13,8 +13,21 @@ import { signIn, signUp, onAuthStateChange, getCurrentUser } from '../lib/auth'
 import { supabaseConfigured } from '../lib/supabase'
 import LoginModal from './LoginModal'
 
+export type CourseWeatherForTopbar = {
+  city: string | null
+  temp: number | null
+  timeStr: string | null
+  windStr: string | null
+  /** Degrés pour la flèche vent (0 = N, 90 = E) — affichée dans le texte météo quand showWindArrow */
+  windDegrees?: number | null
+}
+
 type HeaderTopBarProps = {
   onNavigate?: (view: 'saison' | 'events' | 'courses' | 'course' | 'account') => void
+  /** Météo du parcours (région) : affichée dans saison-topbar__weather quand fournie */
+  courseWeather?: CourseWeatherForTopbar | null
+  /** Afficher la flèche vent dans saison-topbar__weather-text (ex. vue segment) */
+  showWindArrow?: boolean
 }
 
 type AppUser = {
@@ -31,13 +44,25 @@ type LocationWeather = {
   iconType: WeatherIconType
 }
 
-export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
+export default function HeaderTopBar({ onNavigate, courseWeather, showWindArrow }: HeaderTopBarProps) {
   const [user, setUser] = useState<AppUser | null | 'loading'>('loading') // 'loading' pour éviter le flash
   const [avatarError, setAvatarError] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [loginModalMode, setLoginModalMode] = useState<'login' | 'signup' | 'forgot-password' | 'otp-expired'>('login')
   const [locationWeather, setLocationWeather] = useState<LocationWeather | null>(null)
   const [isBetaModalOpen, setIsBetaModalOpen] = useState(false)
+  const [isBurgerMenuOpen, setIsBurgerMenuOpen] = useState(false)
+
+  // Désactiver le scroll du body quand le menu burger est ouvert
+  useEffect(() => {
+    if (isBurgerMenuOpen) {
+      const prev = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = prev
+      }
+    }
+  }, [isBurgerMenuOpen])
   const [currentTime, setCurrentTime] = useState<string>(() => {
     const d = new Date()
     return `${d.getHours().toString().padStart(2, '0')}h${d.getMinutes().toString().padStart(2, '0')}`
@@ -320,6 +345,94 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
   return (
     <header className="saison-topbar">
       <div className="saison-topbar__brand">
+        <button
+          type="button"
+          className="saison-topbar__burger"
+          onClick={() => setIsBurgerMenuOpen((o) => !o)}
+          aria-expanded={isBurgerMenuOpen}
+          aria-label={isBurgerMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+          aria-haspopup="true"
+        >
+          {isBurgerMenuOpen ? <HiX /> : <FiMenu />}
+        </button>
+        {isBurgerMenuOpen && (
+          <div className="saison-topbar__burger-overlay" role="dialog" aria-modal="true" aria-label="Menu de navigation">
+            <div
+              className="saison-topbar__burger-backdrop"
+              aria-hidden
+              onClick={() => setIsBurgerMenuOpen(false)}
+            />
+            <div className="saison-topbar__burger-menu" role="menu">
+              <button
+                type="button"
+                className="saison-topbar__burger-item"
+                role="menuitem"
+                onClick={() => {
+                  onNavigate?.('saison')
+                  setIsBurgerMenuOpen(false)
+                }}
+              >
+                Accueil
+              </button>
+              <button
+                type="button"
+                className="saison-topbar__burger-item"
+                role="menuitem"
+                onClick={() => {
+                  onNavigate?.('courses')
+                  setIsBurgerMenuOpen(false)
+                }}
+              >
+                Parcours
+              </button>
+              {user === 'loading' ? (
+                <span className="saison-topbar__burger-item saison-topbar__burger-item--skeleton" aria-hidden>
+                  <Skeleton width={200} height={44} borderRadius={8} />
+                </span>
+              ) : user ? (
+                <button
+                  type="button"
+                  className="saison-topbar__burger-item saison-topbar__burger-item--user"
+                  role="menuitem"
+                  onClick={() => {
+                    onNavigate?.('account')
+                    setIsBurgerMenuOpen(false)
+                  }}
+                  title="Mon compte"
+                  aria-label="Mon compte"
+                >
+                  {user.profile && !avatarError ? (
+                    <img
+                      src={user.profile}
+                      alt=""
+                      className="saison-topbar__burger-item-avatar"
+                      onError={() => setAvatarError(true)}
+                    />
+                  ) : (
+                    <FiUser className="saison-topbar__burger-item-icon" />
+                  )}
+                  <span>Mon compte</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="saison-topbar__burger-item"
+                  role="menuitem"
+                  onClick={() => {
+                    setLoginModalMode('login')
+                    setIsLoginModalOpen(true)
+                    setIsBurgerMenuOpen(false)
+                  }}
+                  title="Se connecter ou créer un compte"
+                  aria-label="Se connecter ou créer un compte"
+                >
+                  <FiUser className="saison-topbar__burger-item-icon" />
+                  <span>Se connecter</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         <div className="saison-topbar__logo" role="button" tabIndex={0} onClick={() => onNavigate?.('saison')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onNavigate?.('saison') }}>
           <img src={logoKaldera} alt="Kaldera" />
         </div>
@@ -338,14 +451,22 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
         {/* Contenu masqué */}
       </div>
 
-      {/* Lieu, météo, heure + compte/connexion : affichés pour tous, groupés à droite (toujours visible sur mobile) */}
+      {/* Météo à droite (parcours ou lieu par défaut) ; le bouton utilisateur est dans le menu burger */}
       <div className="saison-topbar__actions">
         <div
           className="saison-topbar__weather"
-          aria-label={locationWeather ? `Météo : ${locationWeather.city}, ${Math.round(locationWeather.tempC)}°C, ${currentTime}` : `Météo · ${currentTime}`}
+          aria-label={
+            courseWeather
+              ? [courseWeather.city, courseWeather.temp != null ? `${Math.round(courseWeather.temp)}°` : null, courseWeather.timeStr, courseWeather.windStr].filter(Boolean).join(', ')
+              : locationWeather
+                ? `Météo : ${locationWeather.city}, ${Math.round(locationWeather.tempC)}°C, ${currentTime}`
+                : `Météo · ${currentTime}`
+          }
         >
           <span className="saison-topbar__weather-icon">
-            {locationWeather ? (
+            {courseWeather ? (
+              <FiSun aria-hidden />
+            ) : locationWeather ? (
               <>
                 {locationWeather.iconType === 'sun' && <FiSun />}
                 {locationWeather.iconType === 'cloud' && <FiCloud />}
@@ -357,48 +478,30 @@ export default function HeaderTopBar({ onNavigate }: HeaderTopBarProps) {
             )}
           </span>
           <span className="saison-topbar__weather-text">
-            {locationWeather
-              ? `${locationWeather.city} · ${Math.round(locationWeather.tempC)}° · ${currentTime}`
-              : `— · ${currentTime}`}
+            {courseWeather
+              ? <>
+                  {[courseWeather.city ?? '—', courseWeather.temp != null ? `${Math.round(courseWeather.temp)}°` : null, courseWeather.timeStr].filter(Boolean).join(' · ')}
+                  {courseWeather.windStr && (
+                    <>
+                      {' · '}
+                      {showWindArrow && courseWeather.windDegrees != null ? (
+                        <span className="saison-topbar__weather-wind" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ transform: `rotate(${courseWeather.windDegrees}deg)`, flexShrink: 0 }} aria-hidden>
+                            <path d="M12 4v16M12 4l3 5H9l3-5z" />
+                          </svg>
+                          {courseWeather.windStr}
+                        </span>
+                      ) : (
+                        courseWeather.windStr
+                      )}
+                    </>
+                  )}
+                </>
+              : locationWeather
+                ? `${locationWeather.city} · ${Math.round(locationWeather.tempC)}° · ${currentTime}`
+                : `— · ${currentTime}`}
           </span>
         </div>
-        {user === 'loading' ? (
-        <span className="saison-topbar__user-trigger saison-topbar__user-trigger--skeleton" aria-hidden>
-          <Skeleton width={40} height={40} borderRadius="50%" />
-        </span>
-      ) : user ? (
-        <button
-          className="saison-topbar__user-trigger"
-          type="button"
-          onClick={() => onNavigate?.('account')}
-          title="Mon compte"
-          aria-label="Mon compte"
-        >
-          {user.profile && !avatarError ? (
-            <img
-              src={user.profile}
-              alt=""
-              className="saison-topbar__user-trigger-avatar"
-              onError={() => setAvatarError(true)}
-            />
-          ) : (
-            <FiUser />
-          )}
-        </button>
-      ) : (
-        <button
-          className="saison-topbar__user-trigger"
-          type="button"
-          onClick={() => {
-            setLoginModalMode('login')
-            setIsLoginModalOpen(true)
-          }}
-          title="Se connecter ou créer un compte"
-          aria-label="Se connecter ou créer un compte"
-        >
-          <FiUser />
-        </button>
-        )}
       </div>
 
       <LoginModal

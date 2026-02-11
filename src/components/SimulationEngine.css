@@ -1,6 +1,6 @@
 .simulation-engine {
   background: rgba(255, 255, 255, 0.03);
-  border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
+  border: var(--border-width, 1px) solid rgba(255, 255, 255, 0.1);
   border-radius: var(--spacing-6, 12px);
   padding: var(--spacing-10, 20px);
   margin-top: var(--spacing-10, 20px);
@@ -30,7 +30,7 @@
   margin-bottom: var(--spacing-12, 24px);
   padding: var(--spacing-6, 12px);
   background: rgba(191, 201, 0, 0.06);
-  border: 1px solid rgba(191, 201, 0, 0.25);
+  border: var(--border-width, 1px) solid rgba(191, 201, 0, 0.25);
   border-radius: var(--spacing-4, 8px);
 }
 
@@ -147,7 +147,7 @@
   flex: 1;
   min-width: 100px;
   padding: var(--spacing-4, 8px) var(--spacing-6, 12px);
-  border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.2);
+  border: var(--border-width, 1px) solid rgba(255, 255, 255, 0.2);
   border-radius: var(--spacing-2, 4px);
   background: rgba(255, 255, 255, 0.03);
   color: var(--color-text-primary, #e5e7eb);
@@ -174,7 +174,7 @@
   margin-top: var(--spacing-12, 24px);
   padding: var(--spacing-8, 16px);
   background: rgba(191, 201, 0, 0.1);
-  border: var(--spacing-1, 2px) solid rgba(191, 201, 0, 0.3);
+  border: var(--border-width, 1px) solid rgba(191, 201, 0, 0.3);
   border-radius: var(--spacing-4, 8px);
 }
 
@@ -204,7 +204,7 @@
 .simulation-engine__ai {
   margin-top: var(--spacing-10, 20px);
   padding-top: var(--spacing-8, 16px);
-  border-top: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.08);
+  border-top: var(--border-width, 1px) solid rgba(255, 255, 255, 0.08);
 }
 
 .simulation-engine__ai-trigger {
@@ -255,7 +255,7 @@
 .simulation-engine__barriers {
   margin-top: var(--spacing-12, 24px);
   padding-top: var(--spacing-12, 24px);
-  border-top: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
+  border-top: var(--border-width, 1px) solid rgba(255, 255, 255, 0.1);
 }
 
 .simulation-engine__barriers-title {
@@ -270,7 +270,7 @@
   margin-bottom: var(--spacing-8, 16px);
   padding: var(--spacing-6, 12px);
   background: rgba(255, 255, 255, 0.03);
-  border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
+  border: var(--border-width, 1px) solid rgba(255, 255, 255, 0.1);
   border-radius: var(--spacing-4, 8px);
   transition: var(--transition-base);
 }

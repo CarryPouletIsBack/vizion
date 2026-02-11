@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HiX } from 'react-icons/hi'
+import { FiChevronDown } from 'react-icons/fi'
 
 import './SaisonPage.css'
 
 import HeaderTopBar from '../components/HeaderTopBar'
-import SideNav from '../components/SideNav'
+import SearchBar from '../components/SearchBar'
 import { getCurrentUser } from '../lib/auth'
 import { getMySelectedCourseIds } from '../lib/userCourseSelections'
 import { gpxToSvg, extractGpxStartCoordinates, extractGpxWaypoints, getBoundsFromGpx } from '../lib/gpxToSvg'
@@ -48,9 +49,30 @@ export default function SaisonPage({
   onCreateEvent,
   onCreateCourse,
 }: SaisonPageProps) {
-  const allCoursesWithCoords = useMemo(() => {
-    return events.flatMap((ev) => ev.courses).filter((c): c is typeof c & { startCoordinates: [number, number] } => c.startCoordinates != null && c.startCoordinates.length === 2)
+  /** Toutes les courses chargées depuis Supabase (events) — affichées sous SAISON 2026 */
+  const allCoursesFromEvents = useMemo(() => {
+    return events.flatMap((ev) => ev.courses)
   }, [events])
+
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isSearchActive, setIsSearchActive] = useState(false)
+  const searchWrapRef = useRef<HTMLDivElement>(null)
+
+  type FilterKey = 'pays' | 'distance' | 'date'
+  const [openFilter, setOpenFilter] = useState<FilterKey | null>(null)
+  const filtersRef = useRef<HTMLDivElement>(null)
+  const [filterPays, setFilterPays] = useState<string>('Tous les pays')
+  const [filterDistance, setFilterDistance] = useState<string>('Toutes distances')
+  const [filterDate, setFilterDate] = useState<string>('Toutes dates')
+  const PAYS_OPTIONS = ['Tous les pays', 'France', 'Suisse', 'Italie', 'Espagne']
+  const DISTANCE_OPTIONS = ['Toutes distances', '< 20 km', '20–50 km', '50–100 km', '> 100 km']
+  const DATE_OPTIONS = ['Toutes dates', '2026', '2025', 'À venir']
+
+  const filteredCoursesForList = useMemo(() => {
+    if (!searchTerm.trim()) return allCoursesFromEvents
+    const term = searchTerm.toLowerCase().trim()
+    return allCoursesFromEvents.filter((c) => c.name.toLowerCase().includes(term))
+  }, [allCoursesFromEvents, searchTerm])
 
   const [mySelectedCourseIds, setMySelectedCourseIds] = useState<Set<string>>(new Set())
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
@@ -71,13 +93,38 @@ export default function SaisonPage({
     return () => window.removeEventListener('my-parcours-changed', handler)
   }, [refreshMyParcours])
 
-  const coursesWithCoords = useMemo(() => {
-    return allCoursesWithCoords.filter((c) => {
-      const createdBy = (c as { createdByUserId?: string | null }).createdByUserId
-      return createdBy === currentUserId || mySelectedCourseIds.has(c.id)
-    })
-  }, [allCoursesWithCoords, currentUserId, mySelectedCourseIds])
-  const coursesWithCoordsCount = coursesWithCoords.length
+  useEffect(() => {
+    if (!isSearchActive) return
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node
+      if (searchWrapRef.current && !searchWrapRef.current.contains(target)) {
+        setIsSearchActive(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside, { passive: true })
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [isSearchActive])
+
+  useEffect(() => {
+    if (openFilter === null) return
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node
+      if (filtersRef.current && !filtersRef.current.contains(target)) {
+        setOpenFilter(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside, { passive: true })
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [openFilter])
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [createModalView, setCreateModalView] = useState<CreateModalView>('select')
   const eventNameRef = useRef<HTMLInputElement | null>(null)
@@ -367,23 +414,176 @@ export default function SaisonPage({
       <HeaderTopBar onNavigate={onNavigate} />
 
       <div className="saison-body">
-        <aside className="saison-side">
-          <SideNav activeItem="saison" onNavigate={onNavigate} />
-        </aside>
-
         <main className="saison-main">
+          <div className="saison-search-and-filters">
+          <div className="saison-search-wrap" ref={searchWrapRef}>
+            <div className={`saison-search-bar-wrap ${isSearchActive ? 'saison-search-bar-wrap--active' : ''}`}>
+              <SearchBar
+                placeholder="Rechercher un parcours…"
+                value={searchTerm}
+                onChange={setSearchTerm}
+                onFocus={() => setIsSearchActive(true)}
+                aria-label="Rechercher un parcours"
+              />
+              {isSearchActive && (
+                <div className="saison-search-results">
+                  {filteredCoursesForList.length === 0 ? (
+                    <p className="saison-search-results__empty">Aucun parcours</p>
+                  ) : (
+                    <ul className="saison-search-results__list" role="list">
+                      {filteredCoursesForList.map((course) => (
+                        <li key={course.id}>
+                          <button
+                            type="button"
+                            className="saison-search-results__item"
+                            onClick={() => {
+                              _onCourseSelect?.(course.id)
+                              setIsSearchActive(false)
+                            }}
+                          >
+                            <span className="saison-search-results__item-gpx">
+                              {course.gpxSvg ? (
+                                <span className="saison-search-results__item-gpx-svg" dangerouslySetInnerHTML={{ __html: course.gpxSvg }} />
+                              ) : (
+                                <span className="saison-search-results__item-gpx-placeholder" aria-hidden />
+                              )}
+                            </span>
+                            <span className="saison-search-results__item-content">
+                              <span className="saison-search-results__item-title">{course.name}</span>
+                              {course.distanceKm != null && course.elevationGain != null && (
+                                <span className="saison-search-results__item-stats">
+                                  {course.distanceKm.toFixed(0)} km · {Math.round(course.elevationGain)} D+
+                                </span>
+                              )}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="saison-filters" ref={filtersRef}>
+            <div className="saison-filters__row">
+              <div className="saison-filter-dropdown">
+                <button
+                  type="button"
+                  className="saison-filter-dropdown-button"
+                  onClick={() => setOpenFilter(openFilter === 'pays' ? null : 'pays')}
+                  aria-expanded={openFilter === 'pays'}
+                  aria-haspopup="listbox"
+                  aria-label="Filtrer par pays"
+                >
+                  <span>{filterPays}</span>
+                  <FiChevronDown className="saison-filter-dropdown-icon" aria-hidden />
+                </button>
+                {openFilter === 'pays' && (
+                  <ul className="saison-filter-dropdown-menu" role="listbox">
+                    {PAYS_OPTIONS.map((opt) => (
+                      <li key={opt}>
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={filterPays === opt}
+                          className="saison-filter-dropdown-item"
+                          onClick={() => {
+                            setFilterPays(opt)
+                            setOpenFilter(null)
+                          }}
+                        >
+                          {opt}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="saison-filter-dropdown">
+                <button
+                  type="button"
+                  className="saison-filter-dropdown-button"
+                  onClick={() => setOpenFilter(openFilter === 'distance' ? null : 'distance')}
+                  aria-expanded={openFilter === 'distance'}
+                  aria-haspopup="listbox"
+                  aria-label="Filtrer par distance"
+                >
+                  <span>{filterDistance}</span>
+                  <FiChevronDown className="saison-filter-dropdown-icon" aria-hidden />
+                </button>
+                {openFilter === 'distance' && (
+                  <ul className="saison-filter-dropdown-menu" role="listbox">
+                    {DISTANCE_OPTIONS.map((opt) => (
+                      <li key={opt}>
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={filterDistance === opt}
+                          className="saison-filter-dropdown-item"
+                          onClick={() => {
+                            setFilterDistance(opt)
+                            setOpenFilter(null)
+                          }}
+                        >
+                          {opt}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="saison-filter-dropdown">
+                <button
+                  type="button"
+                  className="saison-filter-dropdown-button"
+                  onClick={() => setOpenFilter(openFilter === 'date' ? null : 'date')}
+                  aria-expanded={openFilter === 'date'}
+                  aria-haspopup="listbox"
+                  aria-label="Filtrer par date"
+                >
+                  <span>{filterDate}</span>
+                  <FiChevronDown className="saison-filter-dropdown-icon" aria-hidden />
+                </button>
+                {openFilter === 'date' && (
+                  <ul className="saison-filter-dropdown-menu" role="listbox">
+                    {DATE_OPTIONS.map((opt) => (
+                      <li key={opt}>
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={filterDate === opt}
+                          className="saison-filter-dropdown-item"
+                          onClick={() => {
+                            setFilterDate(opt)
+                            setOpenFilter(null)
+                          }}
+                        >
+                          {opt}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+          </div>
+
           <section className="saison-heading">
             <div>
               <p className="saison-title">SAISON 2026</p>
               <p className="saison-subtitle">Aucun parcours ou événement pour le moment</p>
             </div>
             <button
-              className="info-card"
+              className="info-card saison-add-parcours-card--hidden"
               type="button"
               onClick={() => {
                 setCreateModalView('select')
                 setIsCreateModalOpen(true)
               }}
+              aria-hidden
             >
               <div>
                 <p className="info-card__title">Ajouter un parcours</p>
@@ -395,49 +595,39 @@ export default function SaisonPage({
             </button>
           </section>
 
-          <div className="saison-map-block">
-            <section className="courses-section">
-              <div className="courses-heading">
-                <p className="courses-title">Mes parcours en cours</p>
-                <p className="courses-subtitle">
-                  {coursesWithCoordsCount > 0
-                    ? `${coursesWithCoordsCount} parcours affiché${coursesWithCoordsCount > 1 ? 's' : ''} sur le globe`
-                    : "Vous n'avez pas encore de parcours en cours."}
-                </p>
-              </div>
-              <div className="courses-carousel">
-                {coursesWithCoords.map((course) => (
-                  <article
-                    key={course.id}
-                    className="courses-carousel__card"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => _onCourseSelect?.(course.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        _onCourseSelect?.(course.id)
-                      }
-                    }}
-                  >
-                    <div className="courses-carousel__card-gpx">
-                      {course.gpxSvg ? (
-                        <div className="courses-carousel__card-gpx-svg" dangerouslySetInnerHTML={{ __html: course.gpxSvg }} />
-                      ) : (
-                        <div className="courses-carousel__card-gpx-placeholder" aria-hidden />
-                      )}
-                    </div>
-                    <div className="courses-carousel__card-content">
-                      <p className="courses-carousel__card-title">{course.name}</p>
-                      {course.distanceKm != null && course.elevationGain != null && (
-                        <p className="courses-carousel__card-stats">{course.distanceKm.toFixed(0)} km · {Math.round(course.elevationGain)} D+</p>
-                      )}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-          </div>
+          <section className="saison-courses" aria-label="Parcours auxquels vous participez">
+            <div className="courses-carousel">
+              {filteredCoursesForList.map((course) => (
+                <article
+                  key={course.id}
+                  className="courses-carousel__card"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => _onCourseSelect?.(course.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      _onCourseSelect?.(course.id)
+                    }
+                  }}
+                >
+                  <div className="courses-carousel__card-gpx">
+                    {course.gpxSvg ? (
+                      <div className="courses-carousel__card-gpx-svg" dangerouslySetInnerHTML={{ __html: course.gpxSvg }} />
+                    ) : (
+                      <div className="courses-carousel__card-gpx-placeholder" aria-hidden />
+                    )}
+                  </div>
+                  <div className="courses-carousel__card-content">
+                    <p className="courses-carousel__card-title">{course.name}</p>
+                    {course.distanceKm != null && course.elevationGain != null && (
+                      <p className="courses-carousel__card-stats">{course.distanceKm.toFixed(0)} km · {Math.round(course.elevationGain)} D+</p>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
         </main>
       </div>
 

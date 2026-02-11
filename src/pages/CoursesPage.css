@@ -11,28 +11,8 @@
 .courses-body {
   position: relative;
   display: flex;
-  gap: var(--spacing-6, 12px);
-  align-items: flex-start;
-}
-
-/* Référence : single-course-side (page single parcours) */
-.courses-side {
-  position: sticky;
-  top: calc(var(--topbar-height, 56px) + var(--spacing-8, 16px));
-  width: max-content;
-  max-width: 200px;
-  flex-shrink: 0;
-  z-index: 90;
-  padding-bottom: var(--spacing-8, 16px);
-  transition: var(--transition-smooth);
-}
-
-.courses-side .side-nav {
-  padding: var(--spacing-6, 12px) var(--spacing-8, 16px);
-  border-radius: var(--spacing-4, 8px);
-  background: rgba(11, 14, 17, 0.6);
-  backdrop-filter: blur(25px);
-  gap: var(--spacing-4, 8px);
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .courses-main {
@@ -91,7 +71,7 @@
   padding: var(--spacing-6, 12px) var(--spacing-8, 16px);
   width: min(473px, 100%);
   border-radius: var(--spacing-4, 8px);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   background: var(--color-card-bg);
   backdrop-filter: blur(100px);
   -webkit-backdrop-filter: blur(100px);
@@ -187,7 +167,7 @@
   padding: var(--spacing-4, 8px);
   overflow: hidden;
   border-radius: var(--spacing-4, 8px);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   background: var(--color-card-bg);
   backdrop-filter: blur(100px);
   display: flex;
@@ -259,7 +239,7 @@
   min-width: 180px;
   padding: var(--spacing-2, 4px);
   background: var(--color-bg-surface, #161b21);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   border-radius: var(--spacing-4, 8px);
   box-shadow: 0 var(--spacing-6, 12px) var(--spacing-20, 40px) rgba(0, 0, 0, 0.4);
   z-index: 20;
@@ -458,43 +438,9 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Mobile : sidebar en bas de l'écran */
 @media (max-width: 768px) {
   .courses-page {
     padding-bottom: var(--spacing-40, 80px);
-  }
-
-  .courses-side {
-    position: fixed;
-    top: auto;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    z-index: 90;
-    display: flex;
-    justify-content: center;
-    padding-bottom: 0;
-  }
-
-  .courses-side .side-nav {
-    flex-direction: row;
-    justify-content: center;
-    width: max-content;
-    max-width: calc(100% - var(--spacing-8, 16px) * 2);
-    border-radius: 0;
-    border-top: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
-    padding: var(--spacing-4, 8px) var(--spacing-2, 4px);
-  }
-
-  .courses-side .side-nav__item {
-    text-align: center;
-    font-size: var(--font-body-sm-size, 14px);
-    padding: var(--spacing-4, 8px) var(--spacing-2, 4px);
-  }
-
-  .courses-side .side-nav__item--active {
-    font-size: var(--font-body-size, 16px);
   }
 
   .courses-main {

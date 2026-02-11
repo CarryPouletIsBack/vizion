@@ -17,6 +17,129 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-4, 8px);
+  position: relative;
+}
+
+.saison-topbar__burger {
+  position: relative;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-20, 40px);
+  height: var(--spacing-20, 40px);
+  min-width: var(--spacing-20, 40px);
+  min-height: var(--spacing-20, 40px);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text-primary, #e5e7eb);
+  cursor: pointer;
+  transition: var(--transition-base);
+  flex-shrink: 0;
+}
+
+.saison-topbar__burger:hover {
+  color: var(--color-accent, #bfc900);
+}
+
+.saison-topbar__burger svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Overlay plein écran : backdrop flou + menu */
+.saison-topbar__burger-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  pointer-events: auto;
+}
+
+.saison-topbar__burger-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: pointer;
+}
+
+.saison-topbar__burger-menu {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: var(--spacing-4, 8px);
+  padding: var(--spacing-12, 24px);
+  padding-top: calc(var(--topbar-height, 56px) + var(--spacing-8, 16px));
+  padding-left: var(--spacing-8, 16px);
+  background: transparent;
+  pointer-events: none;
+}
+
+.saison-topbar__burger-menu .saison-topbar__burger-item {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 200px;
+  padding: var(--spacing-3, 12px) var(--spacing-4, 16px);
+  border-radius: var(--radius-sm, 8px);
+  font-size: 16px;
+  line-height: var(--font-body-line-height, 1.5);
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3, 12px);
+}
+
+.saison-topbar__burger-item--skeleton {
+  pointer-events: none;
+}
+
+.saison-topbar__burger-item--user {
+  gap: var(--spacing-3, 12px);
+}
+
+.saison-topbar__burger-item-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.saison-topbar__burger-item-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.saison-topbar__burger-item {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-3, 12px) var(--spacing-4, 16px);
+  border: none;
+  border-radius: var(--radius-sm, 8px);
+  background: transparent;
+  color: var(--color-text-primary, #e5e7eb);
+  font-size: var(--font-body-size, 16px);
+  line-height: var(--font-body-line-height, 1.5);
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition-base);
+  font-family: inherit;
+}
+
+.saison-topbar__burger-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-accent, #bfc900);
 }
 
 .saison-topbar__logo {
@@ -35,7 +158,7 @@
 .saison-topbar__beta-tag {
   padding: var(--spacing-2, 4px) var(--spacing-4, 8px);
   border-radius: var(--spacing-2, 4px);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   background: rgba(255, 255, 255, 0.06);
   color: var(--color-text-secondary, #9ca3af);
   font-size: var(--font-size-xs, 12px);
@@ -137,7 +260,7 @@
   width: 112px;
   height: var(--spacing-6, 12px);
   border-radius: var(--spacing-2, 4px);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   background: linear-gradient(
     to right,
     var(--color-brand-primary, #d4df00) 65%,
@@ -160,7 +283,7 @@
   padding: var(--spacing-2, 4px) var(--spacing-5, 10px);
   border-radius: var(--spacing-4, 8px);
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: var(--border-width, 1px) solid rgba(255, 255, 255, 0.08);
   color: var(--color-text-secondary, #9ca3af);
   font-size: var(--font-body-sm-size, 14px);
   line-height: var(--font-body-sm-line-height, 1.5);
@@ -195,7 +318,7 @@
   border-radius: 50%;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.05);
-  border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
+  border: var(--border-width, 1px) solid rgba(255, 255, 255, 0.1);
   color: var(--color-text-primary, #e5e7eb);
   cursor: pointer;
   transition: var(--transition-base);
@@ -237,7 +360,7 @@
   padding: var(--spacing-2, 4px) var(--spacing-6, 12px);
   border-radius: var(--spacing-10, 20px);
   background: rgba(255, 255, 255, 0.05);
-  border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
+  border: var(--border-width, 1px) solid rgba(255, 255, 255, 0.1);
   transition: var(--transition-base);
 }
 
@@ -246,7 +369,7 @@
   height: var(--spacing-16, 32px);
   border-radius: 50%;
   object-fit: cover;
-  border: var(--spacing-1, 2px) solid var(--color-accent, #bfc900);
+  border: var(--border-width, 1px) solid var(--color-accent, #bfc900);
   flex-shrink: 0;
 }
 
@@ -312,7 +435,7 @@
   line-height: var(--font-body-sm-line-height, 1.5);
   letter-spacing: 0.12em;
   text-transform: none;
-  border: var(--spacing-1, 2px) solid transparent;
+  border: var(--border-width, 1px) solid transparent;
   cursor: pointer;
   background: transparent;
   color: var(--color-text-primary, #e5e7eb);

@@ -43,7 +43,7 @@ export default function SegmentMapMapbox3D({
       maxPitch: 85,
     })
 
-    map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right')
+    map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'bottom-left')
 
     map.on('style.load', () => {
       map.addSource('mapbox-dem', {

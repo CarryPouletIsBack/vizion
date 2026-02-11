@@ -4,7 +4,6 @@ import { useMemo, useRef, useState } from 'react'
 import { HiX } from 'react-icons/hi'
 
 import HeaderTopBar from '../components/HeaderTopBar'
-import SideNav from '../components/SideNav'
 import EventsColumnFilteringChart from '../components/EventsColumnFilteringChart'
 
 type EventsPageProps = {
@@ -63,10 +62,6 @@ export default function EventsPage({ onNavigate, events, onEventSelect, onEventE
       <HeaderTopBar onNavigate={onNavigate} />
 
       <div className="events-body">
-        <aside className="events-side">
-          <SideNav activeItem="events" onNavigate={onNavigate} />
-        </aside>
-
         <main className="events-main">
           <section className="events-header">
             <div className="events-header__title">

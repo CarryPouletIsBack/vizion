@@ -2,28 +2,110 @@
 .single-course-page {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-12, 24px);
+  gap: var(--spacing-8, 16px);
   min-height: 100vh;
   color: var(--color-text-primary, #e5e7eb);
   transition: var(--transition-smooth);
 }
 
-.single-course-side {
-  position: sticky;
-  top: calc(var(--topbar-height, 56px) + var(--spacing-8, 16px));
-  width: max-content;
-  max-width: 200px;
+/* Vue segment : page sans scroll, tout tient dans l'écran */
+.single-course-page--segment-view {
+  max-height: 100vh;
+  overflow: hidden;
+  gap: 0;
+}
+
+/* Wrapper header + body : en vue segment = contenu contenu dans l'écran, ne dépasse pas */
+.single-course-segment-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.single-course-segment-layout--with-map {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-4, 8px);
+  max-height: calc(100vh - var(--topbar-height, 56px));
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  /* Même largeur que la carte data viz dénivelé (chart-card--fixed) */
+  width: min(480px, calc(100vw - 2 * var(--spacing-12, 24px)));
+  max-width: 100%;
+  align-self: flex-start;
+}
+
+.single-course-segment-layout--with-map .single-course-page-header {
+  width: auto;
+  max-width: 100%;
   flex-shrink: 0;
-  z-index: 90;
-  padding-bottom: var(--spacing-8, 16px);
-  transition: var(--transition-smooth);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.single-course-segment-layout--with-map .single-course-body {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .single-course-segment-layout--with-map {
+    flex-direction: column;
+  }
+  .single-course-segment-layout--with-map .single-course-page-header {
+    width: 100%;
+    max-height: none;
+  }
+}
+
+/* En-tête parcours : titre + bouton + meta, devant la carte 2D/3D en vue segment */
+.single-course-page-header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3, 6px);
+  flex-shrink: 0;
+}
+
+.single-course-page-header .single-course-heading {
+  margin-top: 0;
+}
+
+.single-course-page-header .single-course-breadcrumb {
+  margin-top: var(--spacing-2, 4px);
+  margin-bottom: 0;
+}
+
+.single-course-page-header .single-course-breadcrumb--steps-first {
+  margin-top: 0;
+  margin-bottom: var(--spacing-2, 4px);
+}
+
+/* Carte secteur dans le header : titre + graphique uniquement (stats déplacées en carte fixe en bas à gauche) */
+.single-course-page-header .single-course-segment-page__advice-card--in-header {
+  margin-top: var(--spacing-4, 8px);
+  max-width: 320px;
+}
+
+.single-course-segment-page__advice-card--below-meta {
+  margin-top: var(--spacing-3, 6px);
+  max-width: 508px;
 }
 
 .single-course-body {
   position: relative;
   display: flex;
-  gap: var(--spacing-6, 12px);
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
 }
 
 .single-course-nav {
@@ -65,8 +147,28 @@
   gap: var(--spacing-20, 40px);
   row-gap: var(--spacing-4, 8px);
   flex: 1;
-  min-width: 0;
-  transition: var(--transition-smooth);
+}
+
+/* Meta tout en haut : lieu, météo, vent, km, circuit */
+.single-course-meta-top {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2, 4px);
+  font-size: var(--font-body-sm-size, 14px);
+  line-height: var(--font-body-sm-line-height, 1.5);
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.single-course-meta-top .single-course-course__meta-region {
+  margin: 0;
+}
+
+.single-course-meta-top__stats,
+.single-course-meta-top__prep {
+  margin: 0;
+  font-size: var(--font-size-sm, 12px);
+  line-height: var(--line-height-normal, 1.5);
+  color: var(--color-text-secondary, #9ca3af);
 }
 
 /* Fil d'Ariane (style guide type TrackTitan) — pour le moment on n'affiche que les étapes Description, Segment, Ma préparation */
@@ -77,6 +179,40 @@
 
 .single-course-breadcrumb__list > .single-course-breadcrumb__item:not(.single-course-breadcrumb__steps) {
   display: none;
+}
+
+/* Fil d'Ariane en haut : tout afficher, 12px, peu de place */
+.single-course-breadcrumb--ariane .single-course-breadcrumb__list > .single-course-breadcrumb__item {
+  display: flex;
+}
+
+.single-course-breadcrumb--ariane {
+  margin-top: 0;
+  margin-bottom: var(--spacing-1, 2px);
+}
+
+.single-course-breadcrumb--ariane .single-course-breadcrumb__list {
+  font-size: 12px;
+  line-height: 1.3;
+  gap: var(--spacing-1, 2px);
+}
+
+.single-course-breadcrumb--ariane .single-course-breadcrumb__sep {
+  width: 10px;
+  height: 10px;
+  opacity: 0.5;
+}
+
+.single-course-breadcrumb--ariane .single-course-breadcrumb__step-btn {
+  padding: var(--spacing-1, 2px) var(--spacing-2, 4px);
+  font-size: 12px;
+}
+
+.single-course-breadcrumb--ariane .single-course-breadcrumb__current-course {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .single-course-breadcrumb__list {
@@ -159,11 +295,20 @@
 /* Titre et bouton alignés horizontalement ; en manque de place le bouton repasse en dessous */
 .single-course-heading {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--spacing-8, 16px);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-3, 6px);
   margin-top: var(--spacing-12, 24px);
+}
+
+.single-course-heading__title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 4px);
+}
+
+.single-course-heading__title-row .single-course-breadcrumb__back {
+  flex-shrink: 0;
 }
 
 .single-course-title {
@@ -182,7 +327,7 @@
   gap: var(--spacing-2, 4px);
   padding: var(--spacing-2, 4px) var(--spacing-4, 8px);
   border-radius: var(--spacing-4, 8px);
-  border: 1px solid var(--color-accent, #bfc900);
+  border: var(--border-width, 1px) solid var(--color-accent, #bfc900);
   background: rgba(191, 201, 0, 0.12);
   color: var(--color-accent, #bfc900);
   font-size: var(--font-size-sm, 14px);
@@ -221,7 +366,7 @@
   padding: var(--spacing-6, 12px) var(--spacing-8, 16px);
   width: min(392px, 100%);
   border-radius: var(--spacing-4, 8px);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   background: var(--color-card-bg);
   backdrop-filter: blur(100px);
   overflow: hidden;
@@ -258,12 +403,122 @@
   gap: var(--spacing-10, 20px);
   align-items: start;
   transition: var(--transition-smooth);
+  overflow: visible;
+  min-height: 0;
+}
+
+/* Page Segment : la carte en fond, sous le page-header */
+.single-course-content[data-step="segment"] {
+  display: block;
+  position: relative;
+  z-index: 0;
+  min-height: min(70vh, 600px);
+}
+
+/* Quand la carte 2D/3D est en fond de page (remplace le globe), la section garde la hauteur */
+body.course-segment-view .single-course-content[data-step="segment"] {
+  min-height: 100vh;
+}
+
+.single-course-content[data-step="segment"] .single-course-course--segment-view {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* En vue segment : le wrapper GPX est transparent, seul le fond est la carte 2D/3D */
+.single-course-content[data-step="segment"] .single-course-course--segment-view .single-course-course__gpx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  aspect-ratio: unset;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  backdrop-filter: none;
+  overflow: visible;
+}
+
+/* La div de la vue 2D/3D (Leaflet ou Mapbox) = fond de toute la page segment */
+.single-course-content[data-step="segment"] .single-course-course--segment-view .single-course-course__gpx-map--osm {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  z-index: 0;
+}
+
+.single-course-content[data-step="segment"] .single-course-course--segment-view .single-course-course__meta {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: var(--spacing-4, 8px) var(--spacing-6, 12px);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
+  color: var(--color-text-primary, #e5e7eb);
+}
+
+.single-course-content[data-step="segment"] .single-course-right {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: auto;
+  width: min(380px, 100%);
+  max-width: 100%;
+  z-index: 1;
+  background: transparent;
+  overflow: visible;
+  padding: var(--spacing-6, 12px);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--spacing-6, 12px);
+}
+
+.single-course-content[data-step="segment"] .single-course-right .single-course-chart-block {
+  flex: 1 1 160px;
+  min-width: 160px;
+}
+
+@media (max-width: 768px) {
+  .single-course-content[data-step="segment"] {
+    min-height: auto;
+  }
+
+  .single-course-content[data-step="segment"] .single-course-course--segment-view {
+    position: relative;
+    min-height: 50vh;
+  }
+
+  .single-course-content[data-step="segment"] .single-course-course--segment-view .single-course-course__gpx {
+    position: relative;
+    min-height: 50vh;
+    aspect-ratio: 16 / 10;
+  }
+
+  .single-course-content[data-step="segment"] .single-course-course--segment-view .single-course-course__meta {
+    position: relative;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent);
+  }
+
+  .single-course-content[data-step="segment"] .single-course-right {
+    position: relative;
+    width: 100%;
+    top: auto;
+    bottom: auto;
+    right: auto;
+  }
 }
 
 .single-course-right {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-10, 20px);
+  gap: var(--spacing-6, 12px);
   min-width: 0;
 }
 
@@ -278,7 +533,7 @@
 .single-course-segment-card {
   padding: var(--spacing-6, 12px);
   border-radius: var(--spacing-4, 8px);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   background: var(--color-card-bg);
   backdrop-filter: blur(100px);
   transition: var(--transition-base);
@@ -393,8 +648,91 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.single-course-segment-page__sector-slider::-webkit-scrollbar {
-  height: 6px;
+/* Sector slider fixé en bas de la page (vue segment) */
+/* Contrôles zoom Leaflet (+ / −) devant le bandeau secteurs */
+.single-course-content[data-step="segment"] .leaflet-control-zoom {
+  z-index: 110;
+}
+
+/* Carte graphique secteur : position fixe en bas à gauche (vue segment), marge pour respirer */
+.single-course-segment-page__chart-card--fixed {
+  position: fixed;
+  bottom: var(--spacing-6, 12px);
+  left: var(--spacing-12, 24px);
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2, 4px);
+  padding: var(--spacing-4, 8px) var(--spacing-5, 10px);
+  width: min(480px, calc(100vw - 2 * var(--spacing-12, 24px)));
+  max-width: none;
+}
+
+.single-course-segment-page__chart-card--fixed .single-course-segment-page__chart-card-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--spacing-3, 6px);
+  min-width: 0;
+}
+
+.single-course-segment-page__chart-card--fixed .single-course-segment-page__chart-card-header .single-course-panel__title {
+  margin: 0;
+  font-size: var(--font-size-sm, 12px);
+  flex-shrink: 0;
+}
+
+.single-course-segment-page__chart-card--fixed .single-course-segment-page__sector-pills {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: var(--spacing-2, 4px);
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-width: 0;
+  padding-bottom: var(--spacing-1, 2px);
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.single-course-segment-page__chart-card--fixed .single-course-segment-page__sector-pills .single-course-segment-page__sector-pill {
+  flex-shrink: 0;
+}
+
+.single-course-segment-page__chart-card--fixed .single-course-segment-page__chart {
+  min-width: 0;
+  width: 100%;
+  min-height: 120px;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.single-course-segment-page__chart-card--fixed .single-course-segment-page__chart .single-course-elevation-chart {
+  height: 120px;
+  width: 100%;
+}
+
+/* Carte stats secteur : position fixe en bas à droite (vue segment), marge pour respirer */
+.single-course-segment-page__stats-card--fixed {
+  position: fixed;
+  bottom: var(--spacing-6, 12px);
+  right: var(--spacing-12, 24px);
+  left: auto;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-4, 8px) var(--spacing-5, 10px);
+  min-width: 220px;
+  font-family: "JetBrains Mono", var(--font-family-mono, ui-monospace, monospace);
+}
+
+.single-course-segment-page__stats-card--fixed .single-course-segment-page__stats {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--spacing-2, 4px);
 }
 
 .single-course-segment-page__sector-pill {
@@ -405,7 +743,7 @@
   font-weight: 500;
   color: var(--color-text-secondary, #9ca3af);
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   cursor: pointer;
   transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
@@ -462,6 +800,17 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2, 4px);
+}
+
+/* Carte à part pour le conseil de passage (dissociée du bloc chart + stats) */
+.single-course-segment-page__advice-card {
+  margin-top: var(--spacing-6, 12px);
+}
+
+.single-course-segment-page__advice-card .single-course-segment-page__advice {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 .single-course-segment-page__advice-label {
@@ -601,7 +950,7 @@
   font-weight: 500;
   color: var(--color-text-primary, #e5e7eb);
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   border-radius: var(--spacing-2, 4px);
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
@@ -622,7 +971,7 @@
   padding: var(--spacing-6, 12px) var(--spacing-8, 16px);
   border-radius: var(--spacing-4, 8px);
   background: var(--color-card-bg);
-  border: 1px solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   margin-bottom: var(--spacing-6, 12px);
 }
 
@@ -694,7 +1043,7 @@
   padding: var(--spacing-4, 8px) var(--spacing-6, 12px);
   border-radius: var(--spacing-4, 8px);
   background: rgba(191, 201, 0, 0.06);
-  border: 1px solid rgba(191, 201, 0, 0.2);
+  border: var(--border-width, 1px) solid rgba(191, 201, 0, 0.2);
   margin-bottom: var(--spacing-6, 12px);
 }
 
@@ -717,7 +1066,7 @@
   padding: var(--spacing-4, 8px) var(--spacing-6, 12px);
   border-radius: var(--spacing-4, 8px);
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   margin-bottom: var(--spacing-6, 12px);
 }
 
@@ -820,12 +1169,7 @@
 }
 
 .single-course-course__meta {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2, 4px);
-  font-size: var(--font-body-sm-size, 14px);
-  line-height: var(--font-body-sm-line-height, 1.5);
-  color: var(--color-text-primary, #e5e7eb);
+  display: none;
 }
 
 /* Masqué pour le moment */
@@ -882,7 +1226,7 @@
 }
 
 .single-course-course__surface-below-map {
-  margin: var(--spacing-3, 6px) 0 0;
+  margin: 0;
   font-size: var(--font-size-sm, 12px);
   line-height: var(--line-height-normal, 1.5);
   color: var(--color-text-secondary, #9ca3af);
@@ -898,7 +1242,7 @@
   aspect-ratio: 16 / 10;
   min-height: 360px;
   display: block;
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   border-radius: var(--spacing-4, 8px);
   background: var(--color-card-bg);
   backdrop-filter: blur(100px);
@@ -961,13 +1305,21 @@
   justify-content: flex-end;
 }
 
+/* Toolbar déplacée dans le header (sous "Lancer ma préparation") */
+.single-course-course__gpx-toolbar--in-header {
+  position: static;
+  margin-top: 0;
+  margin-bottom: var(--spacing-2, 4px);
+  justify-content: flex-start;
+}
+
 .single-course-course__gpx-view-toggle {
   padding: var(--spacing-2, 4px) var(--spacing-4, 8px);
   font-size: 12px;
   font-weight: 500;
   color: var(--color-text-primary, #e5e7eb);
   background: rgba(11, 14, 17, 0.85);
-  border: 1px solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   border-radius: var(--spacing-2, 4px);
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease;
@@ -1035,6 +1387,16 @@
   flex-shrink: 0;
 }
 
+/* Vue segment : pastille vent en position fixe (haut droite) pour rester visible au-dessus de la carte */
+.single-course-content[data-step="segment"] .single-course-course__gpx-wind-badge {
+  position: fixed;
+  top: calc(var(--topbar-height, 56px) + var(--spacing-4, 8px));
+  right: var(--spacing-12, 24px);
+  left: auto;
+  bottom: auto;
+  z-index: 95;
+}
+
 .single-course-course__gpx img {
   width: 100%;
   height: auto;
@@ -1084,7 +1446,7 @@
   line-height: var(--line-height-normal, 1.5);
   color: var(--color-accent, #bfc900);
   background: rgba(191, 201, 0, 0.1);
-  border: 1px solid rgba(191, 201, 0, 0.3);
+  border: var(--border-width, 1px) solid rgba(191, 201, 0, 0.3);
   border-radius: var(--spacing-2, 4px);
   display: inline-block;
 }
@@ -1126,7 +1488,7 @@
   margin-top: var(--spacing-6, 12px);
   padding: var(--spacing-6, 12px) var(--spacing-8, 16px);
   border-radius: var(--spacing-4, 8px);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   background: var(--color-card-bg);
   backdrop-filter: blur(100px);
 }
@@ -1159,7 +1521,7 @@
   margin-top: var(--spacing-6, 12px);
   padding: var(--spacing-6, 12px) var(--spacing-8, 16px);
   border-radius: var(--spacing-4, 8px);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   background: var(--color-card-bg);
   backdrop-filter: blur(100px);
 }
@@ -1221,7 +1583,7 @@
   width: 100%;
   padding: var(--spacing-6, 12px);
   border-radius: var(--spacing-4, 8px);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   background: var(--color-card-bg);
   backdrop-filter: blur(100px);
   overflow: hidden;
@@ -1240,7 +1602,7 @@
   display: flex;
   flex-direction: column;
   background: var(--color-card-bg);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   border-radius: var(--spacing-4, 8px);
   padding: var(--spacing-8, 16px);
   backdrop-filter: blur(100px);
@@ -1255,7 +1617,7 @@
 .single-course-course__chart {
   height: 200px;
   border-radius: var(--spacing-4, 8px);
-  border: var(--spacing-1, 2px) dashed rgba(255, 255, 255, 0.2);
+  border: var(--border-width, 1px) dashed rgba(255, 255, 255, 0.2);
   display: grid;
   place-items: center;
   font-size: var(--font-body-sm-size, 14px);
@@ -1279,7 +1641,7 @@
 .single-course-panel {
   padding: var(--spacing-8, 16px);
   border-radius: var(--spacing-4, 8px);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   background: var(--color-card-bg);
   backdrop-filter: blur(100px);
   overflow: hidden;
@@ -1353,7 +1715,7 @@
 .single-course-panel__card {
   padding: var(--spacing-6, 12px);
   border-radius: var(--spacing-4, 8px);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   background: var(--color-card-bg);
   backdrop-filter: blur(100px);
   overflow: hidden;
@@ -1431,7 +1793,7 @@
 .single-course-footer__card {
   padding: var(--spacing-8, 16px);
   border-radius: var(--spacing-4, 8px);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   background: var(--color-card-bg);
   backdrop-filter: blur(100px);
   overflow: hidden;
@@ -1472,37 +1834,11 @@
     gap: var(--spacing-6, 12px);
   }
 
-  .single-course-side {
-    position: fixed;
-    top: auto;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    max-width: 100vw;
-    z-index: 90;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding-left: 24px;
-    padding-right: 24px;
-  }
-
-  /* Barre pleine largeur + contenu centré, bordure 24px (override SideNav.css mobile) */
-  .single-course-side .side-nav {
-    width: 100%;
-    max-width: none;
-    border-radius: 24px;
-    padding-left: var(--spacing-6, 12px);
-    padding-right: var(--spacing-6, 12px);
-    justify-content: center;
-  }
-
   .single-course-nav {
     flex-direction: row;
     justify-content: space-around;
     border-radius: 0;
-    border-top: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
+    border-top: var(--border-width, 1px) solid rgba(255, 255, 255, 0.1);
     padding: var(--spacing-4, 8px) var(--spacing-2, 4px);
   }
 
@@ -1523,6 +1859,10 @@
     margin-top: var(--spacing-6, 12px);
     flex-wrap: wrap;
     gap: var(--spacing-4, 8px);
+  }
+
+  .single-course-page-header .single-course-heading {
+    margin-top: 0;
   }
 
   .single-course-title {
@@ -1681,7 +2021,6 @@
 }
 
 @media print {
-  .single-course-side,
   .single-course-breadcrumb,
   .single-course-preparation__export {
     display: none !important;

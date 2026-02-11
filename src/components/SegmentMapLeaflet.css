@@ -36,6 +36,12 @@
   background: transparent;
 }
 
+/* Contrôle zoom (+ / −) en bas à gauche */
+.segment-map-leaflet .leaflet-control-zoom {
+  margin-bottom: var(--spacing-4, 8px);
+  margin-left: var(--spacing-3, 6px);
+}
+
 .segment-map-leaflet--empty {
   display: flex;
   align-items: center;

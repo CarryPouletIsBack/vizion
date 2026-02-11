@@ -24,9 +24,11 @@ const sampleData = [
 type SingleCourseElevationChartProps = {
   data?: Array<[number, number]>
   metrics?: StravaMetrics | null
+  /** Hauteur du graphique en px (défaut 200). À passer pour la version compacte afin que les axes restent visibles. */
+  height?: number
 }
 
-export default function SingleCourseElevationChart({ data, metrics }: SingleCourseElevationChartProps) {
+export default function SingleCourseElevationChart({ data, metrics, height: chartHeight = 200 }: SingleCourseElevationChartProps) {
   const ref = useRef<HTMLDivElement | null>(null)
 
   const seriesData = useMemo(() => {
@@ -53,7 +55,7 @@ export default function SingleCourseElevationChart({ data, metrics }: SingleCour
       accessibility: { enabled: false },
       chart: {
         backgroundColor: 'transparent',
-        height: 200,
+        height: chartHeight,
         margin: [10, 10, 25, 40],
         animation: {
           duration: 900,
@@ -68,9 +70,9 @@ export default function SingleCourseElevationChart({ data, metrics }: SingleCour
         verticalAlign: 'top',
       },
       xAxis: {
-        title: { text: 'Km', style: { color: '#9ca3af' } },
-        labels: { 
-          style: { color: '#9ca3af' },
+        title: { text: 'Km', style: { color: '#9ca3af', fontSize: '11px' } },
+        labels: {
+          style: { color: '#9ca3af', fontSize: '10px' },
           formatter: function() {
             return Math.round(this.value as number).toString()
           }
@@ -79,9 +81,9 @@ export default function SingleCourseElevationChart({ data, metrics }: SingleCour
         lineColor: 'rgba(255,255,255,0.2)',
       },
       yAxis: {
-        title: { text: 'D+', style: { color: '#9ca3af' } },
-        labels: { 
-          style: { color: '#9ca3af' },
+        title: { text: 'D+', style: { color: '#9ca3af', fontSize: '11px' } },
+        labels: {
+          style: { color: '#9ca3af', fontSize: '10px' },
           formatter: function() {
             return Math.round(this.value as number).toString()
           }
@@ -147,7 +149,14 @@ export default function SingleCourseElevationChart({ data, metrics }: SingleCour
     })
 
     return () => chart.destroy()
-  }, [seriesData, runnerEstimateData])
+  }, [seriesData, runnerEstimateData, chartHeight])
 
-  return <div ref={ref} className="single-course-elevation-chart" aria-label="Dénivelé" />
+  return (
+    <div
+      ref={ref}
+      className="single-course-elevation-chart"
+      aria-label="Dénivelé"
+      style={{ height: chartHeight }}
+    />
+  )
 }

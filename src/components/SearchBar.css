@@ -1,0 +1,112 @@
+/* SearchBar — centrée à l'écran, style input Google Sans */
+.search-bar {
+  width: 100%;
+  max-width: 1012.67px;
+  height: 56px;
+  min-height: 56px;
+  padding: 0;
+  border-radius: var(--radius-full, 9999px);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: var(--border-width, 1px) solid rgba(255, 255, 255, 0.15);
+  transition: var(--transition-base);
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.search-bar:focus-within {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.search-bar__row {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  position: relative;
+}
+
+.search-bar__icon {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  color: var(--color-text-muted, #9aa0a6);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.search-bar:focus-within .search-bar__icon {
+  color: var(--color-accent, #bfc900);
+}
+
+.search-bar__input-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.search-bar__input {
+  width: 100%;
+  min-width: 0;
+  height: 56px;
+  min-height: 56px;
+  padding: 16px 16px 16px 64px;
+  margin: 1px;
+  font-size: 16px;
+  font-family: "Google Sans", Arial, Helvetica, sans-serif;
+  font-weight: 500;
+  box-sizing: border-box;
+  border: none;
+  outline: none;
+  background: none;
+  color: var(--color-text-primary, #e5e7eb);
+  line-height: 1.5;
+  position: relative;
+  z-index: 2;
+}
+
+.search-bar__input::placeholder {
+  color: var(--color-text-muted, #9aa0a6);
+}
+
+.search-bar__input-wrap--has-clear .search-bar__input {
+  padding-right: 48px;
+}
+
+.search-bar__clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted, #9aa0a6);
+  cursor: pointer;
+  transition: var(--transition-base);
+  z-index: 3;
+}
+
+.search-bar__clear:hover {
+  color: var(--color-text-primary, #e5e7eb);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.search-bar__clear svg {
+  width: 16px;
+  height: 16px;
+}

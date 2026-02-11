@@ -7,7 +7,6 @@ import { FiMoreVertical, FiEdit3, FiTrash2, FiStar } from 'react-icons/fi'
 import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import grandRaidLogo from '../assets/da2a1ce5e69564e56a29b5912fd151a8f515e136.png'
 import HeaderTopBar from '../components/HeaderTopBar'
-import SideNav from '../components/SideNav'
 import Skeleton from '../components/Skeleton'
 import useStravaMetrics from '../hooks/useStravaMetrics'
 import { gpxToSvg, extractGpxStartCoordinates, extractGpxWaypoints, getBoundsFromGpx } from '../lib/gpxToSvg'
@@ -732,10 +731,6 @@ export default function CoursesPage({
       <HeaderTopBar onNavigate={onNavigate} />
 
       <div className="courses-body">
-        <aside className="courses-side">
-          <SideNav activeItem="courses" onNavigate={onNavigate} />
-        </aside>
-
         <main className="courses-main">
           <section className="courses-header">
             <div>

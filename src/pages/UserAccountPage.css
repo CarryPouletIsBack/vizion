@@ -9,18 +9,8 @@
 
 .user-account-body {
   display: flex;
-  gap: var(--spacing-12, 24px);
-}
-
-.user-account-side {
-  position: fixed;
-  top: calc(var(--topbar-height, 56px) + var(--spacing-8, 16px));
-  left: var(--spacing-6, 12px);
-  width: 200px;
-  display: flex;
-  align-items: flex-start;
-  z-index: 90;
-  transition: var(--transition-smooth);
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .user-account-main {
@@ -28,9 +18,8 @@
   flex-direction: column;
   gap: var(--spacing-20, 40px);
   row-gap: var(--spacing-20, 40px);
-  margin-left: 224px;
-  width: calc(100% - 224px);
-  flex: 1 0 0;
+  flex: 1;
+  min-width: 0;
   transition: var(--transition-smooth);
 }
 
@@ -85,7 +74,7 @@
 .user-account-profile__connections {
   margin-top: var(--spacing-12, 24px);
   padding-top: var(--spacing-12, 24px);
-  border-top: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border-top: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
 }
 
 .user-account-profile__connections-title {
@@ -104,7 +93,7 @@
 
 .user-account-card {
   background: var(--color-bg-surface, #161b21);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   border-radius: var(--spacing-8, 16px);
   overflow: hidden;
   transition: var(--transition-base);
@@ -112,7 +101,7 @@
 
 .user-account-card__header {
   padding: var(--spacing-10, 20px) var(--spacing-12, 24px);
-  border-bottom: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border-bottom: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -150,7 +139,7 @@
   height: var(--spacing-40, 80px);
   border-radius: 50%;
   overflow: hidden;
-  border: var(--spacing-1, 2px) solid var(--color-accent, #bfc900);
+  border: var(--border-width, 1px) solid var(--color-accent, #bfc900);
   flex-shrink: 0;
 }
 
@@ -213,7 +202,7 @@
 
 .user-account-form__field input {
   background: var(--color-bg-primary, #0b0e11);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   border-radius: var(--spacing-4, 8px);
   padding: var(--spacing-5, 10px) var(--spacing-8, 16px);
   color: var(--color-text-primary, #e5e7eb);
@@ -242,7 +231,7 @@
 .user-account-delete {
   margin-top: var(--spacing-12, 24px);
   padding-top: var(--spacing-8, 16px);
-  border-top: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border-top: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   background: transparent;
   border: none;
   color: var(--color-error, #ef4444);
@@ -298,7 +287,7 @@
   gap: var(--spacing-10, 20px);
   padding: var(--spacing-8, 16px);
   background: var(--color-bg-primary, #0b0e11);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   border-radius: var(--spacing-6, 12px);
   transition: var(--transition-base);
 }
@@ -366,7 +355,7 @@
   cursor: pointer;
   transition: var(--transition-base);
   font-family: inherit;
-  border: var(--spacing-1, 2px) solid transparent;
+  border: var(--border-width, 1px) solid transparent;
 }
 
 .user-account-connection__button--connect {
@@ -409,7 +398,7 @@
   gap: var(--spacing-4, 8px);
   padding: var(--spacing-8, 16px);
   background: var(--color-bg-primary, #0b0e11);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   border-radius: var(--spacing-6, 12px);
   transition: var(--transition-base);
 }
@@ -445,7 +434,7 @@
   justify-content: center;
   gap: var(--spacing-6, 12px);
   padding: var(--spacing-20, 40px) var(--spacing-10, 20px);
-  border: var(--spacing-1, 2px) dashed var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) dashed var(--color-border-default, #2a3038);
   border-radius: var(--spacing-6, 12px);
   background: var(--color-bg-primary, #0b0e11);
   cursor: pointer;
@@ -500,19 +489,6 @@
 @media (max-width: 768px) {
   .user-account-page {
     padding-bottom: var(--spacing-40, 80px);
-  }
-
-  .user-account-side {
-    position: fixed;
-    top: auto;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    height: auto;
-    z-index: 90;
-    display: flex;
-    justify-content: center;
   }
 
   .user-account-main {

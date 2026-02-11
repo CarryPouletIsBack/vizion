@@ -105,3 +105,23 @@
   box-sizing: border-box;
   isolation: isolate;
 }
+
+/* Vue segment : la carte 2D/3D remplace le globe en fond de toute la page */
+body.course-segment-view .app-bg-globe {
+  display: none;
+}
+body.course-segment-view .app-bg-dark {
+  opacity: 0;
+}
+body.course-segment-view .single-course-course__gpx-map--osm {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  z-index: 1;
+}
