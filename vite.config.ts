@@ -4,14 +4,12 @@ import fs from 'fs/promises'
 import os from 'os'
 import { spawn } from 'child_process'
 import { createHash } from 'crypto'
-import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
-// Configuration Vite avec React + Tailwind, alignée sur le projet de référence.
+// Configuration Vite avec React ; Tailwind v4 via PostCSS (postcss.config.js).
 export default defineConfig({
   plugins: [
     react(),
-    tailwindcss(),
     {
       name: 'gpx-to-svg',
       configureServer(server) {

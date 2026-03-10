@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapContainer, TileLayer, Polyline, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Polyline, useMap, ZoomControl } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import './SegmentMapLeaflet.css'
@@ -104,12 +104,13 @@ export default function SegmentMapLeaflet({
           center={center}
           zoom={12}
           style={{ height: '100%', width: '100%', minHeight: 280 }}
-          zoomControl={true}
+          zoomControl={false}
           scrollWheelZoom={true}
           doubleClickZoom={true}
           dragging={true}
           className="segment-map-leaflet__container"
         >
+          <ZoomControl position="bottomleft" />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"

@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "meta": {
+    "name": "Kaldera / Material You Edition",
+    "version": "1.0.0",
+    "style": "Material Design 3",
+    "source": "src/styles/tokens.css"
+  },
+  "colors": {
+    "palette": {
+      "neutral": {
+        "0": "#000000",
+        "10": "#121212",
+        "20": "#1E1E1E",
+        "30": "#333333",
+        "40": "#444746",
+        "90": "#E3E3E3",
+        "100": "#FFFFFF"
+      },
+      "primary": {
+        "main": "#5891FF",
+        "container": "#004A77",
+        "onContainer": "#C2E7FF"
+      },
+      "error": {
+        "main": "#F2B8B5",
+        "container": "#8C1D18"
+      }
+    },
+    "dark": {
+      "background": "#000000",
+      "surfaceBase": "#000000",
+      "surfaceContainer": "#121212",
+      "surfaceHighlight": "#1E1E1E",
+      "border": "#333333",
+      "textPrimary": "#FFFFFF",
+      "textSecondary": "#E3E3E3",
+      "textMuted": "#9AA0A6"
+    },
+    "semantic": {
+      "bgPrimary": { "value": "#000000", "ref": "dark.background" },
+      "bgSurface": { "value": "#121212", "ref": "dark.surfaceContainer" },
+      "borderDefault": { "value": "#333333", "ref": "dark.border" },
+      "textPrimary": { "value": "#FFFFFF", "ref": "dark.textPrimary" },
+      "textMuted": { "value": "#9AA0A6", "ref": "dark.textMuted" },
+      "textSecondary": { "value": "#E3E3E3", "ref": "dark.textSecondary" },
+      "accent": "#5891FF",
+      "brandPrimary": "#5891FF",
+      "brandSecondary": "#C2E7FF",
+      "cardBg": "transparent"
+    }
+  },
+  "spacing": {
+    "gridBase": "4px",
+    "scale": {
+      "0": "0px",
+      "1": "4px",
+      "2": "8px",
+      "3": "12px",
+      "4": "16px",
+      "5": "20px",
+      "6": "24px",
+      "8": "32px",
+      "10": "40px",
+      "12": "48px",
+      "16": "64px"
+    }
+  },
+  "borderRadius": {
+    "none": "0px",
+    "sm": "8px",
+    "md": "12px",
+    "lg": "16px",
+    "xl": "28px",
+    "full": "9999px"
+  },
+  "typography": {
+    "fontFamilies": {
+      "body": "\"Roboto\", \"Inter\", system-ui, sans-serif",
+      "headings": "\"Google Sans\", \"Product Sans\", system-ui, sans-serif",
+      "display": "\"Google Sans\", \"Product Sans\", system-ui, sans-serif",
+      "mono": "\"Roboto Mono\", \"JetBrains Mono\", monospace"
+    },
+    "fontSizes": {
+      "labelSmall": "11px",
+      "label": "12px",
+      "body": "16px",
+      "title": "22px",
+      "headline": "32px",
+      "displaySmall": "36px",
+      "display": "57px",
+      "displayLarge": "64px"
+    },
+    "lineHeights": {
+      "tight": "1.1",
+      "base": "1.5",
+      "relaxed": "1.7",
+      "display": "1.12"
+    },
+    "typeScale": {
+      "displayLarge": {
+        "fontSize": "57px",
+        "lineHeight": "64px",
+        "fontFamily": "display",
+        "letterSpacing": "-0.25px",
+        "weight": "400"
+      },
+      "displayMedium": {
+        "fontSize": "45px",
+        "lineHeight": "52px",
+        "fontFamily": "display",
+        "weight": "400"
+      },
+      "h1": {
+        "fontSize": "32px",
+        "lineHeight": "40px",
+        "fontFamily": "headings",
+        "weight": "400"
+      },
+      "h2": {
+        "fontSize": "28px",
+        "lineHeight": "36px",
+        "fontFamily": "headings",
+        "weight": "400"
+      },
+      "h3": {
+        "fontSize": "24px",
+        "lineHeight": "32px",
+        "fontFamily": "headings",
+        "weight": "500"
+      },
+      "bodyLarge": {
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "fontFamily": "body",
+        "weight": "400"
+      },
+      "body": {
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "fontFamily": "body",
+        "weight": "400"
+      },
+      "label": {
+        "fontSize": "12px",
+        "lineHeight": "16px",
+        "fontFamily": "body",
+        "weight": "500",
+        "letterSpacing": "0.5px"
+      },
+      "mono": {
+        "fontSize": "12px",
+        "lineHeight": "16px",
+        "fontFamily": "mono",
+        "weight": "400"
+      }
+    }
+  },
+  "components": {
+    "card": {
+      "borderRadius": "28px",
+      "borderWidth": "1px",
+      "borderColor": "dark.border",
+      "padding": "24px"
+    },
+    "button": {
+      "borderRadius": "9999px",
+      "height": "48px",
+      "paddingX": "24px"
+    }
+  },
+  "transitions": {
+    "emphasized": "all 500ms cubic-bezier(0.2, 0.0, 0.0, 1.0)",
+    "standard": "all 300ms cubic-bezier(0.2, 0.0, 0, 1.0)"
+  }
+}

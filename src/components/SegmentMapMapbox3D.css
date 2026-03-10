@@ -37,6 +37,12 @@
   color: #e5e7eb;
 }
 
+/* Contrôle zoom / boussole en bas à gauche */
+.segment-map-mapbox3d .mapboxgl-ctrl-bottom-left {
+  bottom: var(--spacing-4, 8px);
+  left: var(--spacing-3, 6px);
+}
+
 .segment-map-mapbox3d .mapboxgl-ctrl-group button:hover {
   background: rgba(255, 255, 255, 0.08);
 }

@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import './UserAccountPage.css'
 import HeaderTopBar from '../components/HeaderTopBar'
-import SideNav from '../components/SideNav'
 import { redirectToStravaAuth } from '../lib/stravaAuth'
 import { getCurrentUser, signOut, updateProfile } from '../lib/auth'
 import { getUserFitActivities, saveUserFitActivity, deleteUserFitActivity, type UserFitActivityRow } from '../lib/userFitActivities'
@@ -434,10 +433,6 @@ export default function UserAccountPage({ onNavigate }: UserAccountPageProps) {
       <HeaderTopBar onNavigate={onNavigate} />
 
       <div className="user-account-body">
-        <aside className="user-account-side">
-          <SideNav activeItem="account" onNavigate={onNavigate} />
-        </aside>
-
         <main className="user-account-main">
           {!user ? (
             <section className="user-account-not-connected">

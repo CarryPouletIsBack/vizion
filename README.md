@@ -7,7 +7,7 @@ Application React/Vite pour un simulateur de préparation trail basé sur l'anal
 ## Stack Technique
 
 - **Frontend** : React 18 + TypeScript + Vite
-- **Styling** : CSS (tokens dans `src/styles/tokens.css`)
+- **Styling** : CSS (tokens dans `src/styles/tokens.css`) + **Tailwind CSS v4** (PostCSS : `postcss.config.js`, `@import "tailwindcss"` dans `src/index.css`)
 - **Cartographie** : Globe WebGL (écran Saison) ; Google Maps + `@react-google-maps/api` (cartes de détail)
 - **Graphiques** : Highcharts (profil d'élévation, données)
 - **Backend** : Supabase (Base de données + Auth)
@@ -283,6 +283,30 @@ Variables d'environnement Vercel :
 - **Composants modulaires** : Réutilisables et maintenables
 - **Validation des données** : TypeScript strict
 
+## Refonte visuelle et UX (branche `refactor-css`)
+
+Des ajustements visuels et UX importants ont été réalisés sur la branche **refactor-css** :
+
+- **Page parcours (Single Course)**  
+  - Météo parcours (ville, °C, heure, vent) déplacée dans la topbar (`saison-topbar__weather`). En vue **Segment**, la flèche vent est affichée dans le texte météo (topbar) ; pastille vent fixe sur la carte supprimée en segment.  
+  - Fil d'Ariane : suppression de « Parcours » à gauche du nom du parcours. En vue **Segment**, le breadcrumb est masqué ; un **chevron gauche** à gauche du nom du parcours permet de revenir à l’étape Description.  
+  - **Layout vue Segment** : colonne gauche (en-tête + contenu) et carte 2D/3D à droite ; largeur de la colonne gauche alignée sur la carte data viz dénivelé (`min(480px, 100vw - 2×marge)`).  
+  - Barre d’outils segment : bouton Vue 2D/3D conservé ; bouton **Plein écran** supprimé.  
+  - Cartes fixes en bas : carte graphique secteur (profil dénivelé) à gauche, carte stats secteur (Longueur, D+, D-, etc.) à droite, sans fond/bordure superflus.
+
+- **Autres**  
+  - Toolbar GPX (Vue 2D/3D) positionnée sous « Lancer ma préparation » puis en haut du header en vue segment.  
+  - Secteurs : pastilles numérotées dans un slider horizontal (carte graphique) ; bandeau/titre « Secteur X » supprimé.  
+  - Conseil de passage remis sous « Circuit sec — pas de pluie… », max-width 508 px.
+
+### Prochaines étapes
+
+- **Page Segment en mobile** : adapter la page segment (layout, cartes fixes, toolbar, chevron retour) pour une bonne utilisation en vue mobile.  
+- **Branches et déploiement** :  
+  - **`main`** = production en cours ; **ne pas toucher** à `main` pour la prod.  
+  - Créer une nouvelle branche **`master`** (ou branche dédiée) et y pousser le contenu de **`refactor-css`** pour faire évoluer la refonte sans impacter la prod.  
+  - Fusionner ensuite `refactor-css` → `master` (ou la branche cible) quand les tests sont validés, puis déployer depuis cette branche lorsque l’on souhaite remplacer la prod.
+
 ## Améliorations Futures
 
 - [ ] Synchronisation automatique Strava (webhooks)
@@ -292,6 +316,7 @@ Variables d'environnement Vercel :
 - [ ] Partage de préparation avec coach/amis
 - [ ] Historique des analyses dans le temps (données réelles par semaine)
 - [ ] Notifications / rappels (objectifs 4 semaines, reprise d’activité)
+- [ ] Adapter la page Segment en vue mobile (layout, cartes, toolbar, retour)
 
 - [ ] Option : limiter à 5 .fit « officiels » par utilisateur
 

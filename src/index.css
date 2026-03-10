@@ -1,10 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Cabin:wght@600;700&family=DM+Mono:wght@500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import 'tailwindcss';
+
+@import './styles/fonts.css';
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
 @import './styles/tokens.css';
 @import './styles/ModalShared.css';
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 /* Styles globaux (minimalistes) pour le MVP. */
 /* ========== Type scale Figma (appliqué globalement) ========== */
@@ -138,14 +137,14 @@ html {
 
 ::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 50px;
+  border-radius: var(--radius-full, 9999px);
   backdrop-filter: blur(10px);
 }
 
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(216, 216, 216, 0.2);
-  border-radius: 50px;
+  border-radius: var(--radius-full, 9999px);
   backdrop-filter: blur(10px);
 }
 

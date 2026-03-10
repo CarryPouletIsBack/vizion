@@ -34,7 +34,7 @@
   max-width: 520px;
   max-height: 90vh;
   background: var(--color-bg-primary, #0b0e11);
-  border: var(--spacing-1, 2px) solid rgba(255, 255, 255, 0.1);
+  border: var(--border-width, 1px) solid rgba(255, 255, 255, 0.1);
   border-radius: var(--spacing-8, 16px) var(--spacing-8, 16px) 0 0;
   box-shadow: 0 var(--spacing-6, 12px) var(--spacing-20, 40px) rgba(0, 0, 0, 0.5);
   display: flex;
@@ -141,7 +141,7 @@
   flex: 1;
   padding: var(--spacing-6, 12px) var(--spacing-8, 16px);
   background: var(--color-bg-surface, #161b21);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   border-radius: var(--spacing-4, 8px);
   color: var(--color-text-primary, #e5e7eb);
   font-size: var(--font-body-size, 16px);
@@ -173,7 +173,7 @@
   align-items: center;
   padding: var(--spacing-3, 6px) var(--spacing-5, 10px);
   background: var(--color-bg-surface, #161b21);
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   border-radius: 20px;
   font-size: var(--font-size-sm, 12px);
   color: var(--color-text-primary, #e5e7eb);
@@ -220,7 +220,7 @@
 .feedback-bottom-sheet__cancel {
   padding: var(--spacing-5, 10px) var(--spacing-8, 16px);
   background: transparent;
-  border: var(--spacing-1, 2px) solid var(--color-border-default, #2a3038);
+  border: var(--border-width, 1px) solid var(--color-border-default, #2a3038);
   border-radius: 20px;
   font-size: var(--font-body-sm-size, 14px);
   line-height: 1.5;

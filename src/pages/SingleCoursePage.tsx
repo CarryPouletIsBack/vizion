@@ -1,10 +1,9 @@
 import './SingleCoursePage.css'
 
-import { FiAlertCircle, FiZap, FiChevronRight, FiMapPin, FiSun, FiMoon, FiClock, FiWind, FiPlus, FiCheck } from 'react-icons/fi'
+import { FiAlertCircle, FiZap, FiChevronLeft, FiChevronRight, FiMapPin, FiSun, FiMoon, FiClock, FiWind, FiPlus, FiCheck, FiEye, FiEyeOff } from 'react-icons/fi'
 import { HiX } from 'react-icons/hi'
 import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
-import HeaderTopBar from '../components/HeaderTopBar'
-import SideNav from '../components/SideNav'
+import HeaderTopBar, { type CourseWeatherForTopbar } from '../components/HeaderTopBar'
 import SingleCourseElevationChart from '../components/SingleCourseElevationChart'
 import SimulationEngine from '../components/SimulationEngine'
 import React, { useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
@@ -29,7 +28,6 @@ import { supabaseConfigured } from '../lib/supabase'
 import { getUserFitActivities, saveUserFitActivity, type UserFitActivityRow } from '../lib/userFitActivities'
 import { grandRaidStats } from '../data/grandRaidStats'
 import { getWeather, getCityFromCoords, formatWeatherCircuitMessage } from '../lib/xweather'
-import { analyzeProfileZones } from '../lib/profileAnalysis'
 import { segmentSvgIntoNumberedSegments, addSvgTooltips, addSvgSegmentClickListeners, getSvgZoomedOnSegment, getSegmentPathPoints, type SegmentClickPayload } from '../lib/svgZoneSegmenter'
 import { latLonToSvg, svgPointToLatLon, getBoundsFromSvg, type GpxBounds } from '../lib/gpxToSvg'
 import { fetchWaysForBounds, computeSurfaceBreakdownFromWays, type GpxSurfaceBreakdown, type OverpassWay } from '../lib/surfaceFromOsm'
@@ -211,7 +209,7 @@ type SingleCoursePageProps = {
   selectedCourseId: string | null
 }
 
-export default function SingleCoursePage({
+function SingleCoursePage({
   onNavigate,
   events,
   selectedCourseId,
@@ -282,8 +280,8 @@ export default function SingleCoursePage({
   const [selectedSegment, setSelectedSegment] = useState<SegmentClickPayload | null>(null)
   /** Vue 3D : carte Mapbox avec relief (nécessite VITE_MAPBOX_ACCESS_TOKEN) */
   const [segmentView3D, setSegmentView3D] = useState(false)
-  /** Carte GPX en plein écran (sur mobile : map en paysage, le site reste en vertical) */
-  const [gpxMapFullscreen, setGpxMapFullscreen] = useState(false)
+  /** Vue segment (mobile) : masquer / afficher les infos texte autour de la carte */
+  const [segmentInfoCollapsed, setSegmentInfoCollapsed] = useState(false)
   /** Bottom sheet de feedback (retour utilisateur) */
   const [feedbackSheetOpen, setFeedbackSheetOpen] = useState(false)
   const [feedbackInitialRating, setFeedbackInitialRating] = useState<'like' | 'dislike' | null>(null)
@@ -296,14 +294,15 @@ export default function SingleCoursePage({
     }
   }, [isInMyParcours, currentStep])
 
+  /* En vue segment : la carte 2D/3D remplace le globe en fond de page */
   useEffect(() => {
-    if (!gpxMapFullscreen) return
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setGpxMapFullscreen(false)
+    if (currentStep === 'segment') {
+      document.body.classList.add('course-segment-view')
+    } else {
+      document.body.classList.remove('course-segment-view')
     }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [gpxMapFullscreen])
+    return () => document.body.classList.remove('course-segment-view')
+  }, [currentStep])
 
   const segmentStartKm =
     currentStep === 'segment' && selectedSegment != null ? selectedSegment.startKm : undefined
@@ -316,6 +315,40 @@ export default function SingleCoursePage({
   const [regionCity, setRegionCity] = useState<string | null>(null)
   const [regionTime, setRegionTime] = useState<string | null>(null)
   const [regionOffsetHours, setRegionOffsetHours] = useState<number | null>(null)
+
+  /** Météo parcours pour la topbar (saison-topbar__weather) */
+  const courseWeatherForTopbar = useMemo((): CourseWeatherForTopbar | null => {
+    const hasAny = regionCity != null || weatherTemp != null || regionTime != null || regionOffsetHours != null || windDir != null || windSpeedKmh != null
+    if (!hasAny) return null
+    const timeStr =
+      regionOffsetHours != null
+        ? (() => {
+            const now = Date.now()
+            const regionMs = now + regionOffsetHours * 60 * 60 * 1000
+            const d = new Date(regionMs)
+            const h = d.getUTCHours()
+            const m = d.getUTCMinutes()
+            const time = `${h.toString().padStart(2, '0')}h${m.toString().padStart(2, '0')}`
+            const userOffsetHours = -new Date().getTimezoneOffset() / 60
+            const diffHours = Math.round((regionOffsetHours - userOffsetHours) * 100) / 100
+            const diffStr = diffHours === 0 ? '0h' : `${diffHours >= 0 ? '+' : ''}${diffHours}h`
+            return `${time} (${diffStr})`
+          })()
+        : regionTime
+    const windStr =
+      windDir != null || windSpeedKmh != null
+        ? [windDir, windSpeedKmh != null ? `${Math.round(windSpeedKmh)} km/h` : null].filter(Boolean).join(' ')
+        : null
+    const windDegrees = windDir != null ? (WIND_DIR_DEG[windDir] ?? null) : null
+    return {
+      city: regionCity,
+      temp: weatherTemp,
+      timeStr: timeStr ?? null,
+      windStr,
+      windDegrees,
+    }
+  }, [regionCity, weatherTemp, regionTime, regionOffsetHours, windDir, windSpeedKmh])
+
   /** Pluie par point échantillon le long du tracé (pour afficher les gouttes sur le GPX) */
   const [rainAlongRoute, setRainAlongRoute] = useState<Array<{ lat: number; lon: number; rain: boolean }> | null>(null)
   /** Type de sentier (surface) le long du tracé, calculé via OSM */
@@ -742,15 +775,6 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
     useGrandRaidStats ? grandRaidStats : undefined
   )
 
-  // Analyser les zones du profil (mémoïsé pour éviter re-renders en chaîne)
-  const profileZones = useMemo(
-    () =>
-      profileData && metrics
-        ? analyzeProfileZones(profileData, metrics, courseData.distanceKm, courseData.elevationGain)
-        : [],
-    [profileData, metrics, courseData.distanceKm, courseData.elevationGain]
-  )
-
   // Réinitialiser le segment sélectionné quand on change de course
   useEffect(() => {
     setSelectedSegment(null)
@@ -866,7 +890,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
     } else {
       setSegmentedSvg(gpxSvg || null)
     }
-  }, [gpxSvg, profileZones, profileData])
+  }, [gpxSvg, profileData])
 
   /** Paragraphe dynamique "Quel est un bon temps..." (style Track Titan, adapté trail) */
   const goodTimeParagraph = (() => {
@@ -954,30 +978,32 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
   }
 
   return (
-    <div className="single-course-page">
-      <HeaderTopBar onNavigate={onNavigate} />
+    <div className={`single-course-page${currentStep === 'segment' ? ' single-course-page--segment-view' : ''}${currentStep === 'segment' && segmentInfoCollapsed ? ' single-course-page--segment-info-collapsed' : ''}`}>
+      <HeaderTopBar onNavigate={onNavigate} courseWeather={courseWeatherForTopbar} showWindArrow={currentStep === 'segment'} />
 
-      <div className="single-course-body">
-        <aside className="single-course-side">
-          <SideNav activeItem="courses" onNavigate={onNavigate} />
-        </aside>
-
-        <main className="single-course-main">
-          {/* Fil d'Ariane : Parcours > [Nom parcours] > [Étape] */}
-          <nav className="single-course-breadcrumb" aria-label="Fil d'Ariane">
+      {/* Wrapper pour la disposition : en vue segment = colonne gauche (header) + carte à droite */}
+      <div className={`single-course-segment-layout${currentStep === 'segment' ? ' single-course-segment-layout--with-map' : ''}`}>
+      <header className="single-course-page-header">
+        {currentStep !== 'segment' && (
+          <nav className="single-course-breadcrumb single-course-breadcrumb--ariane" aria-label="Fil d'Ariane">
             <ol className="single-course-breadcrumb__list">
-              <li className="single-course-breadcrumb__item">
-                <button
-                  type="button"
-                  className="single-course-breadcrumb__link"
-                  onClick={() => onNavigate?.('courses')}
-                >
-                  Parcours
-                </button>
-              </li>
-              <li className="single-course-breadcrumb__item" aria-hidden>
-                <FiChevronRight className="single-course-breadcrumb__sep" aria-hidden />
-              </li>
+              {currentStep !== 'description' && (
+                <li className="single-course-breadcrumb__item">
+                  <button
+                    type="button"
+                    className="single-course-breadcrumb__link single-course-breadcrumb__back"
+                    onClick={() => setCurrentStep('description')}
+                    aria-label="Retour à la description"
+                  >
+                    <FiChevronLeft aria-hidden />
+                  </button>
+                </li>
+              )}
+              {currentStep !== 'description' && (
+                <li className="single-course-breadcrumb__item" aria-hidden>
+                  <FiChevronRight className="single-course-breadcrumb__sep" aria-hidden />
+                </li>
+              )}
               <li className="single-course-breadcrumb__item">
                 <span className="single-course-breadcrumb__current-course">
                   {courseHeading}
@@ -1004,67 +1030,327 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
               </li>
             </ol>
           </nav>
-
-          <section className="single-course-heading">
-            <p className="single-course-title">{courseTitle}</p>
+        )}
+        {currentStep === 'segment' && (
+          <div className="single-course-course__gpx-toolbar single-course-course__gpx-toolbar--in-header">
             <button
               type="button"
-              className="single-course-choose-btn"
-              onClick={() => {
-                if (isInMyParcours) {
-                  removeFromMyParcours()
-                } else if (currentUserId) {
-                  addToMyParcours()
-                } else {
-                  setShowPrepareLoginModal(true)
-                }
-              }}
-              disabled={myParcoursLoading}
-              aria-pressed={isInMyParcours}
+              className="single-course-course__gpx-view-toggle"
+              onClick={() => setSegmentView3D((v) => !v)}
+              aria-pressed={segmentView3D}
+              aria-label={segmentView3D ? 'Passer en vue 2D' : 'Passer en vue 3D'}
             >
-              {myParcoursLoading ? (
-                <span>...</span>
-              ) : isInMyParcours ? (
-                <>
-                  <FiCheck aria-hidden /> Dans mes parcours
-                </>
-              ) : (
-                <>
-                  <FiPlus aria-hidden /> Lancer ma préparation
-                </>
-              )}
+              {segmentView3D ? 'Vue 2D' : 'Vue 3D'}
             </button>
-          </section>
+          </div>
+        )}
+        <section className="single-course-heading">
+          <div className="single-course-heading__title-row">
+            {currentStep === 'segment' && (
+              <button
+                type="button"
+                className="single-course-breadcrumb__link single-course-breadcrumb__back"
+                onClick={() => setCurrentStep('description')}
+                aria-label="Retour à la description"
+              >
+                <FiChevronLeft aria-hidden />
+              </button>
+            )}
+            <p className="single-course-title">{courseTitle}</p>
+          </div>
+          <button
+            type="button"
+            className="single-course-choose-btn"
+            onClick={() => {
+              if (isInMyParcours) {
+                removeFromMyParcours()
+              } else if (currentUserId) {
+                addToMyParcours()
+              } else {
+                setShowPrepareLoginModal(true)
+              }
+            }}
+            disabled={myParcoursLoading}
+            aria-pressed={isInMyParcours}
+          >
+            {myParcoursLoading ? (
+              <span>...</span>
+            ) : isInMyParcours ? (
+              <>
+                <FiCheck aria-hidden /> Dans mes parcours
+              </>
+            ) : (
+              <>
+                <FiPlus aria-hidden /> Lancer ma préparation
+              </>
+            )}
+          </button>
+        </section>
+        <div className="single-course-meta-top">
+          <p className="single-course-meta-top__stats">
+            {currentStep === 'segment' && selectedSegment != null
+              ? `${selectedSegment.startKm.toFixed(1)} – ${selectedSegment.endKm.toFixed(1)} km`
+              : courseStats}
+          </p>
+          {circuitWeather !== undefined && (
+            <p className="single-course-meta-top__prep" aria-label="État du circuit (météo)">
+              {formatWeatherCircuitMessage(circuitWeather)}
+            </p>
+          )}
+        </div>
+        {currentStep === 'segment' && selectedSegment != null && (() => {
+          const segStatsForAdvice = getSegmentStats(selectedSegment.startKm, selectedSegment.endKm)
+          return segStatsForAdvice != null ? (
+            <div className="single-course-segment-page__advice-card single-course-segment-page__advice-card--below-meta">
+              <div className="single-course-segment-page__advice">
+                <p className="single-course-segment-page__advice-label">Conseil de passage</p>
+                <p className="single-course-segment-page__advice-text">
+                  {segStatsForAdvice.elevationGain > segStatsForAdvice.elevationLoss * 1.5
+                    ? `Sur ce secteur en montée (${segStatsForAdvice.averageGradePercent} % de pente moyenne), concentrez-vous sur votre gestion d'allure. Adoptez une foulée régulière et n'hésitez pas à marcher dans les portions les plus raides pour préserver vos jambes. Pensez à vous hydrater et à vous alimenter avant les passages techniques. En maîtrisant ce secteur, vous aborderez la suite du parcours en meilleure condition.`
+                    : segStatsForAdvice.elevationLoss > segStatsForAdvice.elevationGain * 1.5
+                      ? `Sur ce secteur en descente, privilégiez la régularité et la prudence. Contrôlez votre vitesse pour éviter les chocs et les blessures, et gardez les jambes souples. Anticipez les changements de terrain et adaptez votre foulée. Une bonne descente préserve vos quadriceps pour la suite.`
+                      : `Sur ce secteur mixte, alternez course et marche selon la pente pour garder un effort constant. Gérez votre allure sur la longueur du segment et pensez à vous alimenter et vous hydrater. En restant régulier, vous préservez vos réserves pour les secteurs clés à venir.`}
+                </p>
+                <div className="single-course-segment-page__advice-feedback" style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FeedbackLikeDislike
+                    context="conseil-passage"
+                    onOpenFeedback={(rating, ctx) => { setFeedbackInitialRating(rating); setFeedbackContext(ctx); setFeedbackSheetOpen(true) }}
+                    label="sur ce conseil"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : null
+        })()}
+        {currentStep === 'segment' && (
+          <div className="single-course-segment-toggle">
+            <button
+              type="button"
+              className="single-course-segment-toggle__btn"
+              onClick={() => setSegmentInfoCollapsed((v) => !v)}
+              aria-pressed={segmentInfoCollapsed}
+            >
+              {segmentInfoCollapsed ? <FiEye aria-hidden /> : <FiEyeOff aria-hidden />}
+              <span>{segmentInfoCollapsed ? 'Afficher les infos du secteur' : 'Masquer les infos du secteur'}</span>
+            </button>
+          </div>
+        )}
+        {currentStep === 'segment' && selectedSegment != null && (() => {
+          const segStats = getSegmentStats(selectedSegment.startKm, selectedSegment.endKm)
+          const segmentProfile = getSegmentProfile(selectedSegment.startKm, selectedSegment.endKm)
+          return (
+            <>
+              <div className="single-course-segment-page__chart-card--fixed" aria-label="Profil du secteur">
+                <div className="single-course-segment-page__chart-card-header">
+                  {segmentBoundsList.length > 0 && (
+                    <div className="single-course-segment-page__sector-pills" role="tablist" aria-label="Choisir un secteur">
+                      {segmentBoundsList.map((seg) => (
+                        <button
+                          key={seg.segmentNumber}
+                          type="button"
+                          role="tab"
+                          aria-selected={selectedSegment.segmentNumber === seg.segmentNumber}
+                          aria-label={`Secteur ${seg.segmentNumber}`}
+                          className={`single-course-segment-page__sector-pill ${selectedSegment.segmentNumber === seg.segmentNumber ? 'single-course-segment-page__sector-pill--selected' : ''}`}
+                          onClick={() =>
+                            setSelectedSegment({
+                              segmentIndex: seg.segmentNumber - 1,
+                              segmentNumber: seg.segmentNumber,
+                              startKm: seg.startKm,
+                              endKm: seg.endKm,
+                            })
+                          }
+                        >
+                          {seg.segmentNumber}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="single-course-segment-page__chart">
+                  <SingleCourseElevationChart data={segmentProfile} metrics={undefined} height={120} />
+                </div>
+              </div>
+              {segStats != null ? (
+                <div className="single-course-segment-page__stats-card--fixed" aria-label="Stats du secteur">
+                  <dl className="single-course-segment-page__stats">
+                    <div className="single-course-segment-page__stat">
+                      <dt>Longueur</dt>
+                      <dd>{segStats.distanceKm.toFixed(1)} km</dd>
+                    </div>
+                    <div className="single-course-segment-page__stat">
+                      <dt>D+</dt>
+                      <dd>{segStats.elevationGain} m</dd>
+                    </div>
+                    <div className="single-course-segment-page__stat">
+                      <dt>D-</dt>
+                      <dd>{segStats.elevationLoss} m</dd>
+                    </div>
+                    <div className="single-course-segment-page__stat">
+                      <dt>Pente moy.</dt>
+                      <dd>{segStats.averageGradePercent} %</dd>
+                    </div>
+                    <div className="single-course-segment-page__stat">
+                      <dt>Profil</dt>
+                      <dd>
+                        {segStats.elevationGain > segStats.elevationLoss * 1.5
+                          ? 'Montée'
+                          : segStats.elevationLoss > segStats.elevationGain * 1.5
+                            ? 'Descente'
+                            : 'Mixte'}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              ) : null}
+            </>
+          )
+        })()}
+      </header>
 
-          {/* Contenu selon l'étape : première étape = Description (deux colonnes) */}
+      <div className="single-course-body">
+        <main className="single-course-main">
+          {/* Vue segment : juste en dessous de l'en-tête parcours */}
+          {currentStep === 'segment' && (
+            <section className="single-course-content" data-step="segment">
+              {selectedSegment != null ? (() => {
+                const totalKm = maxDistance ?? selectedCourse?.distanceKm ?? 0
+                const baseSvg = segmentedSvg || gpxSvg || ''
+                const segmentZoomedSvg =
+                  totalKm > 0 && baseSvg
+                    ? getSvgZoomedOnSegment(
+                        baseSvg,
+                        selectedSegment.startKm,
+                        selectedSegment.endKm,
+                        totalKm
+                      )
+                    : baseSvg
+                const boundsForMap =
+                  gpxBounds ??
+                  (gpxSvg && regionCoords
+                    ? getBoundsFromSvg(gpxSvg, regionCoords, totalKm)
+                    : null)
+                const fullTrackPositions: Array<[number, number]> =
+                  boundsForMap && gpxSvg && totalKm > 0
+                    ? getSegmentPathPoints(gpxSvg, 0, totalKm, totalKm).map(([x, y]) =>
+                        svgPointToLatLon(x, y, boundsForMap)
+                      )
+                    : []
+                const segmentPositions: Array<[number, number]> =
+                  boundsForMap && gpxSvg && totalKm > 0
+                    ? getSegmentPathPoints(gpxSvg, selectedSegment.startKm, selectedSegment.endKm, totalKm).map(
+                        ([x, y]) => svgPointToLatLon(x, y, boundsForMap)
+                      )
+                    : []
+                return (
+                  <>
+                    <div className="single-course-course single-course-course--segment-view">
+                      <div className="single-course-course__meta">
+                        <p className="single-course-course__meta-title">
+                          {courseHeading} — Segment {selectedSegment.segmentNumber}
+                        </p>
+                        <CourseMetaRegion
+                          regionCity={regionCity}
+                          weatherTemp={weatherTemp}
+                          regionTime={regionTime}
+                          regionOffsetHours={regionOffsetHours}
+                          windDir={windDir}
+                          windSpeedKmh={windSpeedKmh}
+                        />
+                        <p className="single-course-course__meta-stats">
+                          {selectedSegment.startKm.toFixed(1)} – {selectedSegment.endKm.toFixed(1)} km
+                        </p>
+                        {circuitWeather !== undefined && (
+                          <p className="single-course-course__meta-prep" aria-label="État du circuit (météo)">
+                            {formatWeatherCircuitMessage(circuitWeather)}
+                          </p>
+                        )}
+                      </div>
+                      <div className="single-course-course__gpx single-course-course__gpx--with-overlay">
+                        {(fullTrackPositions.length > 0 || segmentPositions.length > 0) ? (
+                          segmentView3D ? (
+                            <div className="single-course-course__gpx-map single-course-course__gpx-map--osm">
+                              <Suspense fallback={<div className="segment-map-mapbox3d-loading" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexDirection: 'column' }}><Skeleton width={160} height={24} /><Skeleton width={120} height={16} /></div>}>
+                                <SegmentMapMapbox3D
+                                  key={`segment-3d-${selectedSegment.segmentNumber}`}
+                                  fullTrackPositions={fullTrackPositions.length > 0 ? fullTrackPositions : undefined}
+                                  segmentPositions={segmentPositions}
+                                  height="100%"
+                                />
+                              </Suspense>
+                            </div>
+                          ) : (
+                            <div className="single-course-course__gpx-map single-course-course__gpx-map--osm">
+                              <SegmentMapLeaflet
+                                key={`segment-${selectedSegment.segmentNumber}`}
+                                fullTrackPositions={fullTrackPositions.length > 0 ? fullTrackPositions : undefined}
+                                segmentPositions={segmentPositions}
+                                height="100%"
+                              />
+                            </div>
+                          )
+                        ) : segmentZoomedSvg ? (
+                          <div className="single-course-course__gpx-map">
+                            <div
+                              className="single-course-course__gpx-svg"
+                              dangerouslySetInnerHTML={{ __html: segmentZoomedSvg.replace('<svg', '<svg id="gpx-inline-svg"') }}
+                            />
+                            {(() => {
+                              const viewBox = parseViewBox(segmentZoomedSvg)
+                              if (!viewBox || !rainAlongRoute?.length || !gpxBounds) return null
+                              const allRain = rainAlongRoute
+                                .filter((p) => p.rain)
+                                .map((p) => latLonToSvg(p.lat, p.lon, gpxBounds))
+                              if (allRain.length === 0) return null
+                              const parts = viewBox.trim().split(/\s+/).map(Number)
+                              const minX = parts[0]; const minY = parts[1]; const w = parts[2]; const h = parts[3]
+                              const inSegment = parts.length === 4 && !parts.some(Number.isNaN)
+                                ? allRain.filter(([x, y]) => x >= minX && x <= minX + w && y >= minY && y <= minY + h)
+                                : allRain
+                              const rainPositions = inSegment.length > 0 ? inSegment : [[minX + w / 2, minY + h / 2]]
+                              return (
+                                <svg
+                                  className="single-course-course__gpx-rain-overlay"
+                                  viewBox={viewBox}
+                                  preserveAspectRatio="xMidYMid meet"
+                                  width="100%"
+                                  height="100%"
+                                  aria-hidden
+                                  style={{ pointerEvents: 'none' }}
+                                >
+                                  <title>Pluie — secteurs où il a plu (24h)</title>
+                                  <g fill="#3b82f6" stroke="#1d4ed8" strokeWidth="0.35">
+                                    {rainPositions.map(([x, y], i) => (
+                                      <path key={i} d={DROP_PATH} transform={`translate(${x},${y}) scale(0.9)`} />
+                                    ))}
+                                  </g>
+                                </svg>
+                              )
+                            })()}
+                          </div>
+                        ) : (
+                          <img src={gpxIcon} alt="GPX" />
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )
+              })() : (
+                <div className="single-course-segment-page single-course-segment-page--empty">
+                  <p className="single-course-segment-page__empty">
+                    Sélectionnez un segment sur la carte ou dans la liste (étape Description) pour afficher son détail.
+                  </p>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Contenu selon l'étape : Description (deux colonnes) ou Ma préparation */}
+          {(currentStep === 'description' || currentStep === 'ma-preparation') && (
           <section className="single-course-content" data-step={currentStep}>
             {currentStep === 'description' && (
             <>
             <div className="single-course-course">
-              <div className="single-course-course__meta">
-                <p className="single-course-course__meta-title">{courseHeading}</p>
-                <CourseMetaRegion
-                  regionCity={regionCity}
-                  weatherTemp={weatherTemp}
-                  regionTime={regionTime}
-                  regionOffsetHours={regionOffsetHours}
-                  windDir={windDir}
-                  windSpeedKmh={windSpeedKmh}
-                />
-                <p className="single-course-course__meta-stats">{courseStats}</p>
-                {circuitWeather !== undefined && (
-                  <p className="single-course-course__meta-prep" aria-label="État du circuit (météo)">
-                    {formatWeatherCircuitMessage(circuitWeather)}
-                  </p>
-                )}
-                <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FeedbackLikeDislike
-                    context="description"
-                    onOpenFeedback={(rating, ctx) => { setFeedbackInitialRating(rating); setFeedbackContext(ctx); setFeedbackSheetOpen(true) }}
-                    label="sur la description"
-                  />
-                </div>
-              </div>
               <div className="single-course-course__gpx single-course-course__gpx--with-overlay">
                 {segmentedSvg || gpxSvg ? (
                   <>
@@ -1104,21 +1390,6 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
                   <img src={gpxIcon} alt="GPX" />
                 )}
               </div>
-              {surfaceBreakdownLoading && (
-                <p className="single-course-course__surface-below-map" aria-live="polite">
-                  <Skeleton width="100%" height={18} block className="skeleton-inline" style={{ maxWidth: 320 }} />
-                </p>
-              )}
-              {!surfaceBreakdownLoading && surfaceBreakdown && surfaceBreakdown.length > 0 && (
-                <p className="single-course-course__surface-below-map" aria-label="Répartition du type de terrain">
-                  Type de terrain : {surfaceBreakdown.map(({ surface, percent }) => `${surface} ${percent} %`).join(' · ')}
-                </p>
-              )}
-              {!surfaceBreakdownLoading && surfaceBreakdownError && (
-                <p className="single-course-course__surface-below-map single-course-course__surface-below-map--muted" aria-live="polite">
-                  {surfaceBreakdownError}
-                </p>
-              )}
               {selectedSegment != null && (
                 <p className="single-course-course__segment-selected" aria-live="polite">
                   Segment {selectedSegment.segmentNumber} sélectionné — {selectedSegment.startKm.toFixed(1)} – {selectedSegment.endKm.toFixed(1)} km
@@ -1213,6 +1484,25 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
               <div className="single-course-course__card">
                 <SingleCourseElevationChart data={profileData} metrics={metrics} />
               </div>
+              {surfaceBreakdownLoading && (
+                <p className="single-course-course__surface-below-map" aria-live="polite">
+                  <Skeleton width="100%" height={18} block className="skeleton-inline" style={{ maxWidth: 320 }} />
+                </p>
+              )}
+              {!surfaceBreakdownLoading && surfaceBreakdown && surfaceBreakdown.length > 0 && (() => {
+                const aboveThreshold = surfaceBreakdown.filter(({ percent }) => percent >= 5)
+                if (aboveThreshold.length === 0) return null
+                return (
+                  <p className="single-course-course__surface-below-map" aria-label="Répartition du type de terrain">
+                    Type de terrain : {aboveThreshold.map(({ surface, percent }) => `${surface} ${percent} %`).join(' · ')}
+                  </p>
+                )
+              })()}
+              {!surfaceBreakdownLoading && surfaceBreakdownError && (
+                <p className="single-course-course__surface-below-map single-course-course__surface-below-map--muted" aria-live="polite">
+                  {surfaceBreakdownError}
+                </p>
+              )}
               <div className="single-course-segment-cards">
                 {segmentBoundsList.map((seg) => {
                   const segmentProfile = getSegmentProfile(seg.startKm, seg.endKm)
@@ -1285,242 +1575,6 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
               </div>
             </div>
             </>
-            )}
-
-            {currentStep === 'segment' && (
-              selectedSegment != null ? (() => {
-                const segStats = getSegmentStats(selectedSegment.startKm, selectedSegment.endKm)
-                const segmentProfile = getSegmentProfile(selectedSegment.startKm, selectedSegment.endKm)
-                const totalKm = maxDistance ?? selectedCourse?.distanceKm ?? 0
-                const baseSvg = segmentedSvg || gpxSvg || ''
-                const segmentZoomedSvg =
-                  totalKm > 0 && baseSvg
-                    ? getSvgZoomedOnSegment(
-                        baseSvg,
-                        selectedSegment.startKm,
-                        selectedSegment.endKm,
-                        totalKm
-                      )
-                    : baseSvg
-                const boundsForMap =
-                  gpxBounds ??
-                  (gpxSvg && regionCoords
-                    ? getBoundsFromSvg(gpxSvg, regionCoords, totalKm)
-                    : null)
-                const fullTrackPositions: Array<[number, number]> =
-                  boundsForMap && gpxSvg && totalKm > 0
-                    ? getSegmentPathPoints(gpxSvg, 0, totalKm, totalKm).map(([x, y]) =>
-                        svgPointToLatLon(x, y, boundsForMap)
-                      )
-                    : []
-                const segmentPositions: Array<[number, number]> =
-                  boundsForMap && gpxSvg && totalKm > 0
-                    ? getSegmentPathPoints(gpxSvg, selectedSegment.startKm, selectedSegment.endKm, totalKm).map(
-                        ([x, y]) => svgPointToLatLon(x, y, boundsForMap)
-                      )
-                    : []
-                return (
-                  <>
-                    <div className="single-course-course single-course-course--segment-view">
-                      <div className="single-course-course__meta">
-                        <p className="single-course-course__meta-title">
-                          {courseHeading} — Segment {selectedSegment.segmentNumber}
-                        </p>
-                        <CourseMetaRegion
-                          regionCity={regionCity}
-                          weatherTemp={weatherTemp}
-                          regionTime={regionTime}
-                          regionOffsetHours={regionOffsetHours}
-                          windDir={windDir}
-                          windSpeedKmh={windSpeedKmh}
-                        />
-                        <p className="single-course-course__meta-stats">
-                          {selectedSegment.startKm.toFixed(1)} – {selectedSegment.endKm.toFixed(1)} km
-                        </p>
-                        {circuitWeather !== undefined && (
-                          <p className="single-course-course__meta-prep" aria-label="État du circuit (météo)">
-                            {formatWeatherCircuitMessage(circuitWeather)}
-                          </p>
-                        )}
-                      </div>
-                      <div className={`single-course-course__gpx single-course-course__gpx--with-overlay${gpxMapFullscreen ? ' single-course-course__gpx--fullscreen' : ''}`}>
-                        <div className="single-course-course__gpx-toolbar">
-                          <button
-                            type="button"
-                            className="single-course-course__gpx-view-toggle"
-                            onClick={() => setSegmentView3D((v) => !v)}
-                            aria-pressed={segmentView3D}
-                            aria-label={segmentView3D ? 'Passer en vue 2D' : 'Passer en vue 3D'}
-                          >
-                            {segmentView3D ? 'Vue 2D' : 'Vue 3D'}
-                          </button>
-                          <button
-                            type="button"
-                            className="single-course-course__gpx-view-toggle"
-                            onClick={() => setGpxMapFullscreen((v) => !v)}
-                            aria-pressed={gpxMapFullscreen}
-                            aria-label={gpxMapFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
-                          >
-                            {gpxMapFullscreen ? 'Réduire' : 'Plein écran'}
-                          </button>
-                        </div>
-                        <WindBadge windDir={windDir} windSpeedKmh={windSpeedKmh} />
-                        {(fullTrackPositions.length > 0 || segmentPositions.length > 0) ? (
-                          segmentView3D ? (
-                            <div className="single-course-course__gpx-map single-course-course__gpx-map--osm">
-                              <Suspense fallback={<div className="segment-map-mapbox3d-loading" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexDirection: 'column' }}><Skeleton width={160} height={24} /><Skeleton width={120} height={16} /></div>}>
-                                <SegmentMapMapbox3D
-                                  key={`segment-3d-${selectedSegment.segmentNumber}`}
-                                  fullTrackPositions={fullTrackPositions.length > 0 ? fullTrackPositions : undefined}
-                                  segmentPositions={segmentPositions}
-                                  height="100%"
-                                />
-                              </Suspense>
-                            </div>
-                          ) : (
-                            <div className="single-course-course__gpx-map single-course-course__gpx-map--osm">
-                              <SegmentMapLeaflet
-                                key={`segment-${selectedSegment.segmentNumber}`}
-                                fullTrackPositions={fullTrackPositions.length > 0 ? fullTrackPositions : undefined}
-                                segmentPositions={segmentPositions}
-                                height="100%"
-                              />
-                            </div>
-                          )
-                        ) : segmentZoomedSvg ? (
-                          <div className="single-course-course__gpx-map">
-                            <div
-                              className="single-course-course__gpx-svg"
-                              dangerouslySetInnerHTML={{ __html: segmentZoomedSvg.replace('<svg', '<svg id="gpx-inline-svg"') }}
-                            />
-                            {(() => {
-                              const viewBox = parseViewBox(segmentZoomedSvg)
-                              if (!viewBox || !rainAlongRoute?.length || !gpxBounds) return null
-                              const allRain = rainAlongRoute
-                                .filter((p) => p.rain)
-                                .map((p) => latLonToSvg(p.lat, p.lon, gpxBounds))
-                              if (allRain.length === 0) return null
-                              const parts = viewBox.trim().split(/\s+/).map(Number)
-                              const minX = parts[0]; const minY = parts[1]; const w = parts[2]; const h = parts[3]
-                              const inSegment = parts.length === 4 && !parts.some(Number.isNaN)
-                                ? allRain.filter(([x, y]) => x >= minX && x <= minX + w && y >= minY && y <= minY + h)
-                                : allRain
-                              const rainPositions = inSegment.length > 0 ? inSegment : [[minX + w / 2, minY + h / 2]]
-                              return (
-                                <svg
-                                  className="single-course-course__gpx-rain-overlay"
-                                  viewBox={viewBox}
-                                  preserveAspectRatio="xMidYMid meet"
-                                  width="100%"
-                                  height="100%"
-                                  aria-hidden
-                                  style={{ pointerEvents: 'none' }}
-                                >
-                                  <title>Pluie — secteurs où il a plu (24h)</title>
-                                  <g fill="#3b82f6" stroke="#1d4ed8" strokeWidth="0.35">
-                                    {rainPositions.map(([x, y], i) => (
-                                      <path key={i} d={DROP_PATH} transform={`translate(${x},${y}) scale(0.9)`} />
-                                    ))}
-                                  </g>
-                                </svg>
-                              )
-                            })()}
-                          </div>
-                        ) : (
-                          <img src={gpxIcon} alt="GPX" />
-                        )}
-                      </div>
-                    </div>
-                    <div className="single-course-right">
-                      <div className="single-course-chart-block single-course-segment-page__stats-card">
-                        <div className="single-course-segment-page__stats-card-header">
-                          <p className="single-course-panel__title">Secteur {selectedSegment.segmentNumber}</p>
-                          <div className="single-course-segment-page__sector-slider" role="tablist" aria-label="Choisir un secteur">
-                            {segmentBoundsList.map((seg) => (
-                              <button
-                                key={seg.segmentNumber}
-                                type="button"
-                                role="tab"
-                                aria-selected={selectedSegment.segmentNumber === seg.segmentNumber}
-                                aria-label={`Secteur ${seg.segmentNumber}`}
-                                className={`single-course-segment-page__sector-pill ${selectedSegment.segmentNumber === seg.segmentNumber ? 'single-course-segment-page__sector-pill--selected' : ''}`}
-                                onClick={() =>
-                                  setSelectedSegment({
-                                    segmentIndex: seg.segmentNumber - 1,
-                                    segmentNumber: seg.segmentNumber,
-                                    startKm: seg.startKm,
-                                    endKm: seg.endKm,
-                                  })
-                                }
-                              >
-                                Secteur {seg.segmentNumber}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="single-course-segment-page__chart">
-                          <SingleCourseElevationChart data={segmentProfile} metrics={undefined} />
-                        </div>
-                        {segStats != null ? (
-                          <>
-                            <dl className="single-course-segment-page__stats">
-                              <div className="single-course-segment-page__stat">
-                                <dt>Longueur</dt>
-                                <dd>{segStats.distanceKm.toFixed(1)} km</dd>
-                              </div>
-                              <div className="single-course-segment-page__stat">
-                                <dt>D+</dt>
-                                <dd>{segStats.elevationGain} m</dd>
-                              </div>
-                              <div className="single-course-segment-page__stat">
-                                <dt>D-</dt>
-                                <dd>{segStats.elevationLoss} m</dd>
-                              </div>
-                              <div className="single-course-segment-page__stat">
-                                <dt>Pente moy.</dt>
-                                <dd>{segStats.averageGradePercent} %</dd>
-                              </div>
-                              <div className="single-course-segment-page__stat">
-                                <dt>Profil</dt>
-                                <dd>
-                                  {segStats.elevationGain > segStats.elevationLoss * 1.5
-                                    ? 'Montée'
-                                    : segStats.elevationLoss > segStats.elevationGain * 1.5
-                                      ? 'Descente'
-                                      : 'Mixte'}
-                                </dd>
-                              </div>
-                            </dl>
-                            <div className="single-course-segment-page__advice">
-                              <p className="single-course-segment-page__advice-label">Conseil de passage</p>
-                              <p className="single-course-segment-page__advice-text">
-                                {segStats.elevationGain > segStats.elevationLoss * 1.5
-                                  ? `Sur ce secteur en montée (${segStats.averageGradePercent} % de pente moyenne), concentrez-vous sur votre gestion d'allure. Adoptez une foulée régulière et n'hésitez pas à marcher dans les portions les plus raides pour préserver vos jambes. Pensez à vous hydrater et à vous alimenter avant les passages techniques. En maîtrisant ce secteur, vous aborderez la suite du parcours en meilleure condition.`
-                                  : segStats.elevationLoss > segStats.elevationGain * 1.5
-                                    ? `Sur ce secteur en descente, privilégiez la régularité et la prudence. Contrôlez votre vitesse pour éviter les chocs et les blessures, et gardez les jambes souples. Anticipez les changements de terrain et adaptez votre foulée. Une bonne descente préserve vos quadriceps pour la suite.`
-                                    : `Sur ce secteur mixte, alternez course et marche selon la pente pour garder un effort constant. Gérez votre allure sur la longueur du segment et pensez à vous alimenter et vous hydrater. En restant régulier, vous préservez vos réserves pour les secteurs clés à venir.`}
-                              </p>
-                              <div className="single-course-segment-page__advice-feedback" style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <FeedbackLikeDislike
-                                  context="conseil-passage"
-                                  onOpenFeedback={(rating, ctx) => { setFeedbackInitialRating(rating); setFeedbackContext(ctx); setFeedbackSheetOpen(true) }}
-                                  label="sur ce conseil"
-                                />
-                              </div>
-                            </div>
-                          </>
-                        ) : null}
-                      </div>
-                    </div>
-                  </>
-                )
-              })() : (
-                <div className="single-course-segment-page single-course-segment-page--empty">
-                  <p className="single-course-segment-page__empty">
-                    Sélectionnez un segment sur la carte ou dans la liste (étape Description) pour afficher son détail.
-                  </p>
-                </div>
-              )
             )}
 
             {currentStep === 'ma-preparation' && (
@@ -2111,7 +2165,9 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
               </>
             )}
           </section>
+          )}
         </main>
+      </div>
       </div>
 
       <FeedbackBottomSheet
@@ -2169,6 +2225,9 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
           </div>
         </div>
       )}
+
     </div>
   )
 }
+
+export default SingleCoursePage

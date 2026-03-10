@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import './App.css'
 import Skeleton, { SkeletonLines } from './components/Skeleton'
-import WebGlGlobe from './components/WebGlGlobe'
 import CoursesPage from './pages/CoursesPage'
 import EventsPage from './pages/EventsPage'
 import SaisonPage from './pages/SaisonPage'
@@ -734,16 +733,6 @@ function App() {
     loadEvents()
   }, [])
 
-  const courseMarkersOnGlobe = useMemo<{ id: string; coordinates: [number, number] }[]>(() => {
-    return events.flatMap((e) =>
-      e.courses
-        .filter((c): c is typeof c & { startCoordinates: [number, number] } =>
-          c.startCoordinates != null && c.startCoordinates.length === 2
-        )
-        .map((c) => ({ id: c.id, coordinates: c.startCoordinates }))
-    )
-  }, [events])
-
   if (loading) {
     return (
       <div className="app-root app-loading" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', gap: 24 }}>
@@ -754,11 +743,9 @@ function App() {
   }
 
   return (
-    <div className={`app-root${view === 'saison' ? ' app-root--globe-interactive' : ''}`}>
-      <div className="app-bg-globe" aria-hidden={view !== 'saison'}>
-        <WebGlGlobe courseMarkers={courseMarkersOnGlobe} onCourseSelect={(id) => { setSelectedCourseId(id ?? null); setView('course') }} />
-      </div>
-      <div className={`app-bg-dark ${view !== 'saison' ? 'app-bg-dark--visible' : ''}`} aria-hidden={view === 'saison'} />
+    <div className="app-root">
+      {/* Globe 3D masqué temporairement : on garde uniquement le fond sombre */}
+      <div className="app-bg-dark app-bg-dark--visible" aria-hidden={false} />
       <div className="app-content">
       {view === 'saison' && (
         <SaisonPage
