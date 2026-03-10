@@ -263,6 +263,26 @@
   display: none;
 }
 
+.modal-upload-simple__success {
+  margin: var(--spacing-2, 4px) 0 0;
+  font-size: var(--font-size-sm, 12px);
+  line-height: 1.4;
+  color: #4ade80;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 4px);
+}
+
+.modal-upload-simple__success::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
 .modal-field {
   display: flex;
   flex-direction: column;

@@ -7,7 +7,7 @@ Application React/Vite pour un simulateur de préparation trail basé sur l'anal
 ## Stack Technique
 
 - **Frontend** : React 18 + TypeScript + Vite
-- **Styling** : CSS (tokens dans `src/styles/tokens.css`)
+- **Styling** : CSS (tokens dans `src/styles/tokens.css`) + **Tailwind CSS v4** (PostCSS : `postcss.config.js`, `@import "tailwindcss"` dans `src/index.css`)
 - **Cartographie** : Globe WebGL (écran Saison) ; Google Maps + `@react-google-maps/api` (cartes de détail)
 - **Graphiques** : Highcharts (profil d'élévation, données)
 - **Backend** : Supabase (Base de données + Auth)

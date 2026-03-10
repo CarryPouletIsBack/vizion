@@ -2,9 +2,8 @@ import './CoursesPage.css'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HiX } from 'react-icons/hi'
-import { FiMoreVertical, FiEdit3, FiTrash2, FiStar } from 'react-icons/fi'
+import { FiMoreVertical, FiEdit3, FiTrash2, FiStar, FiImage, FiMapPin } from 'react-icons/fi'
 
-import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import grandRaidLogo from '../assets/da2a1ce5e69564e56a29b5912fd151a8f515e136.png'
 import HeaderTopBar from '../components/HeaderTopBar'
 import Skeleton from '../components/Skeleton'
@@ -195,6 +194,10 @@ export default function CoursesPage({
   const { metrics, loading } = useStravaMetrics()
   const selectedEvent = events.find((event) => event.id === selectedEventId) ?? events[0]
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  /** Message succès après upload image/GPX dans la modale Créer une course */
+  const [createUploadSuccess, setCreateUploadSuccess] = useState<{ image?: boolean; gpx?: boolean }>({})
+  /** Message succès après upload image/GPX dans la modale Modifier le parcours */
+  const [editUploadSuccess, setEditUploadSuccess] = useState<{ image?: boolean; gpx?: boolean }>({})
   const [courseOptionsOpenId, setCourseOptionsOpenId] = useState<string | null>(null)
   const [editingCourse, setEditingCourse] = useState<{
     id: string
@@ -337,7 +340,12 @@ export default function CoursesPage({
     if (editTimeRef.current) editTimeRef.current.value = editingCourse.startTime ?? '08:00'
     if (editImageRef.current) editImageRef.current.value = ''
     if (editGpxRef.current) editGpxRef.current.value = ''
+    setEditUploadSuccess({})
   }, [editingCourse])
+
+  useEffect(() => {
+    if (isCreateModalOpen) setCreateUploadSuccess({})
+  }, [isCreateModalOpen])
 
   const sanitizeSvg = (svgText: string) => {
     try {
@@ -687,6 +695,7 @@ export default function CoursesPage({
           readiness: readinessLabel,
           countdown: countdownLabel,
           imageUrl: course.imageUrl ?? parentEvent?.imageUrl ?? grandRaidLogo,
+          hasCustomImage: !!(course.imageUrl ?? parentEvent?.imageUrl),
           gpxName: course.gpxName,
           gpxSvg: course.gpxSvg,
           isFirst: index === 0,
@@ -721,6 +730,7 @@ export default function CoursesPage({
         readiness: readinessLabel,
         countdown: countdownLabel,
         imageUrl: course.imageUrl ?? parentEvent?.imageUrl ?? grandRaidLogo,
+        hasCustomImage: !!(course.imageUrl ?? parentEvent?.imageUrl),
         gpxSvg: course.gpxSvg,
         courseRaw: course,
       }
@@ -775,15 +785,30 @@ export default function CoursesPage({
                 }}
               >
                 <div className="course-card__top">
-                  <div className="course-card__gpx">
-                    {card.gpxSvg ? (
-                      <div
-                        className="course-card__gpx-svg"
-                        dangerouslySetInnerHTML={{ __html: card.gpxSvg }}
-                      />
-                    ) : (
-                      <img src={gpxIcon} alt="GPX" />
-                    )}
+                  <div className="course-card__media">
+                    <div className="course-card__media-image">
+                      {card.hasCustomImage && card.imageUrl ? (
+                        <img src={card.imageUrl} alt="" />
+                      ) : (
+                        <span className="course-card__placeholder" title="Aucune image">
+                          <FiImage aria-hidden />
+                          <span>Aucune image</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="course-card__media-gpx">
+                      {card.gpxSvg ? (
+                        <div
+                          className="course-card__gpx-svg"
+                          dangerouslySetInnerHTML={{ __html: card.gpxSvg }}
+                        />
+                      ) : (
+                        <span className="course-card__placeholder" title="Aucun tracé">
+                          <FiMapPin aria-hidden />
+                          <span>Aucun tracé</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="course-card__content">
                     <h3 className="course-card__title">{card.subtitle}</h3>
@@ -912,12 +937,27 @@ export default function CoursesPage({
                   }}
                 >
                   <div className="course-card__top">
-                    <div className="course-card__gpx">
-                      {card.gpxSvg ? (
-                        <div className="course-card__gpx-svg" dangerouslySetInnerHTML={{ __html: card.gpxSvg }} />
-                      ) : (
-                        <img src={gpxIcon} alt="GPX" />
-                      )}
+                    <div className="course-card__media">
+                      <div className="course-card__media-image">
+                        {card.hasCustomImage && card.imageUrl ? (
+                          <img src={card.imageUrl} alt="" />
+                        ) : (
+                          <span className="course-card__placeholder" title="Aucune image">
+                            <FiImage aria-hidden />
+                            <span>Aucune image</span>
+                          </span>
+                        )}
+                      </div>
+                      <div className="course-card__media-gpx">
+                        {card.gpxSvg ? (
+                          <div className="course-card__gpx-svg" dangerouslySetInnerHTML={{ __html: card.gpxSvg }} />
+                        ) : (
+                          <span className="course-card__placeholder" title="Aucun tracé">
+                            <FiMapPin aria-hidden />
+                            <span>Aucun tracé</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="course-card__content">
                       <h3 className="course-card__title">{card.subtitle}</h3>
@@ -1033,7 +1073,11 @@ export default function CoursesPage({
                 type="file"
                 accept="image/*"
                 ref={courseImageRef}
+                onChange={() => setCreateUploadSuccess((s) => ({ ...s, image: true }))}
               />
+              {createUploadSuccess.image && (
+                <p className="modal-upload-simple__success" role="status">Image ajoutée avec succès</p>
+              )}
             </div>
             <div className="modal-upload-simple">
               <label className="modal-upload-simple__button" htmlFor="course-gpx-page">
@@ -1046,7 +1090,11 @@ export default function CoursesPage({
                 type="file"
                 accept=".gpx,application/gpx+xml,application/xml,text/xml"
                 ref={courseGpxRef}
+                onChange={() => setCreateUploadSuccess((s) => ({ ...s, gpx: true }))}
               />
+              {createUploadSuccess.gpx && (
+                <p className="modal-upload-simple__success" role="status">Fichier GPX ajouté avec succès</p>
+              )}
             </div>
             <div className="modal-field">
               <label htmlFor="course-name-page">
@@ -1152,9 +1200,13 @@ export default function CoursesPage({
                 type="file"
                 accept="image/*"
                 ref={editImageRef}
+                onChange={() => setEditUploadSuccess((s) => ({ ...s, image: true }))}
               />
               {editingCourse.imageUrl && (
                 <p className="modal-field__hint">Image actuelle conservée si vous ne choisissez pas un nouveau fichier.</p>
+              )}
+              {editUploadSuccess.image && (
+                <p className="modal-upload-simple__success" role="status">Image ajoutée avec succès</p>
               )}
             </div>
             <div className="modal-upload-simple">
@@ -1170,9 +1222,13 @@ export default function CoursesPage({
                 type="file"
                 accept=".gpx,application/gpx+xml,application/xml,text/xml"
                 ref={editGpxRef}
+                onChange={() => setEditUploadSuccess((s) => ({ ...s, gpx: true }))}
               />
               {editingCourse.gpxName && (
                 <p className="modal-field__hint">Fichier actuel : {editingCourse.gpxName}</p>
+              )}
+              {editUploadSuccess.gpx && (
+                <p className="modal-upload-simple__success" role="status">Fichier GPX ajouté avec succès</p>
               )}
             </div>
             <div className="modal-field">

@@ -1,6 +1,6 @@
 import './SingleCoursePage.css'
 
-import { FiAlertCircle, FiZap, FiChevronLeft, FiChevronRight, FiMapPin, FiSun, FiMoon, FiClock, FiWind, FiPlus, FiCheck } from 'react-icons/fi'
+import { FiAlertCircle, FiZap, FiChevronLeft, FiChevronRight, FiMapPin, FiSun, FiMoon, FiClock, FiWind, FiPlus, FiCheck, FiEye, FiEyeOff } from 'react-icons/fi'
 import { HiX } from 'react-icons/hi'
 import gpxIcon from '../assets/d824ad10b22406bc6f779da5180da5cdaeca1e2c.svg'
 import HeaderTopBar, { type CourseWeatherForTopbar } from '../components/HeaderTopBar'
@@ -280,6 +280,8 @@ function SingleCoursePage({
   const [selectedSegment, setSelectedSegment] = useState<SegmentClickPayload | null>(null)
   /** Vue 3D : carte Mapbox avec relief (nécessite VITE_MAPBOX_ACCESS_TOKEN) */
   const [segmentView3D, setSegmentView3D] = useState(false)
+  /** Vue segment (mobile) : masquer / afficher les infos texte autour de la carte */
+  const [segmentInfoCollapsed, setSegmentInfoCollapsed] = useState(false)
   /** Bottom sheet de feedback (retour utilisateur) */
   const [feedbackSheetOpen, setFeedbackSheetOpen] = useState(false)
   const [feedbackInitialRating, setFeedbackInitialRating] = useState<'like' | 'dislike' | null>(null)
@@ -976,7 +978,7 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
   }
 
   return (
-    <div className={`single-course-page${currentStep === 'segment' ? ' single-course-page--segment-view' : ''}`}>
+    <div className={`single-course-page${currentStep === 'segment' ? ' single-course-page--segment-view' : ''}${currentStep === 'segment' && segmentInfoCollapsed ? ' single-course-page--segment-info-collapsed' : ''}`}>
       <HeaderTopBar onNavigate={onNavigate} courseWeather={courseWeatherForTopbar} showWindArrow={currentStep === 'segment'} />
 
       {/* Wrapper pour la disposition : en vue segment = colonne gauche (header) + carte à droite */}
@@ -1120,6 +1122,19 @@ const userFitTop5 = userFitActivities.slice(0, 5).map((r) => r.summary)
             </div>
           ) : null
         })()}
+        {currentStep === 'segment' && (
+          <div className="single-course-segment-toggle">
+            <button
+              type="button"
+              className="single-course-segment-toggle__btn"
+              onClick={() => setSegmentInfoCollapsed((v) => !v)}
+              aria-pressed={segmentInfoCollapsed}
+            >
+              {segmentInfoCollapsed ? <FiEye aria-hidden /> : <FiEyeOff aria-hidden />}
+              <span>{segmentInfoCollapsed ? 'Afficher les infos du secteur' : 'Masquer les infos du secteur'}</span>
+            </button>
+          </div>
+        )}
         {currentStep === 'segment' && selectedSegment != null && (() => {
           const segStats = getSegmentStats(selectedSegment.startKm, selectedSegment.endKm)
           const segmentProfile = getSegmentProfile(selectedSegment.startKm, selectedSegment.endKm)

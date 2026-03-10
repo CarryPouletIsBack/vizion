@@ -1,11 +1,9 @@
+@import 'tailwindcss';
+
 @import './styles/fonts.css';
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
 @import './styles/tokens.css';
 @import './styles/ModalShared.css';
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 /* Styles globaux (minimalistes) pour le MVP. */
 /* ========== Type scale Figma (appliqué globalement) ========== */

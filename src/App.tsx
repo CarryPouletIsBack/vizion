@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 
 import './App.css'
 import Skeleton, { SkeletonLines } from './components/Skeleton'
-import WebGlGlobe from './components/WebGlGlobe'
 import CoursesPage from './pages/CoursesPage'
 import EventsPage from './pages/EventsPage'
 import SaisonPage from './pages/SaisonPage'
@@ -754,11 +753,9 @@ function App() {
   }
 
   return (
-    <div className={`app-root${view === 'saison' ? ' app-root--globe-interactive' : ''}`}>
-      <div className="app-bg-globe" aria-hidden={view !== 'saison'}>
-        <WebGlGlobe courseMarkers={courseMarkersOnGlobe} onCourseSelect={(id) => { setSelectedCourseId(id ?? null); setView('course') }} />
-      </div>
-      <div className={`app-bg-dark ${view !== 'saison' ? 'app-bg-dark--visible' : ''}`} aria-hidden={view === 'saison'} />
+    <div className="app-root">
+      {/* Globe 3D masqué temporairement : on garde uniquement le fond sombre */}
+      <div className="app-bg-dark app-bg-dark--visible" aria-hidden={false} />
       <div className="app-content">
       {view === 'saison' && (
         <SaisonPage

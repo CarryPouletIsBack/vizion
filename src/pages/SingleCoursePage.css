@@ -1910,6 +1910,41 @@ body.course-segment-view .single-course-content[data-step="segment"] {
     aspect-ratio: 16 / 10;
   }
 
+  /* Bouton mobile pour masquer / afficher les infos de la vue segment */
+  .single-course-segment-toggle {
+    margin-top: var(--spacing-4, 8px);
+    margin-bottom: var(--spacing-2, 4px);
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .single-course-segment-toggle__btn {
+    border-radius: var(--radius-full, 9999px);
+    border: var(--border-width, 1px) solid rgba(255, 255, 255, 0.2);
+    background: rgba(15, 23, 42, 0.85);
+    color: var(--color-text-secondary, #9ca3af);
+    font-size: var(--font-size-sm, 12px);
+    padding: var(--spacing-2, 4px) var(--spacing-4, 8px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-1, 2px);
+    cursor: pointer;
+  }
+
+  .single-course-page--segment-info-collapsed .single-course-segment-toggle__btn {
+    color: var(--color-accent, #bfc900);
+    border-color: rgba(191, 201, 0, 0.6);
+  }
+
+  /* En mode « infos masquées », on enlève les blocs texte sous la carte en vue segment */
+  .single-course-page--segment-info-collapsed .single-course-course__meta,
+  .single-course-page--segment-info-collapsed .single-course-segment-page__advice-card--below-meta,
+  .single-course-page--segment-info-collapsed .single-course-segment-page__stats-card--fixed,
+  .single-course-page--segment-info-collapsed .single-course-segment-page__chart-card--fixed {
+    display: none;
+  }
+
   .single-course-course__good-time {
     padding: var(--spacing-4, 8px) var(--spacing-5, 10px);
     width: 100%;

@@ -35,20 +35,20 @@
   /* ========== Grille de base 4px (Material You) ========== */
   --grid-base: 4px;
 
-  /* ========== Spacing — scale Material You ========== */
+  /* ========== Spacing — scale (4px grid, harmonisée avec l'existant) ========== */
   --spacing-0: 0;
-  --spacing-1: 4px;
-  --spacing-2: 8px;
-  --spacing-3: 12px;
-  --spacing-4: 16px;
-  --spacing-5: 20px;
-  --spacing-6: 24px;
-  --spacing-8: 32px;
-  --spacing-10: 40px;
-  --spacing-12: 48px;
-  --spacing-14: 28px;
-  --spacing-16: 64px;
-  --spacing-20: 40px;
+  --spacing-1: 2px;   /* ultra serré (bordures, outlines fins) */
+  --spacing-2: 4px;   /* micro-spacing (icônes, puces)        */
+  --spacing-3: 6px;   /* petit gap vertical                   */
+  --spacing-4: 8px;   /* base spacing pour les gaps / paddings courts */
+  --spacing-5: 10px;  /* demi entre 8 et 12                   */
+  --spacing-6: 12px;  /* padding boutons, cartes compactes     */
+  --spacing-8: 16px;  /* marge/gap de section                  */
+  --spacing-10: 20px; /* gros gap horizontal                   */
+  --spacing-12: 24px; /* padding cartes, sections              */
+  --spacing-14: 28px; /* utilisé pour certains halos / effets  */
+  --spacing-16: 32px; /* marge de blocs                         */
+  --spacing-20: 40px; /* grandes sections                       */
   --spacing-24: 48px;
   --spacing-32: 64px;
   --spacing-40: 80px;
