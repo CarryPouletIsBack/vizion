@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import './App.css'
 import Skeleton, { SkeletonLines } from './components/Skeleton'
@@ -732,16 +732,6 @@ function App() {
     }
     loadEvents()
   }, [])
-
-  const courseMarkersOnGlobe = useMemo<{ id: string; coordinates: [number, number] }[]>(() => {
-    return events.flatMap((e) =>
-      e.courses
-        .filter((c): c is typeof c & { startCoordinates: [number, number] } =>
-          c.startCoordinates != null && c.startCoordinates.length === 2
-        )
-        .map((c) => ({ id: c.id, coordinates: c.startCoordinates }))
-    )
-  }, [events])
 
   if (loading) {
     return (
